@@ -1,0 +1,89 @@
+Tối ưu hóa cho Smartphone/Tablet:
+	•	Sử dụng Checkbox (chọn nhiều) và Radio Button (chọn một).
+	•	Hạn chế tối đa việc gõ phím (chỉ dùng cho tên và các con số cụ thể).
+	•	Phân loại theo nhóm triệu chứng để bác sĩ dễ dàng chẩn đoán nhanh.
+
+PHẦN 1: THÔNG TIN CƠ BẢN & LỐI SỐNG
+(Phần này nhập liệu tối thiểu)
+	•	Thông tin Định danh & Liên lạc
+	•	Họ và Tên: [ Nhập văn bản ]
+	•	Ngày sinh: [ Chọn từ lịch ]
+	•	Giới tính: ○ Nam | ○ Nữ | ○ Khác 
+	•	Chiều cao/Cân nặng: [ __ cm / __ kg ] 
+
+	•	Sàng lọc Nguy cơ & Lối sống (Check-only)
+	•	Đặc thù công việc: * □ Ngồi nhiều | □ Đứng nhiều | □ Lao động tay chân 
+	•	Tần suất vận động: * ○ Không tập | ○ Thỉnh thoảng | ○ Thường xuyên 
+	•	Tiền sử bản thân (Birth History): * ○ Sinh thường | ○ Sinh mổ | ○ Có dùng kẹp/giác hút 
+
+PHẦN 2: TÌNH TRẠNG BỆNH LÝ HIỆN TẠI
+4. Vị trí đau chính (Có thể chọn nhiều): (chú ý: khi chọn vào các mục ở dưới thì hiện pop-up Tính chất cơn đau như mục 5 và mục 6 ở dưới)
+	•	□ Cổ (Halswirbelsäule)
+	•	□ Ngực/Lưng trên (Brustwirbelsäule)
+	•	□ Thắt lưng (Lendenwirbelsäule)
+	•	□ Khớp (Khi check vào sẽ cho chọn: Vai/Khuỷu tay/Cổ tay/Háng/Gối/Cổ chân)
+	•	□ Khác: [________]
+5. Tính chất cơn đau: 
+	•	□ Đau nhói | □ Đau âm ỉ | □ Tê bì | □ Yếu cơ | □ Hạn chế vận động
+6. Mức độ đau (Từ 0 - Không đau đến 10 - Không thể chịu nổi): 
+	•	(Thanh trượt hoặc nút chọn từ 0 đến 10)
+7. Thời gian triệu chứng: 
+	•	○ Cấp tính (vài ngày) | ○ Mạn tính (vài tháng/năm) | ○ Tái phát nhiều lần
+Nguyên nhân kích hoạt: * □ Ngã/Va chạm | □ Tai nạn xe | □ Tự nhiên bị
+(Gợi ý: Chèn hình ảnh giải phẫu cơ thể để bệnh nhân chạm trực tiếp vào điểm đau trên máy tính bảng)
+
+PHẦN 3: TIỀN SỬ Y KHOA & CHẤN THƯƠNG
+(Kiểm tra các yếu tố ảnh hưởng đến cột sống)
+8. Nguyên nhân nghi ngờ (nếu có): (nếu chọn thì hiện ra khung trống để điền thời gian đã xảy ra)
+	•	□ Tai nạn xe | □ Ngã/Chấn thương thể thao | □ Không rõ nguyên nhân
+9. Tiền sử can thiệp: 
+	•	□ Đã từng phẫu thuật (Vùng:________, thời gian:______) (Đánh dấu O vàng lên hình trên)
+	•	□ Từng bị gãy xương (từ lúc nào:_________) Vị trí nào? Đánh dấu (cho đánh dấu X đỏ vào hình ở trên.)
+	•	□ Đang đeo răng niềng/Có cấy ghép implant nha khoa (từ lúc nào:________)
+	•	Đã có phim chụp: * □ X-Ray | □ MRI/CT 
+	•	Đã từng điều trị tại: * □ Chiropractic khác | □ Vật lý trị liệu | □ Osteopath 
+Nhóm bệnh Cơ - Xương - Khớp (Cực kỳ quan trọng)
+	•	□ Thoát vị đĩa đệm (Bandscheibenvorfall): Đã có chẩn đoán xác định.
+	•	□ Viêm khớp dạng thấp (Rheumatoide Polyarthritis): Hoặc các bệnh tự miễn về khớp.
+	•	□ Loãng xương (Osteoporosis): Nguy cơ gãy xương khi nắn chỉnh lực mạnh.
+	•	□ Thoái hóa cột sống nặng: Gây hẹp ống sống hoặc gai xương lớn.
+	•	□ Vẹo cột sống (Skoliose): Cột sống hình chữ S đã biết.
+	•	□ Viêm cột sống dính khớp: Gây cứng hóa các đốt sống.
+Nhóm bệnh Nội khoa & Hệ thống
+	•	□ Ung thư (Krebs): Bất kỳ loại nào, đặc biệt là ung thư xương hoặc di căn.
+	•	□ Huyết áp cao (Bluthochdruck): Liên quan đến nguy cơ lưu thông máu lên não.
+	•	□ Tiểu đường (Diabetes): Ảnh hưởng đến tốc độ phục hồi thần kinh và mạch máu.
+	•	□ Rối loạn đông máu: Hoặc đang sử dụng thuốc làm loãng máu (nguy cơ xuất huyết nội).
+	•	□ Bệnh lý tim mạch: Đã từng đặt stent, phẫu thuật tim hoặc dùng máy tạo nhịp.
+Tiền sử chấn thương & Can thiệp (Surgical History)
+	•	□ Gãy xương (Frakturen): Đặc biệt là vùng cột sống, xương chậu. Chỗ nào:_______
+	•	□ Phẫu thuật cột sống: Đã từng bắt vít, nẹp hoặc thay đĩa đệm nhân tạo. Chỗ nào:_______
+	•	□ Phẫu thuật cột sống: Đã từng bắt vít, nẹp hoặc thay đĩa đệm nhân tạo
+	•	□ Tai nạn xe cộ/ngã mạnh: Gây chấn thương vùng _________________
+Dấu hiệu thần kinh cấp cứu (Phải báo ngay với bác sĩ)
+	•	□ Mất kiểm soát bàng quang/ruột (Đại tiểu tiện không tự chủ).
+	•	□ Tê vùng yên ngựa (Tê vùng bẹn, cơ quan sinh dục).
+	•	□ Yếu liệt chi tiến triển nhanh.
+
+10. Thuốc/Thực phẩm chức năng đang dùng: (dùng từ lúc nào:_______)
+	•	□ Thuốc giảm đau | □ Thuốc chống viêm | □ Thuốc huyết áp/tim mạch | □ Cortison 
+
+PHẦN 4: RÀ SOÁT HỆ THỐNG
+  Vùng đầu mặt:
+	•	□ Đau đầu | □ Chóng mặt | □ Ù tai 
+	•	□ Vấn đề hàm (Khớp thái dương hàm) | □ Đang niềng răng 
+  Cơ quan liên quan:
+	•	□ Tê lan xuống ngón tay | □ Đau tức ngực (không do tim) 
+	•	□ Đau/Tê lan xuống mông/le | □ Có tiền sử Vẹo cột sống (S-form) 
+  Cơ sở hạ tầng (Bàn chân):
+	•	□ Chênh lệch chiều dài chân | □ Hay bị lật sơ mi (bong gân cổ chân) 
+	•	□ Đang dùng miếng lót giày/đế nâng 
+
+
+PHẦN 5: MỤC TIÊU ĐIỀU TRỊ
+(Giúp bác sĩ hiểu mong muốn của bệnh nhân)
+12. Bạn mong muốn điều gì nhất?
+	•	○ Giảm đau nhanh chóng
+	•	○ Phục hồi chức năng vận động
+	•	○ Chăm sóc sức khỏe lâu dài/Phòng ngừa 
+

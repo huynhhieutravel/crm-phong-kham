@@ -1,0 +1,10 @@
+config/database.php
+._*
+.DS_Store
+tmp/
+.gemini/
+.agents/
+.agent/
+_agents/
+_agent/
+brain/

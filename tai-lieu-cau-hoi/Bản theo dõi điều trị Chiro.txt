@@ -1,0 +1,233 @@
+BẢN THEO DÕI ĐIỀU TRỊ CHIROPRACTIC (SOAP NOTE)
+Thông tin cơ bản:
+	•	Bệnh nhân: ........................................... (tự điền vào khi mở hồ sơ bệnh án)
+	•	Ngày khám: ..../..../2026 Lần thứ: ......... (tự điền vào khi mở hồ sơ bệnh án, cho phép sửa nếu muốn)
+
+1. Chủ quan (S - Subjective): Tình trạng bệnh nhân khai báo
+Đánh giá cảm nhận của bệnh nhân so với lần ghé thăm trước.
+	•	Tiến triển chung: 
+	•	☐ Cải thiện rõ rệt 
+	•	☐ Cải thiện nhẹ 
+	•	☐ Không thay đổi 
+	•	☐ Tệ hơn 
+	•	Chấn thương mới (nếu có): ☐ Không ☐ Có (Ngày bị: .....................) 
+	•	Tần suất triệu chứng: 
+	•	☐ Thỉnh thoảng (0-25%) 
+	•	☐ Lúc có lúc không (25-50%) 
+	•	☐ Thường xuyên (50-75%) 
+	•	☐ Liên tục (75-100%) 
+	•	Đau khi thực hiện các hoạt động: 
+	•	☐ Nâng vật nặng | ☐ Đứng | ☐ Ngồi | ☐ Nằm | ☐ Cúi người 
+	•	☐ Ngủ | ☐ Lái xe | ☐ Đi bộ | ☐ Mọi hoạt động hàng ngày 
+	•	Thang điểm đau (VAS): ...../10 (0: Không đau - 10: Đau dữ dội)
+
+Vị trí đau: _________________________
+	•	Mức độ đau (VAS 1-10): [..../10] (So với lần trước: ☐ Giảm ☐ Tăng ☐ Không đổi)
+	•	Biểu hiện: ☐ Đau nhức ☐ Tê bì ☐ Cứng khớp ☐ Chóng mặt/Đau đầu.
+	•	Ghi chú nhanh: ..................................................................................................
+
+Vị trí đau: _________________________
+	•	Mức độ đau (VAS 1-10): [..../10] (So với lần trước: ☐ Giảm ☐ Tăng ☐ Không đổi)
+	•	Biểu hiện: ☐ Đau nhức ☐ Tê bì ☐ Cứng khớp ☐ Chóng mặt/Đau đầu.
+	•	Ghi chú nhanh: ..................................................................................................
+Vị trí đau: _________________________
+	•	Mức độ đau (VAS 1-10): [..../10] (So với lần trước: ☐ Giảm ☐ Tăng ☐ Không đổi)
+	•	Biểu hiện: ☐ Đau nhức ☐ Tê bì ☐ Cứng khớp ☐ Chóng mặt/Đau đầu.
+	•	Ghi chú nhanh: ..................................................................................................
+
+2. Khách quan (O - Objective): Kiểm tra của bác sĩ
+Kết quả thăm khám của bác sĩ.
+	•	Sờ nắn (Palpation) & Trương lực cơ: 
+	•	Vùng cơ co thắt (Hypertonicity):.......................................................................
+	•	Mức độ: ☐ Nhẹ (Mild) | ☐ Vừa (Mod) | ☐ Nặng (Sev) 
+	•	Điểm đau/Cố định khớp (Fixation): 
+	•	Đốt sống cổ (C0-C7): ................. | Đốt sống ngực (T1-T12): ................. 
+	•	Đốt sống thắt lưng (L1-L5): ................. | Khớp cùng chậu (SI Joint): ................. 
+	•	Khớp ngoại vi (Vai, Khuỷu, Cổ tay, Hông, Gối, Cổ chân): .................................... 
+	•	Hạn chế tầm vận động (ROM): 
+	•	☐ Cổ | ☐ Ngực | ☐ Thắt lưng 
+
+3. Đánh giá & Vị trí điều trị (A - Assessment & Adjustment)
+Nắn chỉnh
+Đánh dấu (X) vào các vị trí đốt sống có sai lệch (Subluxation) đã thực hiện nắn chỉnh trong buổi hôm nay:
+L
+R
+
+
+☐
+☐
+Atlas
+
+☐
+☐
+Axis 2
+C
+☐
+☐
+3
+
+☐
+☐
+4
+
+☐
+☐
+5
+
+☐
+☐
+6
+
+☐
+☐
+7
+
+☐
+☐
+1
+D
+☐
+☐
+2
+
+☐
+☐
+3
+
+☐
+☐
+4
+
+☐
+☐
+5
+
+☐
+☐
+6
+
+☐
+☐
+7
+
+☐
+☐
+8
+
+☐
+☐
+9
+
+☐
+☐
+10
+
+☐
+☐
+11
+
+☐
+☐
+12
+
+☐
+☐
+1
+L
+☐
+☐
+2
+
+☐
+☐
+3
+
+☐
+☐
+4
+
+☐
+☐
+5
+
+☐
+☐
+Sac
+
+☐
+☐
+Rlli
+
+☐
+☐
+Llli
+
+☐
+☐
+Coc
+
+
+
+Becken
+AS
+PI
+IN-Ilium
+EX-Ilium
+Up-Slip
+Down-Slip
+links
+☐
+☐
+☐
+☐
+☐
+☐
+rechts
+☐
+☐
+☐
+☐
+☐
+☐
+
+
+L
+R
+Khớp
+☐
+☐
+Khớp vai
+☐
+☐
+Khớp khuỷu tay
+☐
+☐
+Khớp cổ tay
+☐
+☐
+Khớp háng
+☐
+☐
+Khớp gối
+☐
+☐
+Khớp cổ chân
+
+
+Vật lý trị liệu / Phục hồi chức năng: 
+	•	☐ Nhiệt/Lạnh (Heat/Cryo) | ☐ Điện xung (DEMS) | ☐ Siêu âm (Ultrasound) 
+	•	☐ Giải cơ (Trigger Point) | ☐ Massage trị liệu | ☐ Kéo giãn (Traction) 
+	•	☐ Trị liệu bằng tay (Manual Therapy) | ☐ Bài tập chức năng 
+4. ĐÁNH GIÁ & KẾ HOẠCH (ASSESSMENT & PLAN - A/P)
+	•	Đánh giá buổi hôm nay: 
+	•	☐ Tiến triển tốt | ☐ Tiến triển chậm | ☐ Chưa cải thiện 
+	•	Kế hoạch tiếp theo: 
+	•	Tần suất: ☐ 3 lần/tuần | ☐ 2 lần/tuần | ☐ 1 lần/tuần | ☐ Khi cần (PRN) 
+	•	Ghi chú (Notes): ..........................................................................................................
+
+
+
+
+
+Chữ ký Bác sĩ: ........................................ 
+
