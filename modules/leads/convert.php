@@ -32,8 +32,8 @@ try {
     }
 
     $stmt = $db->prepare("
-        INSERT INTO patients (full_name, gender, birthday, phone, email, address, zalo_number, source, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO patients (full_name, gender, birthday, phone, email, address, zalo_number, source, consultant_id, label, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $lead['full_name'],
@@ -44,6 +44,8 @@ try {
         $lead['address'],
         $lead['zalo_number'],
         $lead['source'],
+        $lead['consultant_id'],
+        'Khách mới',
         $notes
     ]);
     $patient_id = $db->lastInsertId();

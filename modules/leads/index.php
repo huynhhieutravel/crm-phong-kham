@@ -2,21 +2,9 @@
 // modules/leads/index.php
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
-$page_title = 'Quản lý Lead Marketing';
-$current_page = 'leads';
-require_once '../../templates/header.php';
+require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-
-// Medical Groups constants
-$medical_groups = [
-    'Thoát vị đĩa đệm',
-    'Thoái hóa cột sống',
-    'Đau thần kinh tọa',
-    'Cong vẹo cột sống',
-    'Phục hồi chức năng',
-    'Cơ xương khớp khác'
-];
 
 // Handle Quick Add
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_add'])) {
@@ -35,6 +23,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_add'])) {
     set_flash('Đã thêm Lead nhanh thành công!');
     redirect('index.php');
 }
+
+$page_title = 'Quản lý Lead Marketing';
+$current_page = 'leads';
+require_once '../../templates/header.php';
+
+$db = getDB();
+
+// Medical Groups constants
+$medical_groups = [
+    'Thoát vị đĩa đệm',
+    'Thoái hóa cột sống',
+    'Đau thần kinh tọa',
+    'Cong vẹo cột sống',
+    'Phục hồi chức năng',
+    'Cơ xương khớp khác'
+];
 
 $search = $_GET['search'] ?? '';
 $status_filter = $_GET['status'] ?? '';

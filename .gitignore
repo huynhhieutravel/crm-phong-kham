@@ -8,3 +8,7 @@ tmp/
 _agents/
 _agent/
 brain/
+*.sqlite
+*.db
+uploads/*
+!uploads/.gitkeep

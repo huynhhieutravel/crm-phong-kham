@@ -1,7 +1,7 @@
 <?php
 // modules/hr/index.php
 require_once '../../includes/db.php';
-$page_title = 'Chấm công & Nhân sự';
+$page_title = 'Nhân sự & Chấm công';
 $current_page = 'hr';
 require_once '../../templates/header.php';
 
@@ -27,6 +27,13 @@ $attendance = $stmt->fetchAll();
 // Check if current user already checked in today
 $my_check = $db->query("SELECT id FROM timekeeping WHERE user_id = {$_SESSION['user_id']} AND work_date = '$today'")->fetch();
 ?>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2 style="margin: 0; font-weight: 800; color: var(--text-main);">NHÂN SỰ & CHẤM CÔNG</h2>
+    <a href="users.php" class="btn btn-primary shadow-sm" style="background: var(--primary); color: white; border-radius: 12px; padding: 0.75rem 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+        <i class="fas fa-users-cog"></i> Quản lý Nhân sự
+    </a>
+</div>
 
 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
     <div class="card">

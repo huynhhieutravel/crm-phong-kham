@@ -1,12 +1,13 @@
 <?php
-// modules/patients/add.php
+// modules/patients/edit.php
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
+$id = $_GET['id'] ?? 0;
 
-// Fetch active consultants (CSKH/Admin)
+// Fetch active consultants
 $consultants_stmt = $db->query("
     SELECT u.id, u.full_name 
     FROM users u 
@@ -16,14 +17,22 @@ $consultants_stmt = $db->query("
 ");
 $consultants = $consultants_stmt->fetchAll();
 
+$stmt = $db->prepare("SELECT * FROM patients WHERE id = ?");
+$stmt->execute([$id]);
+$p = $stmt->fetch();
+
+if (!$p) {
+    set_flash('Bệnh nhân không tồn tại!', 'error');
+    redirect('index.php');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $db->prepare("
-        INSERT INTO patients (
-            customer_id, full_name, gender, birthday, phone, email, address, 
-            branch, occupation, source, consultant_id, zalo_number, facebook_link, instagram_link, twitter_link,
-            guardian_name, guardian_id_card, guardian_phone, guardian_relationship, notes
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        UPDATE patients SET 
+            customer_id = ?, full_name = ?, gender = ?, birthday = ?, phone = ?, email = ?, address = ?, 
+            branch = ?, occupation = ?, source = ?, consultant_id = ?, label = ?, zalo_number = ?, facebook_link = ?, instagram_link = ?, twitter_link = ?,
+            guardian_name = ?, guardian_id_card = ?, guardian_phone = ?, guardian_relationship = ?, notes = ?
+        WHERE id = ?
     ");
     
     $birthday = !empty($_POST['birthday']) ? $_POST['birthday'] : null;
@@ -41,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['occupation'],
         $_POST['source'],
         $consultant_id,
+        $_POST['label'],
         $_POST['zalo_number'],
         $_POST['facebook_link'],
         $_POST['instagram_link'],
@@ -49,22 +59,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['guardian_id_card'],
         $_POST['guardian_phone'],
         $_POST['guardian_relationship'],
-        $_POST['notes']
+        $_POST['notes'],
+        $id
     ]);
     
-    set_flash('Thêm bệnh nhân thành công!');
-    redirect('index.php');
+    set_flash('Cập nhật hồ sơ thành công!');
+    redirect("view.php?id=$id");
 }
 
-$page_title = 'Thêm Bệnh nhân mới';
+$page_title = 'Chỉnh sửa Hồ sơ Bệnh nhân';
 $current_page = 'patients';
 require_once '../../templates/header.php';
 ?>
 
 <div style="max-width: 1000px; margin: 0 auto;">
     <div style="margin-bottom: 2rem;">
-        <h2 style="font-weight: 800; color: var(--text-main); margin: 0;"><i class="fas fa-user-plus" style="color: var(--primary);"></i> Hồ sơ Bệnh nhân</h2>
-        <p style="color: var(--text-muted); margin-top: 0.25rem;">Tạo mới thông tin khách hàng đầy đủ</p>
+        <h2 style="font-weight: 800; color: var(--text-main); margin: 0;"><i class="fas fa-edit" style="color: var(--primary);"></i> Chỉnh sửa Hồ sơ</h2>
+        <p style="color: var(--text-muted); margin-top: 0.25rem;">Cập nhật thông tin chi tiết cho bệnh nhân: <strong style="color: var(--text-main);"><?php echo e($p['full_name']); ?></strong></p>
     </div>
 
     <form method="POST">
@@ -77,54 +88,54 @@ require_once '../../templates/header.php';
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Họ và tên <span style="color: red;">*</span></label>
-                    <input type="text" name="full_name" class="form-input" required placeholder="Nguyễn Văn A" style="font-size: 1.1rem; font-weight: 600;">
+                    <input type="text" name="full_name" class="form-input" required value="<?php echo e($p['full_name']); ?>" style="font-size: 1.1rem; font-weight: 600;">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Số điện thoại <span style="color: red;">*</span></label>
-                    <input type="text" name="phone" class="form-input" required placeholder="0912345678">
+                    <input type="text" name="phone" class="form-input" required value="<?php echo e($p['phone']); ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Mã khách hàng (Tùy chọn)</label>
-                    <input type="text" name="customer_id" class="form-input" placeholder="Ví dụ: BN-1001">
+                    <input type="text" name="customer_id" class="form-input" value="<?php echo e($p['customer_id']); ?>" placeholder="Ví dụ: BN-1001">
                 </div>
-                
+
                 <div class="form-group">
                     <label class="form-label">Giới tính</label>
                     <div style="display: flex; gap: 1.5rem; padding: 0.5rem 0;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="radio" name="gender" value="male" checked> Nam
+                            <input type="radio" name="gender" value="male" <?php echo $p['gender'] === 'male' ? 'checked' : ''; ?>> Nam
                         </label>
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="radio" name="gender" value="female"> Nữ
+                            <input type="radio" name="gender" value="female" <?php echo $p['gender'] === 'female' ? 'checked' : ''; ?>> Nữ
                         </label>
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="radio" name="gender" value="other"> Khác
+                            <input type="radio" name="gender" value="other" <?php echo $p['gender'] === 'other' ? 'checked' : ''; ?>> Khác
                         </label>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Ngày sinh</label>
-                    <input type="date" name="birthday" class="form-input">
+                    <input type="date" name="birthday" class="form-input" value="<?php echo $p['birthday']; ?>">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Chi nhánh</label>
                     <select name="branch" class="form-input">
-                        <option value="Trụ sở chính">Trụ sở chính</option>
-                        <option value="Chi nhánh 1">Chi nhánh 1</option>
+                        <option value="Trụ sở chính" <?php echo $p['branch'] === 'Trụ sở chính' ? 'selected' : ''; ?>>Trụ sở chính</option>
+                        <option value="Chi nhánh 1" <?php echo $p['branch'] === 'Chi nhánh 1' ? 'selected' : ''; ?>>Chi nhánh 1</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Nguồn khách hàng</label>
                     <select name="source" class="form-input">
-                        <option value="Facebook">Facebook</option>
-                        <option value="Zalo">Zalo</option>
-                        <option value="TikTok">TikTok</option>
-                        <option value="Google">Google</option>
-                        <option value="Referral">Người quen (Referral)</option>
-                        <option value="Walk-in">Tự đến (Walk-in)</option>
-                        <option value="Other">Khác</option>
+                        <option value="Facebook" <?php echo $p['source'] === 'Facebook' ? 'selected' : ''; ?>>Facebook</option>
+                        <option value="Zalo" <?php echo $p['source'] === 'Zalo' ? 'selected' : ''; ?>>Zalo</option>
+                        <option value="TikTok" <?php echo $p['source'] === 'TikTok' ? 'selected' : ''; ?>>TikTok</option>
+                        <option value="Google" <?php echo $p['source'] === 'Google' ? 'selected' : ''; ?>>Google</option>
+                        <option value="Referral" <?php echo $p['source'] === 'Referral' ? 'selected' : ''; ?>>Người quen (Referral)</option>
+                        <option value="Walk-in" <?php echo $p['source'] === 'Walk-in' ? 'selected' : ''; ?>>Tự đến (Walk-in)</option>
+                        <option value="Other" <?php echo $p['source'] === 'Other' ? 'selected' : ''; ?>>Khác</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -132,19 +143,23 @@ require_once '../../templates/header.php';
                     <select name="consultant_id" class="form-input">
                         <option value="">-- Chọn tư vấn viên --</option>
                         <?php foreach ($consultants as $con): ?>
-                            <option value="<?php echo $con['id']; ?>"><?php echo e($con['full_name']); ?></option>
+                            <option value="<?php echo $con['id']; ?>" <?php echo $p['consultant_id'] == $con['id'] ? 'selected' : ''; ?>><?php echo e($con['full_name']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Nhãn khách hàng (Ví dụ: Khách mới, VIP, Thân thiết...)</label>
+                    <input type="text" name="label" class="form-input" value="<?php echo e($p['label']); ?>" placeholder="Nhập nhãn phân loại...">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Nghề nghiệp / Công việc</label>
-                    <input type="text" name="occupation" class="form-input" placeholder="Ví dụ: Nhân viên văn phòng, Kinh doanh tự do...">
+                    <input type="text" name="occupation" class="form-input" value="<?php echo e($p['occupation']); ?>" placeholder="Ví dụ: Nhân viên văn phòng, Kinh doanh tự do...">
                 </div>
             </div>
             
             <div class="form-group" style="margin-top: 1.5rem;">
                 <label class="form-label">Địa chỉ</label>
-                <input type="text" name="address" class="form-input" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
+                <input type="text" name="address" class="form-input" value="<?php echo e($p['address']); ?>">
             </div>
         </div>
 
@@ -157,26 +172,26 @@ require_once '../../templates/header.php';
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="form-group">
                     <label class="form-label">Số Zalo</label>
-                    <input type="text" name="zalo_number" class="form-input" placeholder="Thường mặc định là SĐT">
+                    <input type="text" name="zalo_number" class="form-input" value="<?php echo e($p['zalo_number']); ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-input" placeholder="example@gmail.com">
+                    <input type="email" name="email" class="form-input" value="<?php echo e($p['email']); ?>">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label"><i class="fab fa-facebook" style="color: #1877f2;"></i> Facebook Link</label>
-                    <input type="url" name="facebook_link" class="form-input" placeholder="https://facebook.com/username">
+                    <input type="url" name="facebook_link" class="form-input" value="<?php echo e($p['facebook_link']); ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label"><i class="fab fa-instagram" style="color: #e4405f;"></i> Instagram Link</label>
-                    <input type="url" name="instagram_link" class="form-input" placeholder="https://instagram.com/username">
+                    <input type="url" name="instagram_link" class="form-input" value="<?php echo e($p['instagram_link']); ?>">
                 </div>
             </div>
-            <input type="hidden" name="twitter_link" value="">
+            <input type="hidden" name="twitter_link" value="<?php echo e($p['twitter_link']); ?>">
         </div>
 
-        <!-- Section 3: Guardian Info (Conditional Layout) -->
+        <!-- Section 3: Guardian Info -->
         <div class="card" style="margin-bottom: 1.5rem; padding: 2rem; background: #fffbeb; border: 1px solid #fef3c7;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
                 <div>
@@ -191,25 +206,25 @@ require_once '../../templates/header.php';
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="form-group">
                     <label class="form-label">Họ tên người giám hộ</label>
-                    <input type="text" name="guardian_name" class="form-input" placeholder="Nhập tên người giám hộ">
+                    <input type="text" name="guardian_name" class="form-input" value="<?php echo e($p['guardian_name']); ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Số CMND/CCCD</label>
-                    <input type="text" name="guardian_id_card" class="form-input" placeholder="Nhập số CMND/CCCD">
+                    <input type="text" name="guardian_id_card" class="form-input" value="<?php echo e($p['guardian_id_card']); ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Số điện thoại</label>
-                    <input type="text" name="guardian_phone" class="form-input" placeholder="Nhập số điện thoại liên hệ">
+                    <input type="text" name="guardian_phone" class="form-input" value="<?php echo e($p['guardian_phone']); ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Mối quan hệ</label>
                     <select name="guardian_relationship" class="form-input">
                         <option value="">-- Chọn mối quan hệ --</option>
-                        <option value="Cha">Cha</option>
-                        <option value="Mẹ">Mẹ</option>
-                        <option value="Ông/Bà">Ông/Bà</option>
-                        <option value="Anh/Chị">Anh/Chị</option>
-                        <option value="Người thân khác">Người thân khác</option>
+                        <option value="Cha" <?php echo $p['guardian_relationship'] === 'Cha' ? 'selected' : ''; ?>>Cha</option>
+                        <option value="Mẹ" <?php echo $p['guardian_relationship'] === 'Mẹ' ? 'selected' : ''; ?>>Mẹ</option>
+                        <option value="Ông/Bà" <?php echo $p['guardian_relationship'] === 'Ông/Bà' ? 'selected' : ''; ?>>Ông/Bà</option>
+                        <option value="Anh/Chị" <?php echo $p['guardian_relationship'] === 'Anh/Chị' ? 'selected' : ''; ?>>Anh/Chị</option>
+                        <option value="Người thân khác" <?php echo $p['guardian_relationship'] === 'Người thân khác' ? 'selected' : ''; ?>>Người thân khác</option>
                     </select>
                 </div>
             </div>
@@ -220,14 +235,14 @@ require_once '../../templates/header.php';
                 <i class="fas fa-sticky-note"></i> Ghi chú & Tiểu sử bệnh
             </h3>
             <div class="form-group">
-                <textarea name="notes" class="form-input" rows="4" placeholder="Nhập các lưu ý đặc biệt hoặc tình trạng bệnh sơ bộ..."></textarea>
+                <textarea name="notes" class="form-input" rows="4"><?php echo e($p['notes']); ?></textarea>
             </div>
         </div>
         
         <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end; padding-bottom: 4rem;">
-            <a href="index.php" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;">Hủy bỏ</a>
+            <a href="view.php?id=<?php echo $id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;">Hủy bỏ</a>
             <button type="submit" class="btn btn-primary" style="padding: 1rem 3rem; font-weight: 700; font-size: 1.1rem; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);">
-                <i class="fas fa-save" style="margin-right: 0.5rem;"></i> LƯU HỒ SƠ
+                <i class="fas fa-save" style="margin-right: 0.5rem;"></i> CẬP NHẬT HỒ SƠ
             </button>
         </div>
     </form>

@@ -1,27 +1,16 @@
 <?php
 // modules/medical/add_treatment.php
 require_once '../../includes/db.php';
-$patient_id = $_GET['patient_id'] ?? 0;
-
-$page_title = 'Ghi nhật ký điều trị';
-$current_page = 'medical';
-require_once '../../templates/header.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
+$patient_id = $_GET['patient_id'] ?? 0;
+$session_id = $_GET['session_id'] ?? null;
+
 $stmt = $db->prepare("SELECT full_name FROM patients WHERE id = ?");
 $stmt->execute([$patient_id]);
 $patient_name = $stmt->fetchColumn();
-
-// Fetch active packages for this patient (including corporate ones where this patient might be a user)
-$stmt = $db->prepare("
-    SELECT pp.*, p.name as package_name, p.is_corporate
-    FROM patient_packages pp
-    JOIN packages p ON pp.package_id = p.id
-    WHERE pp.sessions_remaining > 0 AND (pp.patient_id = ? OR p.is_corporate = 1)
-    AND pp.status = 'active'
-");
-$stmt->execute([$patient_id]);
-$available_packages = $stmt->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db->beginTransaction();
@@ -31,11 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 1. Insert treatment
         $stmt = $db->prepare("
-            INSERT INTO treatments (patient_id, technician_id, session_data, package_id)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO treatments (patient_id, session_id, technician_id, session_data, package_id)
+            VALUES (?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $patient_id,
+            $session_id,
             $_SESSION['user_id'],
             $session_data,
             $patient_package_id
@@ -55,12 +45,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $db->commit();
         set_flash('Lưu nhật ký điều trị thành công!');
-        redirect("../patients/view.php?id=$patient_id");
+        
+        if ($session_id) {
+            redirect("session_view.php?id=$session_id");
+        } else {
+            redirect("../patients/view.php?id=$patient_id");
+        }
     } catch (Exception $e) {
         $db->rollBack();
         $error = "Lỗi: " . $e->getMessage();
     }
 }
+
+$page_title = 'Ghi nhật ký điều trị';
+$current_page = 'medical';
+require_once '../../templates/header.php';
+
+// Fetch active packages for this patient (including corporate ones where this patient might be a user)
+$stmt = $db->prepare("
+    SELECT pp.*, p.name as package_name, p.is_corporate
+    FROM patient_packages pp
+    JOIN packages p ON pp.package_id = p.id
+    WHERE pp.sessions_remaining > 0 AND (pp.patient_id = ? OR p.is_corporate = 1)
+    AND pp.status = 'active'
+");
+$stmt->execute([$patient_id]);
+$available_packages = $stmt->fetchAll();
 ?>
 
 <div class="card" style="max-width: 600px; margin: 0 auto;">

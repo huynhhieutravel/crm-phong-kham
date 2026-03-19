@@ -105,6 +105,61 @@ body {
     color: var(--primary-light);
 }
 
+/* Submenu Styles */
+.nav-item-wrapper {
+    position: relative;
+    margin-bottom: 0.25rem;
+}
+
+.submenu {
+    list-style: none;
+    padding: 0.5rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.25rem;
+    background: #1e293b;
+    border-radius: 12px;
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 0;
+    min-width: 180px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    z-index: 9999;
+}
+
+.nav-item-wrapper:hover .submenu {
+    display: flex;
+}
+
+.submenu-item {
+    padding: 0.5rem 1rem;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.submenu-item:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.submenu-item.active {
+    color: var(--primary-light);
+    font-weight: 700;
+}
+
+.submenu-item i {
+    font-size: 0.75rem;
+    width: 12px;
+}
+
 /* Glassmorphism Top Bar */
 .top-bar {
     height: 80px;

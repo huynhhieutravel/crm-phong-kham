@@ -55,17 +55,20 @@ $patients = $stmt->fetchAll();
                             <?php echo $p['history_count']; ?> hồ sơ
                         </span>
                     </td>
-                    <td style="padding: 1rem; display: flex; gap: 0.5rem;">
-                        <a href="initial_exam.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-sm" style="background: #f5f3ff; color: #7c3aed;" title="Khám tiền Chiro">
-                            <i class="fas fa-stethoscope"></i> Tiền Chiro
+                    <td style="padding: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <a href="chiro_history.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-sm" style="background: #fdf2f8; color: #be185d;" title="Tiền sử bệnh Chiropractic">
+                            <i class="fas fa-history"></i> Tiền Chiro
                         </a>
-                        <a href="form.php?patient_id=<?php echo $p['id']; ?>&type=chiropractic" class="btn btn-sm" style="background: #eef2ff; color: #4f46e5;" title="Tạo phiếu Chiropractic">
-                            <i class="fas fa-bone"></i> Chiro
+                        <a href="chiro_exam.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-sm" style="background: #f5f3ff; color: #7c3aed;" title="Khám thực thể Chiropractic">
+                            <i class="fas fa-stethoscope"></i> Khám Chiro
+                        </a>
+                        <a href="follow_up.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-sm" style="background: #eef2ff; color: #4f46e5;" title="Theo dõi Chiropractic (SOAP)">
+                            <i class="fas fa-notes-medical"></i> SOAP
                         </a>
                         <a href="form.php?patient_id=<?php echo $p['id']; ?>&type=dong_y" class="btn btn-sm" style="background: #fdf2f2; color: #dc2626;" title="Tạo phiếu Đông Y">
                             <i class="fas fa-leaf"></i> Đông Y
                         </a>
-                        <a href="../patients/view.php?id=<?php echo $p['id']; ?>" class="btn btn-sm" style="background: #f1f5f9; color: var(--text-main);" title="Xem tất cả">
+                        <a href="../patients/view.php?id=<?php echo $p['id']; ?>" class="btn btn-sm" style="background: #f1f5f9; color: var(--text-main);" title="Xem hồ sơ chi tiết">
                             <i class="fas fa-eye"></i>
                         </a>
                     </td>

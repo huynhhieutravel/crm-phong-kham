@@ -15,10 +15,20 @@
             <i class="fas fa-users"></i>
             <span><?php echo t('patients'); ?></span>
         </a>
-        <a href="/modules/appointments/index.php" class="nav-item <?php echo $current_page === 'appointments' ? 'active' : ''; ?>">
-            <i class="fas fa-calendar-check"></i>
-            <span><?php echo t('appointments'); ?></span>
-        </a>
+        <div class="nav-item-wrapper">
+            <a href="/modules/appointments/index.php" class="nav-item <?php echo $current_page === 'appointments' ? 'active' : ''; ?>">
+                <i class="fas fa-calendar-check"></i>
+                <span><?php echo t('appointments'); ?></span>
+            </a>
+            <div class="submenu">
+                <a href="/modules/appointments/index.php?view=list" class="submenu-item">
+                    <i class="fas fa-list"></i> Danh sách
+                </a>
+                <a href="/modules/appointments/index.php?view=timeline_week" class="submenu-item">
+                    <i class="fas fa-stream"></i> Timeline
+                </a>
+            </div>
+        </div>
         <a href="/modules/medical/index.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
             <i class="fas fa-file-medical"></i>
             <span><?php echo t('medical_records'); ?></span>

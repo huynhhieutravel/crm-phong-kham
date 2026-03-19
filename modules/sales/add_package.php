@@ -1,13 +1,10 @@
 <?php
 // modules/sales/add_package.php
 require_once '../../includes/db.php';
-$page_title = 'Bán gói dịch vụ';
-$current_page = 'sales';
-require_once '../../templates/header.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-$patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_name ASC")->fetchAll();
-$packages = $db->query("SELECT * FROM packages ORDER BY name ASC")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get package info
@@ -45,6 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     set_flash('Bán gói thành công!');
     redirect('index.php');
 }
+
+$page_title = 'Bán gói dịch vụ';
+$current_page = 'sales';
+require_once '../../templates/header.php';
+
+$patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_name ASC")->fetchAll();
+$packages = $db->query("SELECT * FROM packages ORDER BY name ASC")->fetchAll();
 ?>
 
 <div class="card" style="max-width: 600px; margin: 0 auto;">
