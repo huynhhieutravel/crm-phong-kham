@@ -31,6 +31,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_flash('Đã cập nhật trạng thái tư vấn!');
     }
 
+    if (isset($_POST['source'])) {
+        $stmt = $db->prepare("UPDATE leads SET source = ? WHERE id = ?");
+        $stmt->execute([$_POST['source'], $id]);
+        set_flash('Đã cập nhật nguồn!');
+    }
+
+    if (isset($_POST['medical_group'])) {
+        $stmt = $db->prepare("UPDATE leads SET medical_group = ? WHERE id = ?");
+        $stmt->execute([$_POST['medical_group'], $id]);
+        set_flash('Đã cập nhật nhóm bệnh!');
+    }
+
     // Handle AJAX Request for quick updates
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
         header('Content-Type: application/json');

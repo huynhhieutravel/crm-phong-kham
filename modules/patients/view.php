@@ -154,11 +154,21 @@ $treatments = $stmt->fetchAll();
                 // Grouping Logic: Combine Sessions and Orphan items
                 $timeline_items = [];
                 
-                // 1. Add Sessions
+                // 1. Add Sessions (Only those belonging to THIS patient)
                 foreach ($sessions as $session) {
                     $session_parts = [];
-                    foreach ($histories as $h) if ($h['session_id'] == $session['id']) $session_parts[] = $h;
-                    foreach ($treatments as $t) if ($t['session_id'] == $session['id']) $session_parts[] = $t;
+                    // Find all history records for THIS session
+                    foreach ($histories as $h) {
+                        if ($h['session_id'] == $session['id']) {
+                            $session_parts[] = $h;
+                        }
+                    }
+                    // Find all treatments for THIS session
+                    foreach ($treatments as $t) {
+                        if ($t['session_id'] == $session['id']) {
+                            $session_parts[] = $t;
+                        }
+                    }
                     
                     $timeline_items[] = [
                         'type' => 'session',
@@ -168,9 +178,10 @@ $treatments = $stmt->fetchAll();
                     ];
                 }
                 
-                // 2. Add Orphan Histories
+                // 2. Add Orphan Histories (or those belonging to non-existent/wrong sessions)
+                $session_ids = array_column($sessions, 'id');
                 foreach ($histories as $h) {
-                    if (!$h['session_id']) {
+                    if (!$h['session_id'] || !in_array($h['session_id'], $session_ids)) {
                         $timeline_items[] = [
                             'type' => 'history',
                             'data' => $h,
@@ -181,7 +192,7 @@ $treatments = $stmt->fetchAll();
                 
                 // 3. Add Orphan Treatments
                 foreach ($treatments as $t) {
-                    if (!$t['session_id']) {
+                    if (!$t['session_id'] || !in_array($t['session_id'], $session_ids)) {
                         $timeline_items[] = [
                             'type' => 'treatment',
                             'data' => $t,

@@ -15,7 +15,15 @@ $status_filter = $_GET['status'] ?? '';
 $date_filter = $_GET['date'] ?? '';
 $doctor_filter = $_GET['doctor_id'] ?? '';
 $type_filter = $_GET['type'] ?? '';
+$period = $_GET['period'] ?? '';
+$start_date_param = $_GET['start_date'] ?? '';
+$end_date_param = $_GET['end_date'] ?? '';
 $view = $_GET['view'] ?? 'list';
+
+// Default behavior for timeline views if no period/date is set
+if (!$period && !$date_filter) {
+    if ($view === 'timeline') $period = 'today';
+}
 
 $query = "
     SELECT 
@@ -54,31 +62,36 @@ if ($type_filter) {
     $params[] = $type_filter;
 }
 
-if ($date_filter) {
+// Handle Time Filtering
+if ($period) {
+    $range = get_date_range($period, $start_date_param, $end_date_param);
+    $conditions[] = "a.appointment_date BETWEEN ? AND ?";
+    $params[] = $range['start'];
+    $params[] = $range['end'];
+    
+    // Sync date_filter for visual consistency in timeline views if needed
+    if (!$date_filter && ($period === 'today' || $period === 'custom')) {
+        $date_filter = date('Y-m-d', strtotime($range['start']));
+    }
+} elseif ($date_filter) {
     if ($view === 'timeline_week') {
         $ts = strtotime($date_filter);
-        $start = date('Y-m-d', strtotime('monday this week', $ts));
-        $end = date('Y-m-d', strtotime('sunday this week', $ts));
-        $conditions[] = "DATE(a.appointment_date) BETWEEN ? AND ?";
+        $start = date('Y-m-d 00:00:00', strtotime('monday this week', $ts));
+        $end = date('Y-m-d 23:59:59', strtotime('sunday this week', $ts));
+        $conditions[] = "a.appointment_date BETWEEN ? AND ?";
         $params[] = $start;
         $params[] = $end;
     } elseif ($view === 'timeline_month') {
         $ts = strtotime($date_filter);
-        $start = date('Y-m-01', $ts);
-        $end = date('Y-m-t', $ts);
-        $conditions[] = "DATE(a.appointment_date) BETWEEN ? AND ?";
+        $start = date('Y-m-01 00:00:00', $ts);
+        $end = date('Y-m-t 23:59:59', $ts);
+        $conditions[] = "a.appointment_date BETWEEN ? AND ?";
         $params[] = $start;
         $params[] = $end;
     } else {
         $conditions[] = "DATE(a.appointment_date) = ?";
         $params[] = $date_filter;
     }
-} elseif ($view === 'timeline') {
-    $conditions[] = "DATE(a.appointment_date) = CURDATE()";
-} elseif ($view === 'timeline_week') {
-    $conditions[] = "DATE(a.appointment_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) AND DATE_ADD(CURDATE(), INTERVAL 6-WEEKDAY(CURDATE()) DAY)";
-} elseif ($view === 'timeline_month') {
-    $conditions[] = "DATE(a.appointment_date) BETWEEN DATE_FORMAT(CURDATE(), '%Y-%m-01') AND LAST_DAY(CURDATE())";
 }
 
 if ($conditions) {
@@ -86,6 +99,29 @@ if ($conditions) {
 }
 
 $query .= " ORDER BY a.appointment_date ASC";
+
+// Pagination Logic (Only for List view)
+$limit = 20;
+$page = (int)($_GET['page'] ?? 1);
+if ($page < 1) $page = 1;
+$total_count = 0;
+
+if ($view === 'list') {
+    $count_query = "
+        SELECT COUNT(*) 
+        FROM appointments a
+        LEFT JOIN patients p ON a.patient_id = p.id
+        LEFT JOIN leads l ON a.lead_id = l.id
+    ";
+    if ($conditions) {
+        $count_query .= " WHERE " . implode(" AND ", $conditions);
+    }
+    $c_stmt = $db->prepare($count_query);
+    $c_stmt->execute($params);
+    $total_count = $c_stmt->fetchColumn();
+    
+    $query .= get_sql_limit($limit, $page);
+}
 
 $stmt = $db->prepare($query);
 $stmt->execute($params);
@@ -116,83 +152,186 @@ $type_map = [
     're_exam'      => ['label' => 'Tái khám', 'color' => '#8b5cf6', 'icon' => 'fa-redo'],
     'adjustment'   => ['label' => 'Hỗ trợ', 'color' => '#64748b', 'icon' => 'fa-tools']
 ];
+
+$is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $period || ($date_filter && $date_filter != date('Y-m-d') && $view != 'timeline');
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <div>
-        <h2 style="margin: 0; font-weight: 800; color: var(--text-main);">Danh sách Lịch hẹn</h2>
-        <p style="color: var(--text-muted); margin-top: 0.25rem;">Quản lý và theo dõi lịch trình khám của phòng khám</p>
-    </div>
-    <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.75rem 1.5rem; font-weight: 700;">
-        <i class="fas fa-calendar-plus"></i> ĐẶT LỊCH MỚI
-    </a>
-</div>
+<style>
+.filter-card {
+    padding: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 16px !important;
+}
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.filter-group { margin-bottom: 0; }
+.filter-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin-bottom: 0.25rem;
+    display: block;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+.filter-input {
+    height: 38px !important;
+    font-size: 0.85rem !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 10px !important;
+}
+.filter-btn-group {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.filter-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    border: 1px solid transparent;
+}
+.filter-btn:hover { background: #e2e8f0; color: var(--text-main); }
+.filter-btn.active {
+    background: var(--primary);
+    color: white;
+}
+.custom-range-box {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: #f8fafc;
+    padding: 0.4rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+.custom-range-input {
+    border: none;
+    background: transparent;
+    font-size: 0.8rem;
+    color: var(--text-main);
+    width: 110px;
+    outline: none;
+}
+</style>
 
-<div class="card" style="margin-bottom: 2rem; padding: 1.25rem; border: none; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-    <form method="GET" id="filter-form">
-        <input type="hidden" name="view" value="<?php echo e($view); ?>">
-        
-        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr auto; gap: 1rem; align-items: flex-end;">
-            <!-- Search -->
-            <div class="filter-group">
-                <label class="filter-label"><i class="fas fa-search"></i> Tìm kiếm</label>
-                <div style="position: relative;">
-                    <input type="text" name="search" class="form-input filter-input" placeholder="Tên, Số điện thoại..." value="<?php echo e($search); ?>" style="padding-left: 2.5rem;">
-                    <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem;"></i>
+<div class="card filter-card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <form method="GET" id="filterForm" style="flex: 1;">
+            <input type="hidden" name="view" value="<?php echo e($view); ?>">
+            
+            <div class="filter-grid">
+                <!-- Search -->
+                <div class="filter-group">
+                    <label class="filter-label">Tìm kiếm</label>
+                    <div style="position: relative;">
+                        <input type="text" name="search" class="form-input filter-input" placeholder="Tên, SĐT..." value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
+                        <i class="fas fa-search" style="position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.75rem;"></i>
+                    </div>
+                </div>
+
+                <!-- Doctor -->
+                <div class="filter-group">
+                    <label class="filter-label">Bác sĩ</label>
+                    <select name="doctor_id" class="form-input filter-input" onchange="this.form.submit()">
+                        <option value="">Tất cả bác sĩ</option>
+                        <option value="0" <?php echo $doctor_filter === '0' ? 'selected' : ''; ?>>-- Chưa chỉ định --</option>
+                        <?php foreach ($doctors as $doc): ?>
+                            <option value="<?php echo $doc['id']; ?>" <?php echo (int)$doctor_filter === (int)$doc['id'] ? 'selected' : ''; ?>><?php echo e($doc['full_name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div class="filter-group">
+                    <label class="filter-label">Trạng thái</label>
+                    <select name="status" class="form-input filter-input" onchange="this.form.submit()">
+                        <option value="">Tất cả trạng thái</option>
+                        <?php foreach ($status_map as $key => $info): ?>
+                            <option value="<?php echo $key; ?>" <?php echo $status_filter === $key ? 'selected' : ''; ?>><?php echo $info['label']; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Type -->
+                <div class="filter-group">
+                    <label class="filter-label">Loại</label>
+                    <select name="type" class="form-input filter-input" onchange="this.form.submit()">
+                        <option value="">Tất cả loại</option>
+                        <?php foreach ($type_map as $key => $info): ?>
+                            <option value="<?php echo $key; ?>" <?php echo $type_filter === $key ? 'selected' : ''; ?>><?php echo $info['label']; ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
             </div>
 
-            <!-- Doctor -->
-            <div class="filter-group">
-                <label class="filter-label"><i class="fas fa-user-md"></i> Bác sĩ</label>
-                <select name="doctor_id" class="form-input filter-input" onchange="this.form.submit()">
-                    <option value="">Tất cả bác sĩ</option>
-                    <option value="0" <?php echo $doctor_filter === '0' ? 'selected' : ''; ?>>-- Chưa chỉ định --</option>
-                    <?php foreach ($doctors as $doc): ?>
-                        <option value="<?php echo $doc['id']; ?>" <?php echo (int)$doctor_filter === (int)$doc['id'] ? 'selected' : ''; ?>><?php echo e($doc['full_name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div class="filter-btn-group">
+                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;">Thời gian:</span>
+                    <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
+                    <input type="hidden" name="date" id="dateInput" value="<?php echo e($date_filter); ?>">
+                    
+                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod('')">Tất cả</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod('today')">Hôm nay</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod('week')">Tuần</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod('month')">Tháng</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod('quarter')">Quý</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod('year')">Năm</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod('custom')">Tùy chọn</a>
+                </div>
 
-            <!-- Status -->
-            <div class="filter-group">
-                <label class="filter-label"><i class="fas fa-info-circle"></i> Trạng thái</label>
-                <select name="status" class="form-input filter-input" onchange="this.form.submit()">
-                    <option value="">Tất cả trạng thái</option>
-                    <?php foreach ($status_map as $key => $info): ?>
-                        <option value="<?php echo $key; ?>" <?php echo $status_filter === $key ? 'selected' : ''; ?>><?php echo $info['label']; ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
+                    <div class="custom-range-box">
+                        <input type="date" name="start_date" class="custom-range-input" value="<?php echo e($start_date_param); ?>">
+                        <span style="color: #94a3b8; font-size: 0.8rem;">→</span>
+                        <input type="date" name="end_date" class="custom-range-input" value="<?php echo e($end_date_param); ?>">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;">Áp dụng</button>
+                </div>
 
-            <!-- Type -->
-            <div class="filter-group">
-                <label class="filter-label"><i class="fas fa-notes-medical"></i> Loại</label>
-                <select name="type" class="form-input filter-input" onchange="this.form.submit()">
-                    <option value="">Tất cả loại</option>
-                    <?php foreach ($type_map as $key => $info): ?>
-                        <option value="<?php echo $key; ?>" <?php echo $type_filter === $key ? 'selected' : ''; ?>><?php echo $info['label']; ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <!-- Date -->
-            <div class="filter-group">
-                <label class="filter-label"><i class="fas fa-calendar-day"></i> Ngày khám</label>
-                <input type="date" name="date" class="form-input filter-input" value="<?php echo e($date_filter); ?>" onchange="this.form.submit()">
-            </div>
-
-            <!-- Actions -->
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <button type="submit" class="btn btn-primary" style="height: 42px; padding: 0 1.25rem; border-radius: 12px; font-weight: 700;">Lọc</button>
-                <?php if ($search || $status_filter || $date_filter || $doctor_filter || $type_filter): ?>
-                    <a href="?view=<?php echo $view; ?>" class="btn" style="height: 42px; width: 42px; background: #fee2e2; color: #ef4444; border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Xóa lọc">
-                        <i class="fas fa-times"></i>
-                    </a>
+                <?php if ($is_filtered): ?>
+                    <div style="margin-left: auto;">
+                        <a href="?view=<?php echo $view; ?>" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fas fa-times-circle"></i> XÓA LỌC
+                        </a>
+                    </div>
                 <?php endif; ?>
             </div>
-        </div>
-    </form>
+        </form>
+        <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
+            <i class="fas fa-plus"></i> ĐẶT LỊCH
+        </a>
+    </div>
+</div>
+
+<script>
+function setPeriod(p) {
+    document.getElementById('periodInput').value = p;
+    // Clear specific date when selecting a period
+    if (p !== 'custom') {
+        const di = document.getElementById('dateInput');
+        if (di) di.value = '';
+        document.getElementById('filterForm').submit();
+    } else {
+        document.getElementById('customDates').style.display = 'flex';
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        if (event && event.target) {
+            event.target.classList.add('active');
+        }
+    }
+}
+</script>
+
 
     <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; gap: 0.5rem;">
@@ -201,7 +340,11 @@ $type_map = [
             if ($search) $active_filters[] = "Tìm: $search";
             if ($status_filter) $active_filters[] = "Trạng thái: " . ($status_map[$status_filter]['label'] ?? $status_filter);
             if ($type_filter) $active_filters[] = "Loại: " . ($type_map[$type_filter]['label'] ?? $type_filter);
-            if ($date_filter) {
+            
+            if ($period) {
+                $range = get_date_range($period, $start_date_param, $end_date_param);
+                $active_filters[] = $range['label'];
+            } elseif ($date_filter) {
                 if ($view === 'timeline_month') {
                     $active_filters[] = "Tháng: " . date('m/Y', strtotime($date_filter));
                 } else {
@@ -345,6 +488,7 @@ $type_map = [
             </table>
         </div>
     </div>
+    <?php echo render_pagination($total_count, $limit, $page); ?>
 <?php elseif ($view === 'timeline'): ?>
     <!-- Day Timeline View -->
     <div class="card" style="padding: 1.5rem; overflow-x: auto;">

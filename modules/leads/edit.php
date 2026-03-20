@@ -26,14 +26,8 @@ $consultants_stmt = $db->query("
 ");
 $consultants = $consultants_stmt->fetchAll();
 
-$medical_groups = [
-    'Thoát vị đĩa đệm',
-    'Thoái hóa cột sống',
-    'Đau thần kinh tọa',
-    'Cong vẹo cột sống',
-    'Phục hồi chức năng',
-    'Cơ xương khớp khác'
-];
+$medical_groups = get_medical_groups();
+$lead_sources = get_lead_sources();
 
 // Handle form submission before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -105,12 +99,9 @@ require_once '../../templates/header.php';
                     <div class="form-group">
                         <label class="form-label">Nguồn khách hàng</label>
                         <select name="source" class="form-input">
-                            <option value="Facebook" <?php echo $lead['source'] === 'Facebook' ? 'selected' : ''; ?>>Facebook</option>
-                            <option value="Zalo" <?php echo $lead['source'] === 'Zalo' ? 'selected' : ''; ?>>Zalo</option>
-                            <option value="TikTok" <?php echo $lead['source'] === 'TikTok' ? 'selected' : ''; ?>>TikTok</option>
-                            <option value="Google" <?php echo $lead['source'] === 'Google' ? 'selected' : ''; ?>>Google</option>
-                            <option value="Referral" <?php echo $lead['source'] === 'Referral' ? 'selected' : ''; ?>>Người quen</option>
-                            <option value="Other" <?php echo $lead['source'] === 'Other' ? 'selected' : ''; ?>>Khác</option>
+                            <?php foreach ($lead_sources as $key => $label): ?>
+                                <option value="<?php echo $key; ?>" <?php echo $lead['source'] === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">

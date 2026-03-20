@@ -30,21 +30,62 @@ if (!$session) {
     redirect('../patients/index.php');
 }
 
-// 2. Handle POST (Assessment & Plan)
+// 2. Handle POST (Assessment & Plan & Status Changes)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Check Lock: If completed and not admin, block editing
+    if ($session['status'] === 'completed' && !has_role('admin')) {
+        set_flash('Buổi khám đã hoàn tất và được khóa. Vui lòng liên hệ Admin để sửa.', 'error');
+        header("Location: session_view.php?id=$session_id");
+        exit;
+    }
+
+    // Admin Re-open Logic
+    if (isset($_POST['reopen']) && has_role('admin')) {
+        // Enforce 7-day rule: Cannot re-open if more than 7 days have passed since session date
+        $session_date = new DateTime($session['session_date']);
+        $now = new DateTime();
+        $interval = $now->diff($session_date);
+        
+        if ($interval->days > 7) {
+            set_flash('Quá hạn 7 ngày. Không thể mở lại buổi khám này nữa.', 'error');
+        } else {
+            $stmt = $db->prepare("UPDATE medical_sessions SET status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$session_id]);
+            log_audit($_SESSION['user_id'], 'reopen_session', 'medical_sessions', $session_id, ['status' => 'completed'], ['status' => 'active']);
+            set_flash('Đã mở lại buổi khám.');
+        }
+        redirect("session_view.php?id=$session_id");
+    }
+
     $assessment = $_POST['assessment'] ?? '';
     $plan = $_POST['treatment_plan'] ?? '';
     $status = isset($_POST['complete']) ? 'completed' : $session['status'];
 
-    $stmt = $db->prepare("
-        UPDATE medical_sessions 
-        SET assessment = ?, treatment_plan = ?, status = ?
-        WHERE id = ?
-    ");
-    $stmt->execute([$assessment, $plan, $status, $session_id]);
+    // Audit Logging for Data changes
+    $old_data = [
+        'assessment' => $session['assessment'],
+        'treatment_plan' => $session['treatment_plan'],
+        'status' => $session['status']
+    ];
+    $new_data = [
+        'assessment' => $assessment,
+        'treatment_plan' => $plan,
+        'status' => $status
+    ];
+
+    if ($old_data !== $new_data) {
+        $stmt = $db->prepare("
+            UPDATE medical_sessions 
+            SET assessment = ?, treatment_plan = ?, status = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([$assessment, $plan, $status, $session_id]);
+        
+        log_audit($_SESSION['user_id'], 'update', 'medical_sessions', $session_id, $old_data, $new_data);
+        set_flash('Cập nhật buổi khám thành công!');
+    }
     
-    set_flash('Cập nhật buổi khám thành công!');
-    if ($status === 'completed') {
+    if ($status === 'completed' && $old_data['status'] !== 'completed') {
         redirect("../patients/view.php?id=" . $session['patient_id']);
     }
     // Refresh
@@ -52,7 +93,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// 3. Fetch component status
+// 3. Locking Variable
+$is_locked = ($session['status'] === 'completed' && !has_role('admin'));
+
+// 4. Fetch component status
 $stmt = $db->prepare("SELECT type, id FROM medical_history WHERE session_id = ?");
 $stmt->execute([$session_id]);
 $history_records = $stmt->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
@@ -178,6 +222,18 @@ require_once '../../templates/header.php';
     <!-- Right Column: Assessment & Plan (Rich-Text) -->
     <div style="width: 500px; display: flex; flex-direction: column; gap: 1.5rem;">
         <form method="POST" id="session-form" class="card" style="position: sticky; top: 1.5rem; background: #fcfdfe;">
+            <?php if ($session['status'] === 'completed'): ?>
+                <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #fecaca; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-lock"></i>
+                    <div style="font-size: 0.85rem; font-weight: 700;">
+                        BUỔI KHÁM ĐÃ KHÓA 
+                        <?php if ($is_locked): ?>
+                            <br><span style="font-weight: 500; font-size: 0.75rem;">Chỉ giới hạn quyền Xem. Liên hệ Admin để sửa.</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #eef2f6; padding-bottom: 1rem;">
                 <h4 style="margin: 0; color: var(--primary); font-weight: 800;">
                     <i class="fas fa-user-md"></i> TỔNG KẾT LÂM SÀNG
@@ -198,12 +254,23 @@ require_once '../../templates/header.php';
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                    <i class="fas fa-save"></i> Lưu ghi chú
-                </button>
-                <button type="submit" name="complete" value="1" class="btn" style="width: 100%; justify-content: center; background: #10b981; color: white;">
-                    <i class="fas fa-check-double"></i> Hoàn tất Buổi khám
-                </button>
+                <?php if (!$is_locked): ?>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                        <i class="fas fa-save"></i> <?php echo $session['status'] === 'completed' ? 'Cập nhật (Admin)' : 'Lưu ghi chú'; ?>
+                    </button>
+                    <?php if ($session['status'] !== 'completed'): ?>
+                        <button type="submit" name="complete" value="1" class="btn" style="width: 100%; justify-content: center; background: #10b981; color: white;">
+                            <i class="fas fa-check-double"></i> Hoàn tất Buổi khám
+                        </button>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($session['status'] === 'completed' && has_role('admin')): ?>
+                    <button type="submit" name="reopen" value="1" class="btn btn-outline" style="width: 100%; justify-content: center; border-color: #f59e0b; color: #b45309;">
+                        <i class="fas fa-unlock"></i> Mở lại buổi khám
+                    </button>
+                <?php endif; ?>
+
                 <a href="../patients/view.php?id=<?php echo $session['patient_id']; ?>" class="btn" style="width: 100%; justify-content: center; background: #f1f5f9; color: var(--text-main);">
                     Quay lại Bệnh nhân
                 </a>
@@ -216,12 +283,9 @@ require_once '../../templates/header.php';
 document.addEventListener('DOMContentLoaded', function() {
     var quillOptions = {
         theme: 'snow',
+        readOnly: <?php echo $is_locked ? 'true' : 'false'; ?>,
         modules: {
-            toolbar: [
-                ['bold', 'italic', 'underline'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                ['clean']
-            ]
+            toolbar: <?php echo $is_locked ? 'false' : "[['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]" ; ?>
         }
     };
 
@@ -229,14 +293,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var planEditor = new Quill('#plan-editor', quillOptions);
 
     var form = document.getElementById('session-form');
-    form.onsubmit = function() {
-        // Populate hidden inputs on submit
-        var assessmentInput = document.getElementById('assessment-input');
-        assessmentInput.value = assessmentEditor.root.innerHTML;
+    if (form) {
+        form.onsubmit = function() {
+            // Populate hidden inputs on submit
+            var assessmentInput = document.getElementById('assessment-input');
+            if (assessmentInput) assessmentInput.value = assessmentEditor.root.innerHTML;
 
-        var planInput = document.getElementById('plan-input');
-        planInput.value = planEditor.root.innerHTML;
-    };
+            var planInput = document.getElementById('plan-input');
+            if (planInput) planInput.value = planEditor.root.innerHTML;
+        };
+    }
 });
 </script>
 

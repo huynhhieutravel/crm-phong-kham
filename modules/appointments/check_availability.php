@@ -50,6 +50,17 @@ if (!empty($time) && !empty($doctor_id)) {
     if ($stmt->fetchColumn() > 0) {
         $results['doctor_busy'] = true;
     }
+
+    // 3. Fetch doctor's full schedule for the day
+    $stmt = $db->prepare("
+        SELECT DATE_FORMAT(appointment_date, '%H:%i') as time, status
+        FROM appointments 
+        WHERE doctor_id = ? AND DATE(appointment_date) = ?
+        AND status NOT IN ('cancelled')
+        ORDER BY appointment_date ASC
+    ");
+    $stmt->execute([$doctor_id, $date]);
+    $results['schedule'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 header('Content-Type: application/json');

@@ -20,10 +20,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $db->prepare("
         INSERT INTO patients (
             customer_id, full_name, gender, birthday, phone, email, address, 
-            branch, occupation, source, consultant_id, zalo_number, facebook_link, instagram_link, twitter_link,
+            branch, occupation, source, consultant_id, label, zalo_number, facebook_link, instagram_link, twitter_link,
             guardian_name, guardian_id_card, guardian_phone, guardian_relationship, notes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     $birthday = !empty($_POST['birthday']) ? $_POST['birthday'] : null;
@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['occupation'],
         $_POST['source'],
         $consultant_id,
+        $_POST['label'],
         $_POST['zalo_number'],
         $_POST['facebook_link'],
         $_POST['instagram_link'],
@@ -118,13 +119,10 @@ require_once '../../templates/header.php';
                 <div class="form-group">
                     <label class="form-label">Nguồn khách hàng</label>
                     <select name="source" class="form-input">
-                        <option value="Facebook">Facebook</option>
-                        <option value="Zalo">Zalo</option>
-                        <option value="TikTok">TikTok</option>
-                        <option value="Google">Google</option>
-                        <option value="Referral">Người quen (Referral)</option>
+                        <?php foreach (get_lead_sources() as $key => $label): ?>
+                            <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
+                        <?php endforeach; ?>
                         <option value="Walk-in">Tự đến (Walk-in)</option>
-                        <option value="Other">Khác</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -135,6 +133,10 @@ require_once '../../templates/header.php';
                             <option value="<?php echo $con['id']; ?>"><?php echo e($con['full_name']); ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Phân loại / Nhãn (Ví dụ: VIP, Khách mới...)</label>
+                    <input type="text" name="label" class="form-input" placeholder="Nhập nhãn phân loại...">
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Nghề nghiệp / Công việc</label>

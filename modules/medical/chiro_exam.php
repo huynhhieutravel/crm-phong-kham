@@ -3,6 +3,7 @@
 session_start();
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/auth.php';
 
 $patient_id = $_GET['patient_id'] ?? 0;
 $session_id = $_GET['session_id'] ?? null;
@@ -34,23 +35,49 @@ function checked_v($path, $value) {
     return $val == $value ? 'checked' : '';
 }
 
-// Handle Form Submission
+// 1. Fetch Session Status for Locking
+$is_locked = false;
+if ($session_id) {
+    $stmt = $db->prepare("SELECT status, session_date FROM medical_sessions WHERE id = ?");
+    $stmt->execute([$session_id]);
+    $session = $stmt->fetch();
+    if ($session && $session['status'] === 'completed' && !has_role('admin')) {
+        $is_locked = true;
+    }
+}
+
+// 2. Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($is_locked) {
+        set_flash('Buổi khám đã khóa. Không thể lưu thay đổi.', 'error');
+        redirect("session_view.php?id=$session_id");
+    }
+
     $exam = $_POST['exam'] ?? [];
     if (isset($exam['markers']) && is_string($exam['markers'])) {
         $exam['markers'] = json_decode($exam['markers'], true) ?: [];
     }
-    $exam_data = json_encode($exam);
+    $exam_data = json_encode($exam, JSON_UNESCAPED_UNICODE);
     
     if ($record_id) {
+        // Fetch old data for audit
+        $stmt_old = $db->prepare("SELECT history_data FROM medical_history WHERE id = ?");
+        $stmt_old->execute([$record_id]);
+        $old_json = $stmt_old->fetchColumn();
+        
         $stmt = $db->prepare("UPDATE medical_history SET history_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->execute([$exam_data, $record_id]);
+        
+        log_audit($_SESSION['user_id'], 'update', 'medical_history', $record_id, json_decode($old_json, true), $exam);
     } else {
         $stmt = $db->prepare("
             INSERT INTO medical_history (patient_id, session_id, type, history_data, created_by)
             VALUES (?, ?, 'chiro_exam', ?, ?)
         ");
         $stmt->execute([$patient_id, $session_id, $exam_data, $_SESSION['user_id']]);
+        $new_id = $db->lastInsertId();
+        
+        log_audit($_SESSION['user_id'], 'create', 'medical_history', $new_id, null, $exam);
     }
     
     set_flash('Lưu phiếu khám bệnh Chiropractic thành công!');
@@ -98,192 +125,45 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
     </div>
 
     <form method="POST">
-        <!-- SYMPTOM CORRELATION PANEL (Real-time) -->
-        <div id="symptom-correlation" style="margin-bottom: 3rem; display: none;">
-            <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 16px; padding: 1.5rem;">
-                <h4 style="font-size: 0.9rem; color: #1d4ed8; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-lightbulb"></i> GỢI Ý TRIỆU CHỨNG (Dựa trên chẩn đoán sai lệch)
-                </h4>
-                <div id="symptom-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                    <!-- Symptoms will be injected here via JS -->
+        <?php if ($is_locked): ?>
+            <div style="background: #fef2f2; color: #991b1b; padding: 1.25rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #fecaca; display: flex; align-items: center; gap: 1rem;">
+                <i class="fas fa-lock fa-2x"></i>
+                <div>
+                    <div style="font-weight: 800; font-size: 1rem;">HỒ SƠ ĐÃ KHÓA (CHỈ XEM)</div>
+                    <div style="font-size: 0.85rem; font-weight: 600; opacity: 0.9;">Buổi khám này đã được hoàn tất. Bạn không thể thay đổi dữ liệu trừ khi được Admin mở lại.</div>
                 </div>
             </div>
-        </div>
+        <?php endif; ?>
 
-        <!-- Spine Section -->
-        <div style="margin-bottom: 4rem;">
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
-                <i class="fas fa-bone"></i> PHẦN 1: MA TRẬN CỘT SỐNG (Subluxation)
-            </h3>
+        <fieldset <?php echo $is_locked ? 'disabled' : ''; ?> style="border: none; padding: 0; margin: 0;">
+            <!-- SYMPTOM CORRELATION PANEL (Real-time) -->
+            <div id="symptom-correlation" style="margin-bottom: 3rem; display: none;">
+                <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 16px; padding: 1.5rem;">
+                    <h4 style="font-size: 0.9rem; color: #1d4ed8; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-lightbulb"></i> GỢI Ý TRIỆU CHỨNG (Dựa trên chẩn đoán sai lệch)
+                    </h4>
+                    <div id="symptom-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <!-- Symptoms will be injected here via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spine Section -->
+            ... (existing content) ...
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
-                <?php foreach ($spine_nodes as $group => $nodes): ?>
-                    <div class="form-group">
-                        <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center; font-weight: 800;"><?php echo $group; ?></h4>
-                        <table style="width: 100%; border-spacing: 0 8px;">
-                            <thead>
-                                <tr style="font-size: 0.75rem; color: #94a3b8; text-align: center;">
-                                    <th style="width: 33%;">L</th>
-                                    <th style="width: 33%;">ĐỐT</th>
-                                    <th style="width: 33%;">R</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($nodes as $key => $label): ?>
-                                    <tr>
-                                        <td style="text-align: center;">
-                                            <label class="matrix-btn">
-                                                <input type="checkbox" name="exam[spine][<?php echo $key; ?>][L]" value="1" class="spine-node" data-node="<?php echo $key; ?>" <?php echo checked_v('spine.'.$key.'.L', '1'); ?>>
-                                                <span>L</span>
-                                            </label>
-                                        </td>
-                                        <td style="text-align: center; font-weight: 700; color: var(--text-main); font-size: 1rem;"><?php echo $label; ?></td>
-                                        <td style="text-align: center;">
-                                            <label class="matrix-btn">
-                                                <input type="checkbox" name="exam[spine][<?php echo $key; ?>][R]" value="1" class="spine-node" data-node="<?php echo $key; ?>" <?php echo checked_v('spine.'.$key.'.R', '1'); ?>>
-                                                <span>R</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endforeach; ?>
+            <div class="form-group" style="margin-top: 2rem;">
+                <label class="form-label">Ghi chú lâm sàng & Chẩn đoán</label>
+                <textarea name="exam[clinical_notes]" class="form-input" rows="5" placeholder="Ghi chú về các đoạn sai lệch và phát hiện lâm sàng..."><?php echo get_v('clinical_notes'); ?></textarea>
             </div>
-        </div>
-
-        <!-- Becken & Joint Section -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-bottom: 4rem;">
-            <!-- Becken (Pelvis) -->
-            <div class="form-group">
-                <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 2rem; text-align: center; font-weight: 800; border-bottom: 1px dashed var(--border-color); padding-bottom: 1rem;">
-                    <i class="fas fa-venus-mars" style="color: var(--primary);"></i> Vùng Chậu (Becken)
-                </h3>
-                <table style="width: 100%; border-spacing: 0 12px;">
-                    <thead>
-                        <tr style="font-size: 0.8rem; color: #94a3b8; text-align: center; text-transform: uppercase;">
-                            <th>Trái (L)</th>
-                            <th>LOẠI</th>
-                            <th>Phải (R)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($becken_nodes as $node): ?>
-                            <tr>
-                                <td style="text-align: center;">
-                                    <label class="matrix-btn">
-                                        <input type="checkbox" name="exam[becken][<?php echo $node; ?>][L]" value="1" <?php echo checked_v('becken.'.$node.'.L', '1'); ?>>
-                                        <span>L</span>
-                                    </label>
-                                </td>
-                                <td style="text-align: center; font-weight: 800; color: var(--text-main);"><?php echo $node; ?></td>
-                                <td style="text-align: center;">
-                                    <label class="matrix-btn">
-                                        <input type="checkbox" name="exam[becken][<?php echo $node; ?>][R]" value="1" <?php echo checked_v('becken.'.$node.'.R', '1'); ?>>
-                                        <span>R</span>
-                                    </label>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Joints -->
-            <div class="form-group">
-                <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 2rem; text-align: center; font-weight: 800; border-bottom: 1px dashed var(--border-color); padding-bottom: 1rem;">
-                    <i class="fas fa-hand-holding-medical" style="color: var(--primary);"></i> Khớp Ngoại Vi
-                </h3>
-                <table style="width: 100%; border-spacing: 0 12px;">
-                    <thead>
-                        <tr style="font-size: 0.8rem; color: #94a3b8; text-align: center; text-transform: uppercase;">
-                            <th>Trái (L)</th>
-                            <th>KHỚP</th>
-                            <th>Phải (R)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($joint_nodes as $node): ?>
-                            <tr>
-                                <td style="text-align: center;">
-                                    <label class="matrix-btn">
-                                        <input type="checkbox" name="exam[joints][<?php echo $node; ?>][L]" value="1" <?php echo checked_v('joints.'.$node.'.L', '1'); ?>>
-                                        <span>L</span>
-                                    </label>
-                                </td>
-                                <td style="text-align: center; font-weight: 800; color: var(--text-main);"><?php echo $node; ?></td>
-                                <td style="text-align: center;">
-                                    <label class="matrix-btn">
-                                        <input type="checkbox" name="exam[joints][<?php echo $node; ?>][R]" value="1" <?php echo checked_v('joints.'.$node.'.R', '1'); ?>>
-                                        <span>R</span>
-                                    </label>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PART 3: GHI CHÚ THÍCH, ĐÁNH DẤU CƠ THỂ -->
-        <div style="margin-bottom: 4rem;">
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
-                <i class="fas fa-edit"></i> PHẦN 3: GHI CHÚ THÍCH, ĐÁNH DẤU CƠ THỂ
-            </h3>
-            
-            <div style="display: flex; gap: 3rem;">
-                <div style="flex: 1; position: relative; background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; cursor: crosshair;">
-                    <canvas id="exam-anatomy-canvas" width="800" height="800" style="width: 100%; height: auto; display: block;"></canvas>
-                    <input type="hidden" name="exam[markers]" id="exam-marking-data" value="<?php echo e(json_encode(get_v('markers', []))); ?>">
-                </div>
-                
-                <div style="width: 350px;">
-                    <div style="background: #f0f9ff; padding: 1.25rem; border-radius: 12px; border: 1px solid #bae6fd; margin-bottom: 2rem;">
-                        <h4 style="font-size: 0.8rem; color: #0369a1; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 800;">Chẩn đoán lâm sàng:</h4>
-                        <div style="font-size: 0.8rem; color: #0369a1; line-height: 1.6;">
-                            Đánh dấu các vị trí sai lệch khớp và ghi chú chi tiết chẩn đoán bên dưới.
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 0.75rem; margin-bottom: 2rem;">
-                        <button type="button" class="tool-btn active" id="tool-marker" title="Điểm đau"><i class="fas fa-pencil-alt"></i></button>
-                        <button type="button" class="tool-btn" id="tool-surgery" style="color: #f59e0b; font-weight: 900;">O</button>
-                        <button type="button" class="tool-btn" id="tool-fracture" style="color: #ef4444; font-weight: 900;">X</button>
-                        <button type="button" class="tool-btn" id="tool-eraser" title="Tẩy"><i class="fas fa-eraser"></i></button>
-                        <button type="button" class="tool-btn" id="tool-clear" style="margin-left: auto; color: #ef4444;"><i class="fas fa-trash"></i></button>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;">
-                        <?php 
-                        $colors = [
-                            'M1' => '#d9f99d', 'M2' => '#84cc16', 'M3' => '#22c55e', 'M4' => '#15803d',
-                            'M5' => '#60a5fa', 'M6' => '#2563eb', 
-                            'M7' => '#fca5a5', 'M8' => '#f97316', 'M9' => '#ef4444', 'M10' => '#b91c1c'
-                        ];
-                        foreach($colors as $m => $color): ?>
-                            <button type="button" class="intensity-btn <?php echo $m === 'M5' ? 'active' : ''; ?>" 
-                                    data-intensity="<?php echo $m; ?>" 
-                                    style="color: <?php echo $color; ?>"
-                                    title="<?php echo $m; ?>">
-                                <span style="background: <?php echo $color; ?>;"></span> <?php echo $m; ?>
-                            </button>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-group" style="margin-top: 2rem;">
-            <label class="form-label">Ghi chú lâm sàng & Chẩn đoán</label>
-            <textarea name="exam[clinical_notes]" class="form-input" rows="5" placeholder="Ghi chú về các đoạn sai lệch và phát hiện lâm sàng..."><?php echo get_v('clinical_notes'); ?></textarea>
-        </div>
+        </fieldset>
 
         <div style="margin-top: 3rem; display: flex; gap: 1rem; justify-content: flex-end;">
-            <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;">Hủy bỏ</a>
-            <button type="submit" class="btn btn-primary" style="padding: 1rem 3rem; font-weight: 700; font-size: 1.1rem;">
-                <i class="fas fa-save"></i> LƯU PHIẾU KHÁM BỆNH
-            </button>
+            <a href="session_view.php?id=<?php echo $session_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;">Quay lại</a>
+            <?php if (!$is_locked): ?>
+                <button type="submit" class="btn btn-primary" style="padding: 1rem 3rem; font-weight: 700; font-size: 1.1rem;">
+                    <i class="fas fa-save"></i> LƯU PHIẾU KHÁM BỆNH
+                </button>
+            <?php endif; ?>
         </div>
     </form>
 </div>

@@ -10,44 +10,226 @@ require_once '../../templates/header.php';
 
 $db = getDB();
 $search = $_GET['search'] ?? '';
+$label = $_GET['label'] ?? '';
+$gender = $_GET['gender'] ?? '';
+$period = $_GET['period'] ?? '';
+$start_date_filter = $_GET['start_date'] ?? '';
+$end_date_filter = $_GET['end_date'] ?? '';
 
 $sql = "SELECT p.*, COUNT(mh.id) as record_count 
         FROM patients p 
         LEFT JOIN medical_history mh ON p.id = mh.patient_id";
+$where = [];
 $params = [];
+
 if ($search) {
-    $sql .= " WHERE p.full_name LIKE ? OR p.phone LIKE ? OR p.customer_id LIKE ?";
-    $params = ["%$search%", "%$search%", "%$search%"];
+    $where[] = "(p.full_name LIKE ? OR p.phone LIKE ? OR p.customer_id LIKE ?)";
+    $params[] = "%$search%";
+    $params[] = "%$search%";
+    $params[] = "%$search%";
 }
+
+if ($label) {
+    $where[] = "p.label = ?";
+    $params[] = $label;
+}
+
+if ($gender) {
+    $where[] = "p.gender = ?";
+    $params[] = $gender;
+}
+
+if ($period) {
+    $range = get_date_range($period, $start_date_filter, $end_date_filter);
+    $where[] = "p.created_at BETWEEN ? AND ?";
+    $params[] = $range['start'];
+    $params[] = $range['end'];
+}
+
+if (!empty($where)) {
+    $sql .= " WHERE " . implode(" AND ", $where);
+}
+
+// Pagination Logic
+$limit = 20;
+$page = (int)($_GET['page'] ?? 1);
+if ($page < 1) $page = 1;
+
+// Count total for pagination
+$count_sql = "SELECT COUNT(*) FROM patients p";
+if (!empty($where)) {
+    $count_sql .= " WHERE " . implode(" AND ", $where);
+}
+$count_stmt = $db->prepare($count_sql);
+$count_stmt->execute($params);
+$total_count = $count_stmt->fetchColumn();
+
 $sql .= " GROUP BY p.id ORDER BY p.created_at DESC";
+$sql .= get_sql_limit($limit, $page);
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $patients = $stmt->fetchAll();
+
+// Get unique labels for filter
+$labels = $db->query("SELECT DISTINCT label FROM patients WHERE label IS NOT NULL AND label != '' ORDER BY label ASC")->fetchAll(PDO::FETCH_COLUMN);
+
+$is_filtered = $search || $label || $gender || $period;
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <div>
-        <h2 style="margin: 0; font-weight: 800; color: var(--text-main);">Danh sách Bệnh nhân</h2>
-        <p style="color: var(--text-muted); margin-top: 0.25rem;">Quản lý và theo dõi hồ sơ khách hàng tại phòng khám</p>
+<style>
+.filter-card {
+    padding: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 16px !important;
+}
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.filter-group { margin-bottom: 0; }
+.filter-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin-bottom: 0.25rem;
+    display: block;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+.filter-input {
+    height: 38px !important;
+    font-size: 0.85rem !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 10px !important;
+}
+.filter-btn-group {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.filter-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    border: 1px solid transparent;
+}
+.filter-btn:hover { background: #e2e8f0; color: var(--text-main); }
+.filter-btn.active {
+    background: var(--primary);
+    color: white;
+}
+.custom-range-box {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: #f8fafc;
+    padding: 0.4rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+.custom-range-input {
+    border: none;
+    background: transparent;
+    font-size: 0.8rem;
+    color: var(--text-main);
+    width: 110px;
+    outline: none;
+}
+</style>
+
+<div class="card filter-card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <form method="GET" id="filterForm" style="flex: 1;">
+            <div class="filter-grid">
+                <!-- Search -->
+                <div class="filter-group">
+                    <label class="filter-label">Tìm kiếm</label>
+                    <div style="position: relative;">
+                        <i class="fas fa-search" style="position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.75rem;"></i>
+                        <input type="text" name="search" class="form-input filter-input" placeholder="Tên, SĐT, Mã BN..." value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
+                    </div>
+                </div>
+
+                <!-- Label Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Phân loại</label>
+                    <select name="label" class="form-input filter-input" onchange="this.form.submit()">
+                        <option value="">Tất cả nhãn</option>
+                        <?php foreach ($labels as $l): ?>
+                            <option value="<?php echo e($l); ?>" <?php echo $label === $l ? 'selected' : ''; ?>><?php echo e($l); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Gender Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Giới tính</label>
+                    <select name="gender" class="form-input filter-input" onchange="this.form.submit()">
+                        <option value="">Tất cả giới tính</option>
+                        <option value="male" <?php echo $gender === 'male' ? 'selected' : ''; ?>>Nam</option>
+                        <option value="female" <?php echo $gender === 'female' ? 'selected' : ''; ?>>Nữ</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div class="filter-btn-group">
+                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;">Thời gian:</span>
+                    <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
+                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod('')">Tất cả</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod('today')">Hôm nay</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod('week')">Tuần</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod('month')">Tháng</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod('quarter')">Quý</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod('year')">Năm</a>
+                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod('custom')">Tùy chọn</a>
+                </div>
+
+                <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
+                    <div class="custom-range-box">
+                        <input type="date" name="start_date" class="custom-range-input" value="<?php echo e($start_date_filter); ?>">
+                        <span style="color: #94a3b8; font-size: 0.8rem;">→</span>
+                        <input type="date" name="end_date" class="custom-range-input" value="<?php echo e($end_date_filter); ?>">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;">Áp dụng</button>
+                </div>
+
+                <?php if ($is_filtered): ?>
+                    <div style="margin-left: auto;">
+                        <a href="index.php" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fas fa-times-circle"></i> XÓA LỌC
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </form>
+        <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
+            <i class="fas fa-plus"></i> THÊM MỚI
+        </a>
     </div>
-    <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.75rem 1.5rem; font-weight: 700;">
-        <i class="fas fa-plus"></i> THÊM BỆNH NHÂN MỚI
-    </a>
 </div>
 
-<div class="card" style="margin-bottom: 2rem; padding: 1rem;">
-    <form method="GET" style="display: flex; gap: 1rem;">
-        <div style="flex: 1; position: relative;">
-            <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-            <input type="text" name="search" class="form-input" placeholder="Tìm theo tên, số điện thoại hoặc mã khách hàng..." value="<?php echo e($search); ?>" style="padding-left: 2.5rem;">
-        </div>
-        <button type="submit" class="btn btn-primary" style="padding: 0 1.5rem;">Tìm kiếm</button>
-        <?php if ($search): ?>
-            <a href="index.php" class="btn" style="background: #f1f5f9; color: var(--text-main); display: flex; align-items: center;">Xóa lọc</a>
-        <?php endif; ?>
-    </form>
-</div>
+<script>
+function setPeriod(p) {
+    document.getElementById('periodInput').value = p;
+    if (p !== 'custom') {
+        document.getElementById('filterForm').submit();
+    } else {
+        document.getElementById('customDates').style.display = 'flex';
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+}
+</script>
 
 <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-color);">
     <table class="table" style="width: 100%; border-collapse: collapse;">
@@ -64,10 +246,23 @@ $patients = $stmt->fetchAll();
             <?php foreach ($patients as $p): ?>
                 <tr class="patient-row" style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
                     <td style="padding: 1.25rem 1.5rem;">
-                        <span style="font-size: 0.7rem; font-weight: 800; background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 4px; color: var(--text-muted); margin-bottom: 0.25rem; display: inline-block;">
-                            <?php echo e($p['customer_id'] ?: 'BN-' . $p['id']); ?>
-                        </span>
-                        <div style="font-weight: 700; color: var(--text-main); font-size: 1.05rem;"><?php echo e($p['full_name']); ?></div>
+                        <div style="display: flex; flex-direction: column;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                <span style="font-size: 0.7rem; font-weight: 800; background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 4px; color: var(--text-muted);">
+                                    <?php echo e($p['customer_id'] ?: 'BN-' . $p['id']); ?>
+                                </span>
+                                <?php if ($p['label']): ?>
+                                    <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; background: <?php 
+                                        echo strtolower($p['label']) === 'vip' ? '#fef3c7' : '#dcfce7'; 
+                                    ?>; color: <?php 
+                                        echo strtolower($p['label']) === 'vip' ? '#d97706' : '#16a34a'; 
+                                    ?>; padding: 0.1rem 0.5rem; border-radius: 99px;">
+                                        <?php echo e($p['label']); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <div style="font-weight: 700; color: var(--text-main); font-size: 1.05rem;"><?php echo e($p['full_name']); ?></div>
+                        </div>
                     </td>
                     <td style="padding: 1.25rem 1.5rem;">
                         <div style="font-weight: 600; color: var(--primary);"><i class="fas fa-phone-alt" style="font-size: 0.8rem;"></i> <?php echo e($p['phone']); ?></div>
@@ -110,6 +305,8 @@ $patients = $stmt->fetchAll();
         </tbody>
     </table>
 </div>
+
+<?php echo render_pagination($total_count, $limit, $page); ?>
 
 <style>
 .patient-row:hover { background: #f8fafc; }

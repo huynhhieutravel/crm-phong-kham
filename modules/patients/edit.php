@@ -129,13 +129,10 @@ require_once '../../templates/header.php';
                 <div class="form-group">
                     <label class="form-label">Nguồn khách hàng</label>
                     <select name="source" class="form-input">
-                        <option value="Facebook" <?php echo $p['source'] === 'Facebook' ? 'selected' : ''; ?>>Facebook</option>
-                        <option value="Zalo" <?php echo $p['source'] === 'Zalo' ? 'selected' : ''; ?>>Zalo</option>
-                        <option value="TikTok" <?php echo $p['source'] === 'TikTok' ? 'selected' : ''; ?>>TikTok</option>
-                        <option value="Google" <?php echo $p['source'] === 'Google' ? 'selected' : ''; ?>>Google</option>
-                        <option value="Referral" <?php echo $p['source'] === 'Referral' ? 'selected' : ''; ?>>Người quen (Referral)</option>
+                        <?php foreach (get_lead_sources() as $key => $label): ?>
+                            <option value="<?php echo $key; ?>" <?php echo $p['source'] === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                        <?php endforeach; ?>
                         <option value="Walk-in" <?php echo $p['source'] === 'Walk-in' ? 'selected' : ''; ?>>Tự đến (Walk-in)</option>
-                        <option value="Other" <?php echo $p['source'] === 'Other' ? 'selected' : ''; ?>>Khác</option>
                     </select>
                 </div>
                 <div class="form-group">

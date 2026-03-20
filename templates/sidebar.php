@@ -27,16 +27,29 @@
                 <a href="/modules/appointments/index.php?view=timeline_week" class="submenu-item">
                     <i class="fas fa-stream"></i> Timeline
                 </a>
+                <a href="/modules/appointments/dashboard.php" class="submenu-item">
+                    <i class="fas fa-chart-pie"></i> Thống kê Lịch hẹn
+                </a>
             </div>
         </div>
         <a href="/modules/medical/index.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
             <i class="fas fa-file-medical"></i>
             <span><?php echo t('medical_records'); ?></span>
         </a>
-        <a href="/modules/leads/index.php" class="nav-item <?php echo $current_page === 'leads' ? 'active' : ''; ?>">
-            <i class="fas fa-filter"></i>
-            <span>Lead Marketing</span>
-        </a>
+        <div class="nav-item-wrapper">
+            <a href="/modules/leads/index.php" class="nav-item <?php echo $current_page === 'leads' ? 'active' : ''; ?>">
+                <i class="fas fa-filter"></i>
+                <span>Lead Marketing</span>
+            </a>
+            <div class="submenu">
+                <a href="/modules/leads/index.php" class="submenu-item">
+                    <i class="fas fa-list"></i> Danh sách
+                </a>
+                <a href="/modules/leads/dashboard.php" class="submenu-item">
+                    <i class="fas fa-chart-pie"></i> Thống kê Lead
+                </a>
+            </div>
+        </div>
         <div class="nav-section-label" style="padding: 1.5rem 1.5rem 0.5rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;"><?php echo t('management'); ?></div>
         <a href="/modules/hr/index.php" class="nav-item <?php echo $current_page === 'hr' ? 'active' : ''; ?>">
             <i class="fas fa-user-clock"></i>
@@ -50,10 +63,12 @@
             <i class="fas fa-boxes"></i>
             <span><?php echo t('inventory'); ?></span>
         </a>
-        <a href="/modules/reports/index.php" class="nav-item <?php echo $current_page === 'reports' ? 'active' : ''; ?>">
-            <i class="fas fa-chart-line"></i>
-            <span><?php echo t('reports'); ?></span>
-        </a>
+        <?php if (has_role('admin')): ?>
+            <a href="/modules/admin/audit_logs.php" class="nav-item <?php echo $current_page === 'admin_audit' ? 'active' : ''; ?>">
+                <i class="fas fa-shield-alt"></i>
+                <span>Nhật ký hệ thống</span>
+            </a>
+        <?php endif; ?>
     </nav>
     <div class="sidebar-footer" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
         <a href="/logout.php" class="nav-item" style="color: #f87171;">

@@ -5,14 +5,8 @@ require_once '../../includes/functions.php';
 
 $db = getDB();
 
-$medical_groups = [
-    'Thoát vị đĩa đệm',
-    'Thoái hóa cột sống',
-    'Đau thần kinh tọa',
-    'Cong vẹo cột sống',
-    'Phục hồi chức năng',
-    'Cơ xương khớp khác'
-];
+$medical_groups = get_medical_groups();
+$lead_sources = get_lead_sources();
 
 // Handle form submission before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -93,12 +87,9 @@ require_once '../../templates/header.php';
                 <div class="form-group">
                     <label class="form-label">Nguồn khách hàng</label>
                     <select name="source" class="form-input">
-                        <option value="Facebook">Facebook</option>
-                        <option value="Zalo">Zalo</option>
-                        <option value="TikTok">TikTok</option>
-                        <option value="Google">Google</option>
-                        <option value="Referral">Người quen</option>
-                        <option value="Other">Khác</option>
+                        <?php foreach ($lead_sources as $key => $label): ?>
+                            <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group">

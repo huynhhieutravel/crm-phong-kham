@@ -3,6 +3,7 @@
 session_start();
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/auth.php';
 $type = $_GET['type'] ?? 'chiropractic';
 $patient_id = $_GET['patient_id'] ?? 0;
 $session_id = $_GET['session_id'] ?? null;
@@ -12,18 +13,44 @@ $current_page = 'medical';
 $db = getDB();
 $history_id = $_GET['id'] ?? 0;
 
+// 1. Fetch Session Status for Locking
+$is_locked = false;
+if ($session_id) {
+    $stmt = $db->prepare("SELECT status, session_date FROM medical_sessions WHERE id = ?");
+    $stmt->execute([$session_id]);
+    $session = $stmt->fetch();
+    if ($session && $session['status'] === 'completed' && !has_role('admin')) {
+        $is_locked = true;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $history_data = json_encode($_POST['history'] ?? []);
+    if ($is_locked) {
+        set_flash('Buổi khám đã khóa. Không thể lưu thay đổi.', 'error');
+        redirect("session_view.php?id=$session_id");
+    }
+
+    $history_data = json_encode($_POST['history'] ?? [], JSON_UNESCAPED_UNICODE);
     
     if ($history_id) {
+        // Fetch old data for audit
+        $stmt_old = $db->prepare("SELECT history_data FROM medical_history WHERE id = ?");
+        $stmt_old->execute([$history_id]);
+        $old_json = $stmt_old->fetchColumn();
+
         $stmt = $db->prepare("UPDATE medical_history SET history_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->execute([$history_data, $history_id]);
+
+        log_audit($_SESSION['user_id'], 'update', 'medical_history', $history_id, json_decode($old_json, true), $_POST['history'] ?? []);
     } else {
         $stmt = $db->prepare("
             INSERT INTO medical_history (patient_id, session_id, type, history_data, created_by)
             VALUES (?, ?, ?, ?, ?)
         ");
         $stmt->execute([$patient_id, $session_id, $type, $history_data, $_SESSION['user_id']]);
+        $new_id = $db->lastInsertId();
+
+        log_audit($_SESSION['user_id'], 'create', 'medical_history', $new_id, null, $_POST['history'] ?? []);
     }
     
     set_flash('Lưu hồ sơ thành công!');
@@ -260,6 +287,17 @@ if ($type === 'chiropractic') {
     </div>
 
     <form method="POST">
+        <?php if ($is_locked): ?>
+            <div style="background: #fef2f2; color: #991b1b; padding: 1.25rem; border-radius: 20px; margin-bottom: 2rem; border: 1px solid #fecaca; display: flex; align-items: center; gap: 1rem; box-shadow: var(--premium-shadow);">
+                <i class="fas fa-lock fa-2x"></i>
+                <div>
+                    <div style="font-weight: 800; font-size: 1rem;">HỒ SƠ ĐÃ KHÓA (CHỈ XEM)</div>
+                    <div style="font-size: 0.85rem; font-weight: 600; opacity: 0.9;">Hồ sơ này thuộc buổi khám đã hoàn tất. Vui lòng liên hệ Admin nếu cần chỉnh sửa.</div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <fieldset <?php echo $is_locked ? 'disabled' : ''; ?> style="border: none; padding: 0; margin: 0;">
         <?php if ($type === 'dong_y'): ?>
             <!-- I. THÔNG TIN CƠ BẢN & HUYẾT ÁP -->
             <div style="margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 2px solid #f1f5f9;">
@@ -856,16 +894,24 @@ if ($type === 'chiropractic') {
             <?php endforeach; ?>
         <?php endif; ?>
 
-        <div class="form-group" style="margin-top: 2rem;">
-            <label class="form-label">Ghi chú lâm sàng / Tình trạng khác</label>
-            <textarea name="history[additional_notes]" class="form-input" rows="4" placeholder="Nhập thêm chi tiết nếu có..."><?php echo e($data['additional_notes'] ?? ''); ?></textarea>
-        </div>
+        </fieldset>
 
-        <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-primary" style="padding: 1rem 2.5rem; border-radius: 12px; font-weight: 800;">
-                <i class="fas fa-save"></i> <?php echo $history_id ? 'CẬP NHẬT HỒ SƠ' : 'LƯU HỒ SƠ MỚI'; ?>
-            </button>
-            <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2rem; border-radius: 12px; font-weight: 800;">HỦY</a>
+        <div style="margin-top: 3rem; display: flex; gap: 1rem; justify-content: flex-end;">
+            <?php if (!$is_locked): ?>
+                <button type="submit" class="btn btn-primary" style="padding: 1rem 2.5rem; border-radius: 12px; font-weight: 800; min-width: 200px;">
+                    <i class="fas fa-save"></i> 
+                    <?php 
+                        if ($history_id) {
+                            echo ($session['status'] === 'completed' ? 'Cập nhật (Admin)' : 'Cập nhật Hồ sơ');
+                        } else {
+                            echo 'Lưu Hồ sơ';
+                        }
+                    ?>
+                </button>
+            <?php endif; ?>
+            <a href="session_view.php?id=<?php echo $session_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem; border-radius: 12px; font-weight: 800;">
+                Quay lại
+            </a>
         </div>
     </form>
 </div>
