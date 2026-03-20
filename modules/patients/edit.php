@@ -1,8 +1,8 @@
 <?php
 // modules/patients/edit.php
-require_once '../../includes/db.php';
-require_once '../../includes/functions.php';
-require_once '../../includes/auth_middleware.php';
+require_once __DIR__ . '/../../includes/db.php';
+require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/auth_middleware.php';
 
 $db = getDB();
 $id = $_GET['id'] ?? 0;
@@ -27,8 +27,10 @@ if (!$p) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Self-healing database check
-    ensure_patient_columns($db);
+    // Self-healing database check (with safety wrapper)
+    try {
+        ensure_patient_columns($db);
+    } catch (\Throwable $e) {}
     
     $stmt = $db->prepare("
         UPDATE patients SET 

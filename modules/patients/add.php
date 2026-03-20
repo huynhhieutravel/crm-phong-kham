@@ -1,8 +1,21 @@
 <?php
 // modules/patients/add.php
-require_once '../../includes/db.php';
-require_once '../../includes/functions.php';
-require_once '../../includes/auth_middleware.php';
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    die("ERROR: [$errno] $errstr in $errfile on line $errline");
+});
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error !== NULL) {
+        die("FATAL ERROR: " . print_r($error, true));
+    }
+});
+
+require_once __DIR__ . '/../../includes/db.php';
+require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/auth_middleware.php';
 
 $db = getDB();
 
@@ -17,8 +30,10 @@ $consultants_stmt = $db->query("
 $consultants = $consultants_stmt->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Self-healing database check
-    ensure_patient_columns($db);
+    // Self-healing database check (with safety wrapper)
+    try {
+        ensure_patient_columns($db);
+    } catch (\Throwable $e) {}
     
     $stmt = $db->prepare("
         INSERT INTO patients (
