@@ -27,6 +27,9 @@ if (!$p) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Self-healing database check
+    ensure_patient_columns($db);
+    
     $stmt = $db->prepare("
         UPDATE patients SET 
             customer_id = ?, full_name = ?, gender = ?, birthday = ?, phone = ?, email = ?, address = ?, 

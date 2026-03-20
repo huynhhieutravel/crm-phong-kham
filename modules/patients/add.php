@@ -17,6 +17,9 @@ $consultants_stmt = $db->query("
 $consultants = $consultants_stmt->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Self-healing database check
+    ensure_patient_columns($db);
+    
     $stmt = $db->prepare("
         INSERT INTO patients (
             customer_id, full_name, gender, birthday, phone, email, address, 
