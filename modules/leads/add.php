@@ -122,6 +122,17 @@ require_once '../../templates/header.php';
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_status'); ?></label>
                 <select name="status" class="form-input">
+                    <option value="new">Mới</option>
+                    <option value="contacted">Đã liên hệ</option>
+                    <option value="scheduled">Đã đặt lịch</option>
+                    <option value="converted">Đã chuyển đổi</option>
+                    <option value="cancelled">Đã hủy</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Ghi chú</label>
             <textarea name="notes" class="form-input" rows="3" placeholder="Ghi chú về tình trạng, nhu cầu của khách..."></textarea>
         </div>
         
