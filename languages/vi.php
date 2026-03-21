@@ -1,6 +1,7 @@
 <?php
-// languages/vi.php
+// languages/vi.php — Tiếng Việt 🇻🇳
 return [
+    // Sidebar & Navigation
     'dashboard' => 'Tổng quan',
     'patients' => 'Bệnh nhân',
     'appointments' => 'Lịch hẹn',
@@ -10,8 +11,51 @@ return [
     'inventory' => 'Kho vật tư',
     'reports' => 'Báo cáo',
     'logout' => 'Đăng xuất',
+    'management' => 'QUẢN LÝ',
+    'leads' => 'Lead Marketing',
+    'list' => 'Danh sách',
+    'lead_stats' => 'Thống kê Lead',
+    'consultant_stats' => 'Thống kê Tư vấn viên',
+    'timeline' => 'Timeline',
+    'appointment_stats' => 'Thống kê Lịch hẹn',
+    'medical_sessions' => 'Buổi khám bệnh',
+    'chiro_first_exam' => 'Khám lần đầu (Chiro)',
+    'chiro_history' => 'Khám tiền sử Chiropractic',
+    'dong_y_form' => 'Phiếu Đông Y',
+    'audit_log' => 'Nhật ký hệ thống',
+
+    // Common Actions
     'welcome' => 'Chào mừng',
     'search' => 'Tìm kiếm...',
+    'save' => 'Lưu',
+    'cancel' => 'Hủy',
+    'edit' => 'Sửa',
+    'delete' => 'Xóa',
+    'add' => 'Thêm mới',
+    'back' => 'Quay lại',
+    'print' => 'In',
+    'upload' => 'Tải lên',
+    'download' => 'Tải xuống',
+    'actions' => 'Thao tác',
+    'confirm' => 'Xác nhận',
+    'close' => 'Đóng',
+    'filter' => 'Bộ lọc',
+    'export' => 'Xuất',
+    'view' => 'Xem',
+    'status' => 'Trạng thái',
+    'notes' => 'Ghi chú',
+    'date' => 'Ngày',
+    'time' => 'Giờ',
+    'phone' => 'Điện thoại',
+    'email' => 'Email',
+    'address' => 'Địa chỉ',
+    'gender' => 'Giới tính',
+    'male' => 'Nam',
+    'female' => 'Nữ',
+    'other' => 'Khác',
+    'birthday' => 'Ngày sinh',
+
+    // Dashboard
     'total_patients' => 'Tổng số Bệnh nhân',
     'today_appointments' => 'Lịch hẹn hôm nay',
     'monthly_revenue' => 'Doanh thu tháng này',
@@ -19,5 +63,25 @@ return [
     'quick_actions' => 'Thao tác nhanh',
     'add_patient' => 'Thêm Bệnh nhân',
     'book_appointment' => 'Đặt lịch hẹn',
-    'management' => 'QUẢN LÝ',
+
+    // Medical
+    'patient_name' => 'Tên bệnh nhân',
+    'doctor' => 'Bác sĩ',
+    'diagnosis' => 'Chẩn đoán',
+    'treatment' => 'Điều trị',
+    'session_date' => 'Ngày khám',
+    'exam_form' => 'Phiếu khám',
+    'medical_history' => 'Tiền sử bệnh',
+    'attachments' => 'Hình ảnh / X-quang',
+    'upload_images' => 'Tải ảnh lên',
+    'print_form' => 'In phiếu khám',
+    'complete_session' => 'Hoàn thành buổi khám',
+    'reopen_session' => 'Mở lại buổi khám',
+
+    // Language
+    'language' => 'Ngôn ngữ',
+    'vietnamese' => 'Tiếng Việt',
+    'english' => 'English',
+    'german' => 'Deutsch',
+    'chinese' => '中文',
 ];

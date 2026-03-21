@@ -196,13 +196,39 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
                 foreach($history_records as $rec) {
                     if($rec['type'] === 'chiro_history') $done[] = "Tiền sử Chiropractic";
                     if($rec['type'] === 'chiro_exam') $done[] = "Khám thực thể";
-                    if($rec['type'] === 'chiropractic') $done[] = "Theo dõi nội bộ (SOAP)";
+                    if($rec['type'] === 'chiropractic' || $rec['type'] === 'soap_note') $done[] = "Theo dõi nội bộ (SOAP)";
                     if($rec['type'] === 'dong_y') $done[] = "Khám Đông Y";
                 }
                 echo implode(', ', $done) ?: 'Chưa có thành phần nào';
                 ?>
             </div>
         </div>
+
+        <?php 
+        // Load attachments
+        $stmt_att = $db->prepare("SELECT attachments FROM medical_history WHERE session_id = ? AND attachments IS NOT NULL AND attachments != '[]'");
+        $stmt_att->execute([$session_id]);
+        $all_att = [];
+        while ($r = $stmt_att->fetch()) {
+            $a = json_decode($r['attachments'], true);
+            if ($a) $all_att = array_merge($all_att, $a);
+        }
+        if (!empty($all_att)):
+        ?>
+        <div class="section" style="page-break-inside: avoid;">
+            <div class="section-title">IV. HÌNH ẢNH ĐÍNH KÈM</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <?php foreach ($all_att as $att): ?>
+                <?php if (strpos($att['type'] ?? '', 'image') !== false): ?>
+                <div style="text-align: center;">
+                    <img src="<?php echo $att['path']; ?>" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" alt="<?php echo e($att['name']); ?>">
+                    <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;"><?php echo e($att['name']); ?></div>
+                </div>
+                <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <div class="footer-sig">
             <div class="sig-box">

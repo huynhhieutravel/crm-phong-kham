@@ -217,6 +217,58 @@ require_once '../../templates/header.php';
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <!-- IMAGE UPLOAD SECTION -->
+        <div class="card" style="margin-top: 0;">
+            <h4 style="margin: 0 0 1rem 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem;">
+                <i class="fas fa-images" style="color: #7c3aed;"></i> <?php echo t('attachments'); ?>
+            </h4>
+
+            <?php
+            // Load existing attachments from all records in this session
+            $stmt_att = $db->prepare("SELECT id, attachments FROM medical_history WHERE session_id = ? AND attachments IS NOT NULL AND attachments != '[]'");
+            $stmt_att->execute([$session_id]);
+            $all_attachments = [];
+            while ($row = $stmt_att->fetch()) {
+                $atts = json_decode($row['attachments'], true);
+                if ($atts) $all_attachments = array_merge($all_attachments, $atts);
+            }
+            ?>
+
+            <?php if (!empty($all_attachments)): ?>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+                <?php foreach ($all_attachments as $att): ?>
+                <div style="position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; cursor: pointer; aspect-ratio: 1;" onclick="openLightbox('<?php echo $att['path']; ?>')">
+                    <?php if (strpos($att['type'] ?? '', 'image') !== false): ?>
+                    <img src="<?php echo $att['path']; ?>" style="width: 100%; height: 100%; object-fit: cover;" alt="<?php echo e($att['name']); ?>">
+                    <?php else: ?>
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f1f5f9;">
+                        <i class="fas fa-file-pdf" style="font-size: 2rem; color: #ef4444;"></i>
+                    </div>
+                    <?php endif; ?>
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 0.5rem; color: white; font-size: 0.65rem; font-weight: 600;">
+                        <?php echo e(mb_substr($att['name'], 0, 18)); ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!$is_locked): ?>
+            <div id="upload-zone" style="border: 2px dashed #cbd5e1; border-radius: 16px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s; background: #fafbfc;" ondragover="event.preventDefault(); this.style.borderColor='#6366f1'; this.style.background='#eef2ff'" ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='#fafbfc'" ondrop="handleDrop(event)">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #94a3b8; margin-bottom: 0.5rem;"></i>
+                <div style="font-weight: 700; color: #64748b; font-size: 0.9rem;"><?php echo t('upload_images'); ?></div>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;">Kéo thả hoặc click để chọn ảnh (JPG, PNG, PDF — Max 10MB)</div>
+                <input type="file" id="file-input" multiple accept="image/*,.pdf" style="display: none;" onchange="uploadFiles(this.files)">
+            </div>
+            <div id="upload-progress" style="display: none; margin-top: 1rem;">
+                <div style="background: #e2e8f0; border-radius: 8px; overflow: hidden; height: 6px;">
+                    <div id="progress-bar" style="height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <div id="upload-status" style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem; text-align: center;"></div>
+            </div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Right Column: Assessment & Plan (Rich-Text) -->
@@ -295,7 +347,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('session-form');
     if (form) {
         form.onsubmit = function() {
-            // Populate hidden inputs on submit
             var assessmentInput = document.getElementById('assessment-input');
             if (assessmentInput) assessmentInput.value = assessmentEditor.root.innerHTML;
 
@@ -304,6 +355,95 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 });
+
+// Upload Functions
+var uploadZone = document.getElementById('upload-zone');
+if (uploadZone) {
+    uploadZone.addEventListener('click', function() {
+        document.getElementById('file-input').click();
+    });
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    var zone = document.getElementById('upload-zone');
+    zone.style.borderColor = '#cbd5e1';
+    zone.style.background = '#fafbfc';
+    uploadFiles(e.dataTransfer.files);
+}
+
+function uploadFiles(files) {
+    if (!files.length) return;
+    var fd = new FormData();
+    fd.append('patient_id', '<?php echo $session['patient_id']; ?>');
+    
+    for (var i = 0; i < files.length; i++) {
+        fd.append('images[]', files[i]);
+    }
+    
+    var progress = document.getElementById('upload-progress');
+    var bar = document.getElementById('progress-bar');
+    var status = document.getElementById('upload-status');
+    progress.style.display = 'block';
+    bar.style.width = '30%';
+    status.textContent = 'Đang tải lên ' + files.length + ' ảnh...';
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/includes/upload_handler.php');
+    
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            bar.style.width = Math.round(e.loaded / e.total * 90) + '%';
+        }
+    };
+    
+    xhr.onload = function() {
+        bar.style.width = '100%';
+        try {
+            var res = JSON.parse(xhr.responseText);
+            if (res.success) {
+                status.textContent = '✅ Tải thành công ' + res.files.length + ' ảnh!';
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                status.textContent = '❌ ' + (res.error || 'Lỗi không xác định');
+            }
+        } catch(e) {
+            status.textContent = '❌ Lỗi phản hồi từ server';
+        }
+    };
+    
+    xhr.onerror = function() {
+        status.textContent = '❌ Lỗi kết nối';
+    };
+    
+    xhr.send(fd);
+}
+
+// Lightbox
+function openLightbox(src) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(5px)';
+    overlay.onclick = function() { document.body.removeChild(overlay); };
+    
+    if (src.toLowerCase().endsWith('.pdf')) {
+        var iframe = document.createElement('iframe');
+        iframe.src = src;
+        iframe.style.cssText = 'width:80%;height:90%;border-radius:12px;border:none';
+        overlay.appendChild(iframe);
+    } else {
+        var img = document.createElement('img');
+        img.src = src;
+        img.style.cssText = 'max-width:90%;max-height:90%;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5)';
+        overlay.appendChild(img);
+    }
+    
+    var closeBtn = document.createElement('div');
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.style.cssText = 'position:absolute;top:1.5rem;right:1.5rem;width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.2rem;cursor:pointer';
+    overlay.appendChild(closeBtn);
+    
+    document.body.appendChild(overlay);
+}
 </script>
 
 <?php require_once '../../templates/footer.php'; ?>

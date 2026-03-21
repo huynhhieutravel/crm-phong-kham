@@ -1,6 +1,7 @@
 <?php
-// languages/en.php
+// languages/en.php — English 🇬🇧
 return [
+    // Sidebar & Navigation
     'dashboard' => 'Dashboard',
     'patients' => 'Patients',
     'appointments' => 'Appointments',
@@ -10,8 +11,51 @@ return [
     'inventory' => 'Inventory',
     'reports' => 'Reports',
     'logout' => 'Logout',
+    'management' => 'MANAGEMENT',
+    'leads' => 'Lead Marketing',
+    'list' => 'List',
+    'lead_stats' => 'Lead Statistics',
+    'consultant_stats' => 'Consultant Statistics',
+    'timeline' => 'Timeline',
+    'appointment_stats' => 'Appointment Statistics',
+    'medical_sessions' => 'Medical Sessions',
+    'chiro_first_exam' => 'First Exam (Chiro)',
+    'chiro_history' => 'Chiropractic History',
+    'dong_y_form' => 'Oriental Medicine Form',
+    'audit_log' => 'System Audit Log',
+
+    // Common Actions
     'welcome' => 'Welcome',
     'search' => 'Search...',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'edit' => 'Edit',
+    'delete' => 'Delete',
+    'add' => 'Add New',
+    'back' => 'Back',
+    'print' => 'Print',
+    'upload' => 'Upload',
+    'download' => 'Download',
+    'actions' => 'Actions',
+    'confirm' => 'Confirm',
+    'close' => 'Close',
+    'filter' => 'Filter',
+    'export' => 'Export',
+    'view' => 'View',
+    'status' => 'Status',
+    'notes' => 'Notes',
+    'date' => 'Date',
+    'time' => 'Time',
+    'phone' => 'Phone',
+    'email' => 'Email',
+    'address' => 'Address',
+    'gender' => 'Gender',
+    'male' => 'Male',
+    'female' => 'Female',
+    'other' => 'Other',
+    'birthday' => 'Date of Birth',
+
+    // Dashboard
     'total_patients' => 'Total Patients',
     'today_appointments' => "Today's Appointments",
     'monthly_revenue' => 'Monthly Revenue',
@@ -19,5 +63,25 @@ return [
     'quick_actions' => 'Quick Actions',
     'add_patient' => 'Add Patient',
     'book_appointment' => 'Book Appointment',
-    'management' => 'MANAGEMENT',
+
+    // Medical
+    'patient_name' => 'Patient Name',
+    'doctor' => 'Doctor',
+    'diagnosis' => 'Diagnosis',
+    'treatment' => 'Treatment',
+    'session_date' => 'Session Date',
+    'exam_form' => 'Exam Form',
+    'medical_history' => 'Medical History',
+    'attachments' => 'Images / X-Ray',
+    'upload_images' => 'Upload Images',
+    'print_form' => 'Print Exam Form',
+    'complete_session' => 'Complete Session',
+    'reopen_session' => 'Reopen Session',
+
+    // Language
+    'language' => 'Language',
+    'vietnamese' => 'Tiếng Việt',
+    'english' => 'English',
+    'german' => 'Deutsch',
+    'chinese' => '中文',
 ];

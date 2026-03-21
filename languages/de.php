@@ -1,6 +1,7 @@
 <?php
-// languages/de.php
+// languages/de.php — Deutsch 🇩🇪
 return [
+    // Sidebar & Navigation
     'dashboard' => 'Übersicht',
     'patients' => 'Patienten',
     'appointments' => 'Termine',
@@ -10,8 +11,51 @@ return [
     'inventory' => 'Inventar',
     'reports' => 'Berichte',
     'logout' => 'Abmelden',
+    'management' => 'VERWALTUNG',
+    'leads' => 'Lead Marketing',
+    'list' => 'Liste',
+    'lead_stats' => 'Lead-Statistik',
+    'consultant_stats' => 'Beraterstatistik',
+    'timeline' => 'Zeitleiste',
+    'appointment_stats' => 'Terminstatistik',
+    'medical_sessions' => 'Arzttermine',
+    'chiro_first_exam' => 'Erstuntersuchung (Chiro)',
+    'chiro_history' => 'Chiropraktik-Vorgeschichte',
+    'dong_y_form' => 'TCM-Formular',
+    'audit_log' => 'Systemprotokoll',
+
+    // Common Actions
     'welcome' => 'Willkommen',
     'search' => 'Suchen...',
+    'save' => 'Speichern',
+    'cancel' => 'Abbrechen',
+    'edit' => 'Bearbeiten',
+    'delete' => 'Löschen',
+    'add' => 'Neu hinzufügen',
+    'back' => 'Zurück',
+    'print' => 'Drucken',
+    'upload' => 'Hochladen',
+    'download' => 'Herunterladen',
+    'actions' => 'Aktionen',
+    'confirm' => 'Bestätigen',
+    'close' => 'Schließen',
+    'filter' => 'Filter',
+    'export' => 'Exportieren',
+    'view' => 'Ansehen',
+    'status' => 'Status',
+    'notes' => 'Notizen',
+    'date' => 'Datum',
+    'time' => 'Uhrzeit',
+    'phone' => 'Telefon',
+    'email' => 'E-Mail',
+    'address' => 'Adresse',
+    'gender' => 'Geschlecht',
+    'male' => 'Männlich',
+    'female' => 'Weiblich',
+    'other' => 'Andere',
+    'birthday' => 'Geburtsdatum',
+
+    // Dashboard
     'total_patients' => 'Gesamtpatienten',
     'today_appointments' => 'Heutige Termine',
     'monthly_revenue' => 'Monatsumsatz',
@@ -19,5 +63,25 @@ return [
     'quick_actions' => 'Schnellzugriff',
     'add_patient' => 'Patient hinzufügen',
     'book_appointment' => 'Termin buchen',
-    'management' => 'VERWALTUNG',
+
+    // Medical
+    'patient_name' => 'Patientenname',
+    'doctor' => 'Arzt',
+    'diagnosis' => 'Diagnose',
+    'treatment' => 'Behandlung',
+    'session_date' => 'Sitzungsdatum',
+    'exam_form' => 'Untersuchungsformular',
+    'medical_history' => 'Krankengeschichte',
+    'attachments' => 'Bilder / Röntgen',
+    'upload_images' => 'Bilder hochladen',
+    'print_form' => 'Formular drucken',
+    'complete_session' => 'Sitzung abschließen',
+    'reopen_session' => 'Sitzung erneut öffnen',
+
+    // Language
+    'language' => 'Sprache',
+    'vietnamese' => 'Tiếng Việt',
+    'english' => 'English',
+    'german' => 'Deutsch',
+    'chinese' => '中文',
 ];

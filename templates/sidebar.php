@@ -14,17 +14,17 @@
         <div class="nav-item-wrapper">
             <a href="/modules/leads/index.php" class="nav-item <?php echo $current_page === 'leads' ? 'active' : ''; ?>">
                 <i class="fas fa-filter"></i>
-                <span>Lead Marketing</span>
+                <span><?php echo t('leads'); ?></span>
             </a>
             <div class="submenu">
                 <a href="/modules/leads/index.php" class="submenu-item">
-                    <i class="fas fa-list"></i> Danh sách
+                    <i class="fas fa-list"></i> <?php echo t('list'); ?>
                 </a>
                 <a href="/modules/leads/dashboard.php" class="submenu-item">
-                    <i class="fas fa-chart-line"></i> Thống kê Lead
+                    <i class="fas fa-chart-line"></i> <?php echo t('lead_stats'); ?>
                 </a>
                 <a href="/modules/leads/consultant_stats.php" class="submenu-item">
-                    <i class="fas fa-user-tie"></i> Thống kê Tư vấn viên
+                    <i class="fas fa-user-tie"></i> <?php echo t('consultant_stats'); ?>
                 </a>
             </div>
         </div>
@@ -35,13 +35,13 @@
             </a>
             <div class="submenu">
                 <a href="/modules/appointments/index.php?view=list" class="submenu-item">
-                    <i class="fas fa-list"></i> Danh sách
+                    <i class="fas fa-list"></i> <?php echo t('list'); ?>
                 </a>
                 <a href="/modules/appointments/index.php?view=timeline_week" class="submenu-item">
-                    <i class="fas fa-stream"></i> Timeline
+                    <i class="fas fa-stream"></i> <?php echo t('timeline'); ?>
                 </a>
                 <a href="/modules/appointments/dashboard.php" class="submenu-item">
-                    <i class="fas fa-chart-pie"></i> Thống kê Lịch hẹn
+                    <i class="fas fa-chart-pie"></i> <?php echo t('appointment_stats'); ?>
                 </a>
             </div>
         </div>
@@ -56,16 +56,16 @@
             </a>
             <div class="submenu">
                 <a href="/modules/medical/index.php" class="submenu-item">
-                    <i class="fas fa-list"></i> Buổi khám bệnh
+                    <i class="fas fa-list"></i> <?php echo t('medical_sessions'); ?>
                 </a>
                 <a href="/modules/medical/chiro_exam.php" class="submenu-item">
-                    <i class="fas fa-stethoscope"></i> Khám lần đầu (Chiro)
+                    <i class="fas fa-stethoscope"></i> <?php echo t('chiro_first_exam'); ?>
                 </a>
                 <a href="/modules/medical/chiro_history.php" class="submenu-item">
-                    <i class="fas fa-hospital-user"></i> Khám tiền sử Chiropractic
+                    <i class="fas fa-hospital-user"></i> <?php echo t('chiro_history'); ?>
                 </a>
                 <a href="/modules/medical/form.php?type=dong_y" class="submenu-item">
-                    <i class="fas fa-leaf"></i> Phiếu Đông Y
+                    <i class="fas fa-leaf"></i> <?php echo t('dong_y_form'); ?>
                 </a>
             </div>
         </div>
@@ -85,7 +85,7 @@
         <?php if (has_role('admin')): ?>
             <a href="/modules/admin/audit_logs.php" class="nav-item <?php echo $current_page === 'admin_audit' ? 'active' : ''; ?>">
                 <i class="fas fa-shield-alt"></i>
-                <span>Nhật ký hệ thống</span>
+                <span><?php echo t('audit_log'); ?></span>
             </a>
         <?php endif; ?>
     </nav>
