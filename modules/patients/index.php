@@ -4,7 +4,7 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-$page_title = 'Danh sách Bệnh nhân';
+$page_title = __('patient.list.title');
 $current_page = 'patients';
 require_once '../../templates/header.php';
 
@@ -16,9 +16,9 @@ $period = $_GET['period'] ?? '';
 $start_date_filter = $_GET['start_date'] ?? '';
 $end_date_filter = $_GET['end_date'] ?? '';
 
-$sql = "SELECT p.*, COUNT(mh.id) as record_count 
+$sql = "SELECT p.*, COUNT(ms.id) as record_count 
         FROM patients p 
-        LEFT JOIN medical_history mh ON p.id = mh.patient_id";
+        LEFT JOIN medical_sessions ms ON p.id = ms.patient_id";
 $where = [];
 $params = [];
 
@@ -64,15 +64,15 @@ $count_stmt = $db->prepare($count_sql);
 $count_stmt->execute($params);
 $total_count = $count_stmt->fetchColumn();
 
+// Fetch labels for filter
+$labels = $db->query("SELECT DISTINCT label FROM patients WHERE label IS NOT NULL AND label != '' ORDER BY label ASC")->fetchAll(PDO::FETCH_COLUMN);
+
 $sql .= " GROUP BY p.id ORDER BY p.created_at DESC";
 $sql .= get_sql_limit($limit, $page);
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $patients = $stmt->fetchAll();
-
-// Get unique labels for filter
-$labels = $db->query("SELECT DISTINCT label FROM patients WHERE label IS NOT NULL AND label != '' ORDER BY label ASC")->fetchAll(PDO::FETCH_COLUMN);
 
 $is_filtered = $search || $label || $gender || $period;
 ?>
@@ -152,18 +152,18 @@ $is_filtered = $search || $label || $gender || $period;
             <div class="filter-grid">
                 <!-- Search -->
                 <div class="filter-group">
-                    <label class="filter-label">Tìm kiếm</label>
+                    <label class="filter-label"><?php echo __('common.search'); ?></label>
                     <div style="position: relative;">
                         <i class="fas fa-search" style="position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.75rem;"></i>
-                        <input type="text" name="search" class="form-input filter-input" placeholder="Tên, SĐT, Mã BN..." value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
+                        <input type="text" name="search" class="form-input filter-input" placeholder="<?php echo __('patient.search_placeholder'); ?>" value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
                     </div>
                 </div>
 
                 <!-- Label Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Phân loại</label>
+                    <label class="filter-label"><?php echo __('patient.label'); ?></label>
                     <select name="label" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value="">Tất cả nhãn</option>
+                        <option value=""><?php echo __('patient.filter.all_labels'); ?></option>
                         <?php foreach ($labels as $l): ?>
                             <option value="<?php echo e($l); ?>" <?php echo $label === $l ? 'selected' : ''; ?>><?php echo e($l); ?></option>
                         <?php endforeach; ?>
@@ -172,26 +172,26 @@ $is_filtered = $search || $label || $gender || $period;
 
                 <!-- Gender Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Giới tính</label>
+                    <label class="filter-label"><?php echo __('patient.gender'); ?></label>
                     <select name="gender" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value="">Tất cả giới tính</option>
-                        <option value="male" <?php echo $gender === 'male' ? 'selected' : ''; ?>>Nam</option>
-                        <option value="female" <?php echo $gender === 'female' ? 'selected' : ''; ?>>Nữ</option>
+                        <option value=""><?php echo __('patient.filter.all_genders'); ?></option>
+                        <option value="male" <?php echo $gender === 'male' ? 'selected' : ''; ?>><?php echo __('patient.gender.male'); ?></option>
+                        <option value="female" <?php echo $gender === 'female' ? 'selected' : ''; ?>><?php echo __('patient.gender.female'); ?></option>
                     </select>
                 </div>
             </div>
 
             <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <div class="filter-btn-group">
-                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;">Thời gian:</span>
+                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;"><?php echo __('common.time_colon'); ?></span>
                     <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
-                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod('')">Tất cả</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod('today')">Hôm nay</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod('week')">Tuần</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod('month')">Tháng</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod('quarter')">Quý</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod('year')">Năm</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod('custom')">Tùy chọn</a>
+                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod('')"><?php echo __('filter.all'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod('today')"><?php echo __('filter.today'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod('week')"><?php echo __('filter.week'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod('month')"><?php echo __('filter.month'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod('quarter')"><?php echo __('filter.quarter'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod('year')"><?php echo __('filter.year'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod('custom')"><?php echo __('filter.custom'); ?></a>
                 </div>
 
                 <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
@@ -200,20 +200,20 @@ $is_filtered = $search || $label || $gender || $period;
                         <span style="color: #94a3b8; font-size: 0.8rem;">→</span>
                         <input type="date" name="end_date" class="custom-range-input" value="<?php echo e($end_date_filter); ?>">
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;">Áp dụng</button>
+                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;"><?php echo __('common.apply'); ?></button>
                 </div>
 
                 <?php if ($is_filtered): ?>
                     <div style="margin-left: auto;">
                         <a href="index.php" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="fas fa-times-circle"></i> XÓA LỌC
+                            <i class="fas fa-times-circle"></i> <?php echo __('common.clear_filter'); ?>
                         </a>
                     </div>
                 <?php endif; ?>
             </div>
         </form>
         <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
-            <i class="fas fa-plus"></i> THÊM MỚI
+            <i class="fas fa-plus"></i> <?php echo __('common.add_new'); ?>
         </a>
     </div>
 </div>
@@ -235,11 +235,11 @@ function setPeriod(p) {
     <table class="table" style="width: 100%; border-collapse: collapse;">
         <thead>
             <tr style="background: #f8fafc; text-align: left;">
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);">Mã BN / Họ Tên</th>
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);">Liên hệ</th>
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);">Sinh nhật / GT</th>
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color); text-align: center;">Số bệnh án</th>
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color); text-align: center;">Thao tác</th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('patient.table.id_name'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('patient.table.contact'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('patient.table.dob_gender'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color); text-align: center;"><?php echo __('patient.table.record_count'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color); text-align: center;"><?php echo __('common.action'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -271,7 +271,7 @@ function setPeriod(p) {
                     <td style="padding: 1.25rem 1.5rem;">
                         <div style="font-weight: 500;"><?php echo $p['birthday'] ? date('d/m/Y', strtotime($p['birthday'])) : '—'; ?></div>
                         <div style="font-size: 0.85rem; color: var(--text-muted);">
-                            <?php echo $p['gender'] === 'male' ? '<i class="fas fa-mars" style="color: #2563eb;"></i> Nam' : ($p['gender'] === 'female' ? '<i class="fas fa-venus" style="color: #e4405f;"></i> Nữ' : 'Khác'); ?>
+                            <?php echo $p['gender'] === 'male' ? '<i class="fas fa-mars" style="color: #2563eb;"></i> ' . __('patient.gender.male') : ($p['gender'] === 'female' ? '<i class="fas fa-venus" style="color: #e4405f;"></i> ' . __('patient.gender.female') : __('patient.gender.other')); ?>
                         </div>
                     </td>
                     <td style="padding: 1.25rem 1.5rem; text-align: center;">
@@ -281,13 +281,13 @@ function setPeriod(p) {
                     </td>
                     <td style="padding: 1.25rem 1.5rem;">
                         <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                            <a href="../appointments/add.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-sm" title="Đặt lịch hẹn" style="background: #fdf2f8; color: #db2777; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
+                            <a href="../appointments/add.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-sm" title="<?php echo __('appointment.book_title'); ?>" style="background: #fdf2f8; color: #db2777; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
                                 <i class="fas fa-calendar-plus"></i>
                             </a>
-                            <a href="view.php?id=<?php echo $p['id']; ?>" class="btn btn-sm" title="Xem chi tiết" style="background: #eff6ff; color: #2563eb; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
+                            <a href="view.php?id=<?php echo $p['id']; ?>" class="btn btn-sm" title="<?php echo __('common.view_details'); ?>" style="background: #eff6ff; color: #2563eb; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="edit.php?id=<?php echo $p['id']; ?>" class="btn btn-sm" title="Chỉnh sửa" style="background: #f1f5f9; color: var(--text-muted); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
+                            <a href="edit.php?id=<?php echo $p['id']; ?>" class="btn btn-sm" title="<?php echo __('common.edit'); ?>" style="background: #f1f5f9; color: var(--text-muted); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
                                 <i class="fas fa-edit"></i>
                             </a>
                         </div>
@@ -298,7 +298,7 @@ function setPeriod(p) {
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 5rem 2rem;">
                          <div style="opacity: 0.1; margin-bottom: 1rem;"><i class="fas fa-users-slash fa-4x"></i></div>
-                         <div style="color: var(--text-muted); font-size: 1.1rem; font-weight: 600;">Không tìm thấy bệnh nhân nào.</div>
+                         <div style="color: var(--text-muted); font-size: 1.1rem; font-weight: 600;"><?php echo __('patient.no_data'); ?></div>
                     </td>
                 </tr>
             <?php endif; ?>

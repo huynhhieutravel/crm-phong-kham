@@ -8,8 +8,8 @@ $type = $_GET['type'] ?? 'chiropractic';
 $patient_id = $_GET['patient_id'] ?? 0;
 $session_id = $_GET['session_id'] ?? null;
 
-$page_title = ($type === 'dong_y' ? 'Phiếu Đông Y' : 'Phiếu Chiropractic');
-if ($type === 'initial_exam') $page_title = 'Khám bệnh lần đầu Chiropractic';
+$page_title = ($type === 'dong_y' ? __('medical.form.dong_y_title') : __('medical.form.chiro_title'));
+if ($type === 'initial_exam') $page_title = __('medical.form.initial_exam_title');
 $current_page = 'medical';
 $db = getDB();
 $history_id = $_GET['id'] ?? 0;
@@ -27,7 +27,7 @@ if ($session_id) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($is_locked) {
-        set_flash('Buổi khám đã khóa. Không thể lưu thay đổi.', 'error');
+        set_flash(__('medical.form.err_locked'), 'error');
         redirect("session_view.php?id=$session_id");
     }
 
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         log_audit($_SESSION['user_id'], 'create', 'medical_history', $new_id, null, $_POST['history'] ?? []);
     }
     
-    set_flash('Lưu hồ sơ thành công!');
+    set_flash(__('medical.form.msg_success'));
     
     if ($session_id) {
         redirect("session_view.php?id=$session_id");
@@ -320,7 +320,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><?php echo $page_title; ?></h2>
-            <p style="color: var(--text-muted); margin-top: 0.25rem;">Bệnh nhân: <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
+            <p style="color: var(--text-muted); margin-top: 0.25rem;"><?php echo __('medical.form.patient_label'); ?> <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
         </div>
         <div style="background: rgba(99, 102, 241, 0.1); padding: 0.5rem 1.25rem; border-radius: 50px; color: var(--primary); font-weight: 700; font-size: 0.85rem;">
             <?php echo strtoupper($type); ?>
@@ -332,8 +332,8 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             <div style="background: #fef2f2; color: #991b1b; padding: 1.25rem; border-radius: 20px; margin-bottom: 2rem; border: 1px solid #fecaca; display: flex; align-items: center; gap: 1rem; box-shadow: var(--premium-shadow);">
                 <i class="fas fa-lock fa-2x"></i>
                 <div>
-                    <div style="font-weight: 800; font-size: 1rem;">HỒ SƠ ĐÃ KHÓA (CHỈ XEM)</div>
-                    <div style="font-size: 0.85rem; font-weight: 600; opacity: 0.9;">Hồ sơ này thuộc buổi khám đã hoàn tất. Vui lòng liên hệ Admin nếu cần chỉnh sửa.</div>
+                    <div style="font-weight: 800; font-size: 1rem;"><?php echo __('medical.form.locked_title'); ?></div>
+                    <div style="font-size: 0.85rem; font-weight: 600; opacity: 0.9;"><?php echo __('medical.form.locked_desc'); ?></div>
                 </div>
             </div>
         <?php endif; ?>
@@ -343,19 +343,19 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             <!-- I. THÔNG TIN CƠ BẢN & HUYẾT ÁP -->
             <div style="margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 2px solid #f1f5f9;">
                 <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-id-card"></i> I. THÔNG TIN CƠ BẢN & HUYẾT ÁP
+                    <i class="fas fa-id-card"></i> <?php echo __('medical.form.part1_title'); ?>
                 </h3>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
                     <div class="form-group">
-                        <label class="form-label">Họ tên</label>
+                        <label class="form-label"><?php echo __('medical.form.fullname_label'); ?></label>
                         <input type="text" class="form-input" value="<?php echo e($patient_name); ?>" readonly style="background: #f8fafc;">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Năm sinh</label>
+                        <label class="form-label"><?php echo __('medical.form.birth_year_label'); ?></label>
                         <input type="text" class="form-input" value="<?php echo e($patient_birth_year); ?>" readonly style="background: #f8fafc;">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Nghề nghiệp</label>
+                        <label class="form-label"><?php echo __('medical.form.occupation_label'); ?></label>
                         <input type="text" class="form-input" value="<?php echo e($patient_occupation); ?>" readonly style="background: #f8fafc;">
                     </div>
                 </div>
@@ -363,48 +363,48 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1.5rem;">
                     <div class="pulse-pair">
-                        <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary); display: block; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">HUYẾT ÁP TAY TRÁI</span>
+                        <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary); display: block; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;"><?php echo __('medical.form.bp_left_title'); ?></span>
                         <div style="display: flex; gap: 1rem;">
                             <div style="flex: 1;">
-                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Chỉ số (mmHg)</label>
-                                <input type="text" name="history[bp_left]" class="form-input" value="<?php echo e($data['bp_left'] ?? ''); ?>" placeholder="Ví dụ: 120/80">
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;"><?php echo __('medical.form.bp_index_label'); ?></label>
+                                <input type="text" name="history[bp_left]" class="form-input" value="<?php echo e($data['bp_left'] ?? ''); ?>" placeholder="<?php echo __('medical.form.bp_placeholder'); ?>">
                             </div>
                             <div style="flex: 1;">
-                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Nhịp tim</label>
-                                <input type="text" name="history[hr_left]" class="form-input" value="<?php echo e($data['hr_left'] ?? ''); ?>" placeholder="Lần/phút">
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;"><?php echo __('medical.form.heart_rate_label'); ?></label>
+                                <input type="text" name="history[hr_left]" class="form-input" value="<?php echo e($data['hr_left'] ?? ''); ?>" placeholder="<?php echo __('medical.form.hr_placeholder'); ?>">
                             </div>
                         </div>
                     </div>
                     <div class="pulse-pair">
-                        <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary); display: block; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">HUYẾT ÁP TAY PHẢI</span>
+                        <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary); display: block; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;"><?php echo __('medical.form.bp_right_title'); ?></span>
                         <div style="display: flex; gap: 1rem;">
                             <div style="flex: 1;">
-                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Chỉ số (mmHg)</label>
-                                <input type="text" name="history[bp_right]" class="form-input" value="<?php echo e($data['bp_right'] ?? ''); ?>" placeholder="Ví dụ: 120/80">
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;"><?php echo __('medical.form.bp_index_label'); ?></label>
+                                <input type="text" name="history[bp_right]" class="form-input" value="<?php echo e($data['bp_right'] ?? ''); ?>" placeholder="<?php echo __('medical.form.bp_placeholder'); ?>">
                             </div>
                             <div style="flex: 1;">
-                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Nhịp tim</label>
-                                <input type="text" name="history[hr_right]" class="form-input" value="<?php echo e($data['hr_right'] ?? ''); ?>" placeholder="Lần/phút">
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;"><?php echo __('medical.form.heart_rate_label'); ?></label>
+                                <input type="text" name="history[hr_right]" class="form-input" value="<?php echo e($data['hr_right'] ?? ''); ?>" placeholder="<?php echo __('medical.form.hr_placeholder'); ?>">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Lý do đến khám</label>
-                    <textarea name="history[reason]" class="form-input" rows="2" placeholder="Nhập lý do khách hàng đến khám..."><?php echo e($data['reason'] ?? ''); ?></textarea>
+                    <label class="form-label"><?php echo __('medical.form.reason_label'); ?></label>
+                    <textarea name="history[reason]" class="form-input" rows="2" placeholder="<?php echo __('medical.form.reason_placeholder'); ?>"><?php echo e($data['reason'] ?? ''); ?></textarea>
                 </div>
             </div>
 
             <!-- II. VỌNG CHẨN (Nhìn) -->
             <div style="margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 2px solid #f1f5f9;">
                 <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-eye"></i> II. VỌNG CHẨN (Nhìn)
+                    <i class="fas fa-eye"></i> <?php echo __('medical.form.part2_title'); ?>
                 </h3>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
                     <div class="form-group">
-                        <label class="form-label">1. Thần sắc</label>
+                        <label class="form-label"><?php echo __('medical.form.spirit_label'); ?></label>
                         <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                             <?php foreach (['Còn thần (Tươi nhuận)', 'Thất thần (Mệt mỏi, lờ đờ)'] as $opt): ?>
                                 <label class="checkbox-tag">
@@ -413,7 +413,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                        <span style="font-size: 0.85rem; opacity: 0.7; display: block; margin-bottom: 0.5rem;">Sắc mặt:</span>
+                        <span style="font-size: 0.85rem; opacity: 0.7; display: block; margin-bottom: 0.5rem;"><?php echo __('medical.form.face_color_label'); ?></span>
                         <div class="medical-form-grid" style="grid-template-columns: repeat(4, 1fr);">
                             <?php foreach (['Trắng bệch', 'Vàng vọt', 'Đỏ gay', 'Sạm đen'] as $opt): ?>
                                 <label class="checkbox-tag">
@@ -426,12 +426,12 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                     <div style="background: #fff; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0;">
                         <span class="form-label" style="color: #6366f1; font-size: 0.9rem; margin-bottom: 1rem; display: block;">
-                            <i class="fas fa-tongue"></i> VỌNG LƯỠI (Cực kỳ quan trọng)
+                            <i class="fas fa-tongue"></i> <?php echo __('medical.form.tongue_title'); ?>
                         </span>
                         
                         <!-- 1. Chất lưỡi -->
                         <div style="margin-bottom: 1.25rem;">
-                            <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;">Chất lưỡi:</div>
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;"><?php echo __('medical.form.tongue_body_label'); ?></div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
                                 <?php foreach (['Hồng đều', 'Đỏ sẫm', 'Tím tái', 'Có điểm ứ huyết'] as $opt): ?>
                                     <label class="checkbox-tag">
@@ -444,7 +444,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                         <!-- 2. Hình dáng -->
                         <div style="margin-bottom: 1.25rem;">
-                            <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;">Hình dáng:</div>
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;"><?php echo __('medical.form.tongue_shape_label'); ?></div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
                                 <?php foreach (['Thon gọn', 'Bệu béo (có vết răng)', 'Nứt ngang/dọc'] as $opt): ?>
                                     <label class="checkbox-tag">
@@ -457,7 +457,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                         <!-- 3. Rêu lưỡi -->
                         <div style="margin-bottom: 1.25rem;">
-                            <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;">Rêu lưỡi:</div>
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;"><?php echo __('medical.form.tongue_coating_label'); ?></div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
                                 <?php foreach (['Trắng mỏng', 'Trắng dày', 'Vàng mỏng', 'Vàng dày', 'Nhớt/Dính'] as $opt): ?>
                                     <label class="checkbox-tag">
@@ -470,7 +470,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                         <!-- 4. Đầu lưỡi -->
                         <div>
-                            <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;">Đầu lưỡi:</div>
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;"><?php echo __('medical.form.tongue_tip_label'); ?></div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem;">
                                 <?php foreach (['Hồng', 'Đỏ', 'Nhạt'] as $opt): ?>
                                     <label class="checkbox-tag">
@@ -485,7 +485,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-eye"></i> 3. Mắt</label>
+                        <label class="section-label-premium"><i class="fas fa-eye"></i> <?php echo __('medical.form.eyes_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
                             <?php foreach (['Lòng trắng đỏ (Can hỏa)', 'Quầng thâm mắt (Thận hư)', 'Mắt sưng nề (Tỳ thấp)'] as $opt): ?>
                                 <label class="checkbox-tag" style="width: 100%;">
@@ -495,7 +495,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <?php endforeach; ?>
                         </div>
                         <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #e2e8f0;">
-                            <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; display: block;">Mí mắt:</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; display: block;"><?php echo __('medical.form.eyelids_label'); ?></span>
                             <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.5rem;">
                                 <?php foreach (['Hồng đều', 'Trong nhạt ngoài hồng', 'Trong nhạt ngoài đỏ', 'Đỏ toàn bộ'] as $opt): ?>
                                     <label class="checkbox-tag" style="width: 100%;">
@@ -507,7 +507,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         </div>
                     </div>
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-lips"></i> 4. Niêm mạc môi</label>
+                        <label class="section-label-premium"><i class="fas fa-lips"></i> <?php echo __('medical.form.lips_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.5rem;">
                             <?php foreach (['Hồng tươi', 'Ẩn vàng', 'Ẩn nâu', 'Có tia máu', 'Ẩn xanh tím tái', 'Nhạt'] as $opt): ?>
                                 <label class="checkbox-tag" style="width: 100%;">
@@ -523,11 +523,11 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             <!-- III. VĂN CHẨN (Nghe) -->
             <div style="margin-bottom: 3rem;">
                 <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-volume-up"></i> III. VĂN CHẨN (Nghe)
+                    <i class="fas fa-volume-up"></i> <?php echo __('medical.form.part3_title'); ?>
                 </h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-comment-medical"></i> 1. Tiếng nói / Hơi thở</label>
+                        <label class="section-label-premium"><i class="fas fa-comment-medical"></i> <?php echo __('medical.form.voice_breath_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr;">
                             <?php foreach (['Tiếng nói to, vang (Thực)', 'Tiếng nói nhỏ, thào thào (Hư)', 'Hơi thở ngắn (Đoản hơi)', 'Nhanh', 'Chậm', 'Khò khè / Có đờm'] as $opt): ?>
                                 <label class="checkbox-tag">
@@ -538,7 +538,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         </div>
                     </div>
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-wind"></i> 2. Mùi cơ thể</label>
+                        <label class="section-label-premium"><i class="fas fa-wind"></i> <?php echo __('medical.form.body_odor_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr;">
                             <?php foreach (['Hơi thở hôi (Vị nhiệt)', 'Cơ thể có mùi hăng/chua'] as $opt): ?>
                                 <label class="checkbox-tag">
@@ -554,12 +554,12 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             <!-- IV. VẤN CHẨN (Hỏi) -->
             <div style="margin-bottom: 3rem;">
                 <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-comments"></i> IV. VẤN CHẨN (Hỏi)
+                    <i class="fas fa-comments"></i> <?php echo __('medical.form.part4_title'); ?>
                 </h3>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-history"></i> Tiền sử / Phụ khoa</label>
+                        <label class="section-label-premium"><i class="fas fa-history"></i> <?php echo __('medical.form.history_gyn_label'); ?></label>
                         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                             <?php foreach (['Sinh thường', 'Sinh mổ', 'Phẫu thuật khác'] as $opt): ?>
                                 <label class="checkbox-tag">
@@ -570,7 +570,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         </div>
                     </div>
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-bed"></i> Giấc ngủ</label>
+                        <label class="section-label-premium"><i class="fas fa-bed"></i> <?php echo __('medical.form.sleep_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr;">
                             <?php foreach (['Dễ', 'Khó', 'Thẳng giấc', 'Trở giấc', 'Hay mơ (Mộng mị)', 'Đạo hãn (Mồ hôi trộm)', 'Đủ giờ', 'Thiếu giờ'] as $opt): ?>
                                 <label class="checkbox-tag">
@@ -581,7 +581,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         </div>
                     </div>
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-sun"></i> Thức dậy</label>
+                        <label class="section-label-premium"><i class="fas fa-sun"></i> <?php echo __('medical.form.wake_label'); ?></label>
                         <div style="display: flex; gap: 1rem;">
                             <?php foreach(['Tỉnh táo', 'Lờ đờ'] as $opt): ?>
                                 <label class="checkbox-tag">
@@ -592,7 +592,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         </div>
                     </div>
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-clock"></i> Khung giờ tỉnh giấc</label>
+                        <label class="section-label-premium"><i class="fas fa-clock"></i> <?php echo __('medical.form.wake_time_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.5rem;">
                             <?php foreach ([
                                 '21h-23h: Khó vào giấc (Tam Tiêu)', 
@@ -612,11 +612,11 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                 <!-- PHẦN IV: VẤN CHẨN - Thói Quen (Layout Image 4) -->
                 <div class="premium-card" style="margin-bottom: 2.5rem;">
-                    <label class="section-label-premium"><i class="fas fa-user-clock"></i> Thói quen, Môi trường & Tư thế</label>
+                    <label class="section-label-premium"><i class="fas fa-user-clock"></i> <?php echo __('medical.form.habits_env_posture_label'); ?></label>
                     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                         <!-- Row 1 -->
                         <div>
-                            <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;">Lối sống:</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.lifestyle_label'); ?></span>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                                 <?php foreach (['Ăn đêm sau 20h', 'Tắm sau 19h', 'Uống nước đá lạnh', 'Dùng điều hòa nhiệt độ dưới 25 độ', 'Stress'] as $opt): ?>
                                     <label class="checkbox-tag">
@@ -629,7 +629,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                         <!-- Row 2 -->
                         <div style="padding-top: 1.25rem; border-top: 1px dashed #e2e8f0;">
-                            <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;">Trước khi ngủ:</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.before_sleep_label'); ?></span>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                                 <?php foreach (['Sử dụng thiết bị điện tử sát giờ ngủ', 'Ngủ sau 23h'] as $opt): ?>
                                     <label class="checkbox-tag">
@@ -643,7 +643,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <!-- Row 3 & 4 Grid -->
                         <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; padding-top: 1.25rem; border-top: 1px dashed #e2e8f0;">
                             <div>
-                                <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;">Đặc thù tư thế (Làm việc):</span>
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.work_posture_label'); ?></span>
                                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                                     <?php foreach (['Đứng nhiều', 'Ngồi nhiều', 'Đi nhiều'] as $opt): ?>
                                         <label class="checkbox-tag">
@@ -654,7 +654,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                                 </div>
                             </div>
                             <div>
-                                <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;">Môi trường sống:</span>
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.living_env_label'); ?></span>
                                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                                     <?php foreach (['Bình thường', 'Ẩm ướt'] as $opt): ?>
                                         <label class="checkbox-tag">
@@ -670,12 +670,12 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                 <!-- PHẦN V: TIÊU HÓA & BÀI TIẾT (Premium Redesign) -->
                 <div class="premium-card" style="margin-bottom: 2.5rem;">
-                    <label class="section-label-premium"><i class="fas fa-utensils"></i> V. Tiêu hóa & Bài tiết</label>
+                    <label class="section-label-premium"><i class="fas fa-utensils"></i> <?php echo __('medical.form.part5_title'); ?></label>
                     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                             <!-- Ăn uống -->
                             <div style="background: #f8fafc; padding: 1.25rem; border-radius: 16px; border: 1px solid #eef2f6;">
-                                <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 1rem; display: block;">Hệ tiêu hóa (Ăn uống):</span>
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 1rem; display: block;"><?php echo __('medical.form.digestion_eating_label'); ?></span>
                                 <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr;">
                                     <?php foreach (['Ngon miệng', 'Thích đồ mát', 'Thích đồ nóng', 'Sợ ăn/Chán ăn'] as $opt): ?>
                                         <label class="checkbox-tag">
@@ -688,7 +688,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                             <!-- Đại tiện -->
                             <div style="background: #f8fafc; padding: 1.25rem; border-radius: 16px; border: 1px solid #eef2f6;">
-                                <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 1rem; display: block;">Đại tiện (Tính chất):</span>
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 1rem; display: block;"><?php echo __('medical.form.digestion_excretion_label'); ?></span>
                                 <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr;">
                                     <?php foreach (['Táo bón', 'Sống phân/Nát', 'Tiêu chảy', 'Bình thường'] as $opt): ?>
                                         <label class="checkbox-tag">
@@ -703,7 +703,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <!-- Frequency Rows -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding-top: 1.25rem; border-top: 1px dashed #e2e8f0;">
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <span style="font-size: 0.85rem; font-weight: 700; color: #475569;">Số lần đại tiện trong ngày:</span>
+                                <span style="font-size: 0.85rem; font-weight: 700; color: #475569;"><?php echo __('medical.form.excretion_frequency_label'); ?></span>
                                 <div class="toggle-group-premium">
                                     <?php foreach (['1', '2', '3', 'Nhiều hơn'] as $opt): ?>
                                         <label class="toggle-item-premium">
@@ -714,7 +714,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <span style="font-size: 0.85rem; font-weight: 700; color: #475569;">Số lần tiểu đêm:</span>
+                                <span style="font-size: 0.85rem; font-weight: 700; color: #475569;"><?php echo __('medical.form.night_urine_label'); ?></span>
                                 <div class="toggle-group-premium">
                                     <?php foreach (['1', '2', '3', 'Nhiều hơn'] as $opt): ?>
                                         <label class="toggle-item-premium">
@@ -728,7 +728,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                         <!-- Urine Color -->
                         <div style="padding-top: 1.25rem; border-top: 1px dashed #e2e8f0;">
-                            <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;">Màu sắc tiểu tiện:</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.urine_color_label'); ?></span>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                                 <?php foreach (['Hơi vàng', 'Trắng, trong', 'Vàng sẫm', 'Đục', 'Đau, xót'] as $opt): ?>
                                     <label class="checkbox-tag">
@@ -744,7 +744,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                 <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; margin-bottom: 2.5rem;">
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-venus text-pink-500"></i> Kinh nguyệt (Nữ giới)</label>
+                        <label class="section-label-premium"><i class="fas fa-venus text-pink-500"></i> <?php echo __('medical.form.menses_label'); ?></label>
                         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
                             <?php foreach (['Đều', 'Không đều'] as $opt): ?>
                                 <label class="checkbox-tag">
@@ -754,11 +754,11 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <?php endforeach; ?>
                         </div>
                         <div style="margin-bottom: 1.25rem;">
-                            <input type="text" name="history[menses_days]" class="form-input" value="<?php echo e($data['menses_days'] ?? ''); ?>" placeholder="Số ngày hành kinh..." style="width: 100%; height: 42px; border-radius: 12px; border: 1px solid #e2e8f0; padding: 0 1rem; font-weight: 600;">
+                            <input type="text" name="history[menses_days]" class="form-input" value="<?php echo e($data['menses_days'] ?? ''); ?>" placeholder="<?php echo __('medical.form.menses_days_placeholder'); ?>" style="width: 100%; height: 42px; border-radius: 12px; border: 1px solid #e2e8f0; padding: 0 1rem; font-weight: 600;">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
                             <div>
-                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Đau bụng kinh:</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;"><?php echo __('medical.form.menses_pain_label'); ?></span>
                                 <div style="display: flex; gap: 0.5rem;">
                                     <?php foreach (['Có', 'Không'] as $opt): ?>
                                         <label class="checkbox-tag" style="padding: 0.4rem 0.75rem;">
@@ -769,7 +769,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                                 </div>
                             </div>
                             <div>
-                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Huyết trắng:</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;"><?php echo __('medical.form.menses_leucorrhoea_label'); ?></span>
                                 <div style="display: flex; gap: 0.5rem;">
                                     <?php foreach (['Có', 'Không'] as $opt): ?>
                                         <label class="checkbox-tag" style="padding: 0.4rem 0.75rem;">
@@ -781,7 +781,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             </div>
                         </div>
                         <div>
-                            <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Màu sắc kinh nguyệt:</span>
+                            <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;"><?php echo __('medical.form.menses_color_label'); ?></span>
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <?php foreach (['Đỏ tươi', 'Có cục / Thẫm màu'] as $opt): ?>
                                     <label class="checkbox-tag" style="padding: 0.4rem 0.75rem;">
@@ -793,10 +793,10 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         </div>
                     </div>
                     <div class="premium-card">
-                        <label class="section-label-premium"><i class="fas fa-thermometer-half"></i> Cảm giác đối với bệnh lý</label>
+                        <label class="section-label-premium"><i class="fas fa-thermometer-half"></i> <?php echo __('medical.form.sensation_label'); ?></label>
                         <div style="margin-bottom: 1.25rem; padding: 1.25rem; background: #fff1f2; border-radius: 16px; border: 1px solid #fecaca;">
                             <span style="font-size: 0.75rem; font-weight: 800; color: #dc2626; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.75rem;">
-                                <i class="fas fa-fire"></i> NHIỆT (NÓNG):
+                                <i class="fas fa-fire"></i> <?php echo __('medical.form.heat_label'); ?>
                             </span>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                                 <?php foreach (['Đau', 'Ngứa', 'Mỏi', 'Nóng'] as $opt): ?>
@@ -809,7 +809,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         </div>
                         <div style="padding: 1.25rem; background: #eff6ff; border-radius: 16px; border: 1px solid #bfdbfe;">
                             <span style="font-size: 0.75rem; font-weight: 800; color: #2563eb; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.75rem;">
-                                <i class="fas fa-snowflake"></i> HÀN (LẠNH):
+                                <i class="fas fa-snowflake"></i> <?php echo __('medical.form.cold_label'); ?>
                             </span>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                                 <?php foreach (['Nhức', 'Tê', 'Nặng nề', 'Lạnh'] as $opt): ?>
@@ -827,29 +827,29 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                 <!-- V. THIẾT CHẨN (Bắt mạch & Sờ nắn) -->
                 <div style="margin-bottom: 3.5rem;">
                     <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="fas fa-hand-holding-heart"></i> V. THIẾT CHẨN (Thiết)
+                        <i class="fas fa-hand-holding-heart"></i> <?php echo __('medical.form.part6_title'); ?>
                     </h3>
                     
                     <div class="premium-card" style="margin-bottom: 2rem;">
-                        <label class="section-label-premium"><i class="fas fa-wave-square"></i> 1. Mạch tượng (Hệ mạch chính)</label>
+                        <label class="section-label-premium"><i class="fas fa-wave-square"></i> <?php echo __('medical.form.pulse_label'); ?></label>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
                             <div class="pulse-pair">
-                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;">Độ sâu (Vị):</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.pulse_depth_label'); ?></span>
                                 <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_depth]" value="Phù (Nổi)" <?php echo ($data['pulse_depth'] ?? '') == 'Phù (Nổi)' ? 'checked' : ''; ?>><span>Phù</span></label>
                                 <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_depth]" value="Trầm (Chìm)" <?php echo ($data['pulse_depth'] ?? '') == 'Trầm (Chìm)' ? 'checked' : ''; ?>><span>Trầm</span></label>
                             </div>
                             <div class="pulse-pair">
-                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;">Tốc độ (Sác):</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.pulse_speed_label'); ?></span>
                                 <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_speed]" value="Trì (Chậm)" <?php echo ($data['pulse_speed'] ?? '') == 'Trì (Chậm)' ? 'checked' : ''; ?>><span>Trì</span></label>
                                 <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_speed]" value="Sác (Nhanh)" <?php echo ($data['pulse_speed'] ?? '') == 'Sác (Nhanh)' ? 'checked' : ''; ?>><span>Sác</span></label>
                             </div>
                             <div class="pulse-pair">
-                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;">Hình dạng (Thể):</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.pulse_texture_label'); ?></span>
                                 <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_texture]" value="Hoạt (Trơn)" <?php echo ($data['pulse_texture'] ?? '') == 'Hoạt (Trơn)' ? 'checked' : ''; ?>><span>Hoạt</span></label>
                                 <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_texture]" value="Sáp (Rít)" <?php echo ($data['pulse_texture'] ?? '') == 'Sáp (Rít)' ? 'checked' : ''; ?>><span>Sáp</span></label>
                             </div>
                             <div class="pulse-pair">
-                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;">Lực (Lực):</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.pulse_strength_label'); ?></span>
                                 <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_strength]" value="Có lực (Thực)" <?php echo ($data['pulse_strength'] ?? '') == 'Có lực (Thực)' ? 'checked' : ''; ?>><span>Có lực</span></label>
                                 <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_strength]" value="Không lực (Hư)" <?php echo ($data['pulse_strength'] ?? '') == 'Không lực (Hư)' ? 'checked' : ''; ?>><span>Không lực</span></label>
                             </div>
@@ -858,7 +858,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                         <div class="premium-card">
-                            <label class="section-label-premium"><i class="fas fa-hand-paper"></i> 2. Xúc chẩn (Sờ nắn)</label>
+                            <label class="section-label-premium"><i class="fas fa-hand-paper"></i> <?php echo __('medical.form.palpation_label'); ?></label>
                             <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.5rem;">
                                 <?php foreach (['Chân tay lạnh (Dương hư)', 'Lòng bàn tay chân nóng (Âm hư)', 'Ấn bụng đau tăng (Cự án)', 'Ấn bụng thấy dễ chịu (Thiện án)', 'Đầu ấm chân lạnh'] as $opt): ?>
                                     <label class="checkbox-tag">
@@ -869,9 +869,9 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             </div>
                         </div>
                         <div class="premium-card">
-                            <label class="section-label-premium"><i class="fas fa-child"></i> Cơ bắp & Nhiệt độ</label>
+                            <label class="section-label-premium"><i class="fas fa-child"></i> <?php echo __('medical.form.muscle_temp_label'); ?></label>
                             <div style="margin-bottom: 1.5rem;">
-                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;">Trạng thái cơ bắp:</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.muscle_state_label'); ?></span>
                                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                     <?php foreach (['Săn chắc', 'Co cứng', 'Lỏng lẽo'] as $opt): ?>
                                         <label class="checkbox-tag">
@@ -882,7 +882,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                                 </div>
                             </div>
                             <div>
-                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;">Nhiệt độ cơ thể:</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.body_temp_label'); ?></span>
                                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                     <?php foreach (['Bình thường', 'Nóng', 'Lạnh'] as $opt): ?>
                                         <label class="checkbox-tag">
@@ -899,10 +899,10 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             <!-- VI. TỔNG KẾT NHANH -->
             <div style="margin-bottom: 3.5rem;">
                 <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-clipboard-check"></i> VI. TỔNG KẾT NHANH
+                    <i class="fas fa-clipboard-check"></i> <?php echo __('medical.form.part7_title'); ?>
                 </h3>
                 <div class="premium-card">
-                    <label class="section-label-premium"><i class="fas fa-tags"></i> Bát cương</label>
+                    <label class="section-label-premium"><i class="fas fa-tags"></i> <?php echo __('medical.form.bat_cuong_label'); ?></label>
                     <div class="medical-form-grid" style="grid-template-columns: repeat(4, 1fr); gap: 1rem;">
                         <?php foreach (['Biểu', 'Lý', 'Hàn', 'Nhiệt', 'Hư', 'Thực', 'Âm', 'Dương'] as $opt): ?>
                             <label class="checkbox-tag" style="justify-content: center; padding: 1rem;">
@@ -943,15 +943,15 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <i class="fas fa-save"></i> 
                     <?php 
                         if ($history_id) {
-                            echo ($session['status'] === 'completed' ? 'Cập nhật (Admin)' : 'Cập nhật Hồ sơ');
+                            echo ($session['status'] === 'completed' ? __('medical.form.btn_update_admin') : __('medical.form.btn_update'));
                         } else {
-                            echo 'Lưu Hồ sơ';
+                            echo __('medical.form.btn_save');
                         }
                     ?>
                 </button>
             <?php endif; ?>
             <a href="session_view.php?id=<?php echo $session_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem; border-radius: 12px; font-weight: 800;">
-                Quay lại
+                <?php echo __('common.back'); ?>
             </a>
         </div>
     </form>

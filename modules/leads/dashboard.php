@@ -4,8 +4,8 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-$page_title = 'Thống kê Lead Marketing';
-$current_page = 'leads';
+$page_title = __('leads.dashboard.title');
+$current_page = 'leads_dashboard';
 require_once '../../templates/header.php';
 
 $db = getDB();
@@ -71,52 +71,148 @@ $conversion_rate = $total_leads > 0 ? round(($converted_count / $total_leads) * 
 $care_count = 0;
 foreach($status_data as $s) if(in_array($s['status'], ['contacted', 'scheduled', 'converted'])) $care_count += $s['count'];
 $care_rate = $total_leads > 0 ? round(($care_count / $total_leads) * 100, 1) : 0;
+
+$cancelled_count = 0;
+foreach($status_data as $s) if($s['status'] === 'cancelled') $cancelled_count = $s['count'];
 ?>
 
+<style>
+.grid { display: grid; gap: 1.5rem; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.kpi-card { background: white; border-radius: 20px; padding: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; box-shadow: 0 4px 20px rgba(0,0,0,0.03); transition: transform 0.2s; position: relative; overflow: hidden; }
+.kpi-card:hover { transform: translateY(-5px); }
+.kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; }
+.kpi-label { font-size: 0.85rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.kpi-value { font-size: 2rem; font-weight: 900; color: #1e293b; line-height: 1; }
+
+.filter-btn-group { display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; padding: 0.5rem; border-radius: 12px; }
+.filter-label { font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-right: 0.5rem; }
+.filter-btn { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #64748b; text-decoration: none; transition: all 0.2s; white-space: nowrap; }
+.filter-btn:hover { background: #e2e8f0; color: #1e293b; }
+.filter-btn.active { background: #6366f1; color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
+
+.custom-range-box { display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; padding: 0.5rem; border-radius: 12px; }
+.custom-range-input { border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem; font-size: 0.85rem; outline: none; background: white; color: #1e293b; font-weight: 500; }
+
+@media (max-width: 1024px) { 
+    .grid-4 { grid-template-columns: repeat(2, 1fr); } 
+}
+@media (max-width: 768px) { 
+    .grid-4 { grid-template-columns: 1fr; } 
+    div[style*="1.8fr 1.2fr"] { grid-template-columns: 1fr !important; } 
+}
+</style>
+
 <div class="leads-dashboard-outer" style="max-width: 1400px; margin: 0 auto; padding: 1.5rem;">
-    <!-- Adaptive Filter Hub -->
-    <div class="filter-bar-leads" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem; padding: 1.5rem; background: white; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-        <div class="period-toggle-leads" style="display: flex; background: #f1f5f9; padding: 5px; border-radius: 14px; gap: 4px;">
-            <?php foreach (['today' => 'Hôm nay', 'week' => 'Tuần', 'month' => 'Tháng', 'quarter' => 'Quý', 'year' => 'Năm'] as $p => $label): ?>
-                <a href="?period=<?php echo $p; ?>" class="btn-toggle-lead <?php echo $period === $p ? 'active' : ''; ?>" style="padding: 0.7rem 1.5rem; border-radius: 11px; font-size: 0.9rem; font-weight: 600; color: #64748b; text-decoration: none; transition: all 0.25s ease; border: none; background: transparent; cursor: pointer; <?php echo $period === $p ? 'background: white; color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);' : ''; ?>">
-                    <?php echo $label; ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-        
-        <form method="GET" style="display: flex; align-items: center; gap: 0.8rem;">
-            <input type="hidden" name="period" value="custom">
-            <div style="display: flex; align-items: center; background: #f8fafc; padding: 0.3rem 0.8rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <input type="date" name="start_date" value="<?php echo e($range['start_val'] ?? ''); ?>" style="border:none; background:transparent; font-size: 0.9rem; font-weight: 600; color: #1e293b; outline:none;">
-                <span style="padding: 0 0.5rem; color: #94a3b8;"><i class="fas fa-arrow-right"></i></span>
-                <input type="date" name="end_date" value="<?php echo e($range['end_val'] ?? ''); ?>" style="border:none; background:transparent; font-size: 0.9rem; font-weight: 600; color: #1e293b; outline:none;">
-            </div>
-            <button type="submit" class="btn btn-primary" style="padding: 0.7rem 1.5rem; border-radius: 12px; font-weight: 700;">Áp dụng</button>
-        </form>
+    <div class="page-header" style="margin-bottom: 2rem;">
+    <div>
+        <h1 class="page-title"><?php echo __('leads.dashboard.title'); ?></h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+            <?php echo __('leads.dashboard.subtitle'); ?>
+        </p>
     </div>
-
-    <!-- Premium Stats Cards -->
-    <div class="leads-grid-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2.5rem;">
-        <div class="stat-card" style="padding: 2rem; border-radius: 24px; color: white; background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%); position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.3);">
-            <i class="fas fa-users" style="position: absolute; right: -10px; bottom: -10px; font-size: 5.5rem; opacity: 0.2; transform: rotate(-15deg);"></i>
-            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;">Tiếp cận mới</span>
-            <span style="display: block; font-size: 3.5rem; font-weight: 900; line-height: 1;"><?php echo number_format($total_leads); ?></span>
-            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;">Tổng số Lead thu thập được từ Marketing</span>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="index.php" class="btn btn-secondary">
+            <i class="fas fa-list"></i> <?php echo __('leads.dashboard.btn_list'); ?>
+        </a>
+        <a href="consultant_stats.php" class="btn btn-primary" style="background: linear-gradient(135deg, #4f46e5, #6366f1); border: none;">
+            <i class="fas fa-user-tie"></i> <?php echo __('leads.dashboard.btn_consultant_stats'); ?>
+        </a>
+    </div>
+</div>
+    <!-- Adaptive Filter Hub -->
+    <form method="GET" class="filter-bar-leads" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem; padding: 1.5rem; background: white; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div class="filter-btn-group">
+            <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;"><?php echo __('leads.index.filter_time'); ?></span>
+            <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
+            <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod(event, '')"><?php echo __('common.all'); ?></a>
+            <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod(event, 'today')"><?php echo __('filter.today'); ?></a>
+            <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod(event, 'week')"><?php echo __('filter.week'); ?></a>
+            <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod(event, 'month')"><?php echo __('filter.month'); ?></a>
+            <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod(event, 'quarter')"><?php echo __('filter.quarter'); ?></a>
+            <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod(event, 'year')"><?php echo __('filter.year'); ?></a>
+            <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod(event, 'custom')"><?php echo __('filter.custom'); ?></a>
         </div>
 
-        <div class="stat-card" style="padding: 2rem; border-radius: 24px; color: white; background: linear-gradient(135deg, #10b981 0%, #34d399 100%); position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);">
-            <i class="fas fa-check-circle" style="position: absolute; right: -10px; bottom: -10px; font-size: 5.5rem; opacity: 0.2; transform: rotate(-15deg);"></i>
-            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;">Tỷ lệ Chuyển đổi</span>
-            <span style="display: block; font-size: 3.5rem; font-weight: 900; line-height: 1;"><?php echo $conversion_rate; ?><small style="font-size: 1.5rem;">%</small></span>
-            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;"><?php echo number_format($converted_count); ?> khách hàng đã đăng ký sử dụng dịch vụ</span>
-        </div>
+        <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
+            <div style="display: flex; gap: 0.5rem; align-items: center; background: #f8fafc; padding: 0.3rem 0.5rem; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <?php if($period === 'month'): ?>
+                    <select name="sel_month" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
+                        <?php for($m=1; $m<=12; $m++): ?>
+                            <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                        <?php endfor; ?>
+                    </select>
+                <?php endif; ?>
+                
+                <?php if($period === 'quarter'): ?>
+                    <select name="sel_quarter" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
+                        <?php for($q=1; $q<=4; $q++): ?>
+                            <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                        <?php endfor; ?>
+                    </select>
+                <?php endif; ?>
 
-        <div class="stat-card" style="padding: 2rem; border-radius: 24px; color: white; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);">
-            <i class="fas fa-headset" style="position: absolute; right: -10px; bottom: -10px; font-size: 5.5rem; opacity: 0.2; transform: rotate(-15deg);"></i>
-            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;">Hiệu suất Chăm sóc</span>
-            <span style="display: block; font-size: 3.5rem; font-weight: 900; line-height: 1;"><?php echo $care_rate; ?><small style="font-size: 1.5rem;">%</small></span>
-            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;"><?php echo number_format($care_count); ?> khách hàng đang trong tiến trình tư vấn</span>
+                <select name="sel_year" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
+                    <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
+                        <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                    <?php endfor; ?>
+                </select>
+            </div>
+        <?php endif; ?>
+
+        <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
+            <div class="custom-range-box">
+                <input type="date" name="start_date" class="custom-range-input" value="<?php echo e($start_date); ?>">
+                <span style="color: #94a3b8; font-size: 0.8rem;">→</span>
+                <input type="date" name="end_date" class="custom-range-input" value="<?php echo e($end_date); ?>">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;"><?php echo __('common.apply'); ?></button>
         </div>
+    </div>
+    </form>
+    
+    <script>
+    function setPeriod(event, p) {
+        event.preventDefault();
+        document.getElementById('periodInput').value = p;
+        if (p !== 'custom') {
+            const s = document.querySelector('input[name="start_date"]');
+            const e = document.querySelector('input[name="end_date"]');
+            if (s) s.value = '';
+            if (e) e.value = '';
+            event.target.closest('form').submit();
+        } else {
+            document.getElementById('customDates').style.display = 'flex';
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+    }
+    </script>
+
+<div class="grid grid-4" style="margin-bottom: 2rem;">
+    <!-- KPI Cards -->
+    <div class="card kpi-card">
+        <div class="kpi-icon" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;"><i class="fas fa-users"></i></div>
+        <div class="kpi-label"><?php echo __('leads.dashboard.kpi_total'); ?></div>
+        <div class="kpi-value"><?php echo $total_leads; ?></div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fas fa-user-check"></i></div>
+        <div class="kpi-label"><?php echo __('leads.dashboard.kpi_converted'); ?></div>
+        <div class="kpi-value" style="color: #10b981;"><?php echo $converted_count; ?></div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fas fa-percentage"></i></div>
+        <div class="kpi-label"><?php echo __('leads.dashboard.kpi_rate'); ?></div>
+        <div class="kpi-value" style="color: #f59e0b;"><?php echo $conversion_rate; ?>%</div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;"><i class="fas fa-user-slash"></i></div>
+        <div class="kpi-label"><?php echo __('leads.dashboard.kpi_cancelled'); ?></div>
+        <div class="kpi-value" style="color: #ef4444;"><?php echo $cancelled_count; ?></div>
+    </div>
+</div>
     </div>
 
     <!-- Charts Layout -->

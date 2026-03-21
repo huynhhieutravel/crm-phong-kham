@@ -21,7 +21,7 @@ try {
     $appt = $stmt->fetch();
 
     if (!$appt) {
-        throw new Exception("Không tìm thấy lịch hẹn hoặc Lead không hợp lệ.");
+        throw new Exception(__('appointment.msg.checkin_invalid'));
     }
 
     // 2. Create Patient from Lead
@@ -53,7 +53,7 @@ try {
     $stmt->execute([$patient_id, $id]);
 
     $db->commit();
-    set_flash("Check-in thành công! Lead đã được chuyển thành Bệnh nhân.");
+    set_flash(__('appointment.msg.checkin_success'));
     
     // Redirect to patient view to start clinical documentation
     redirect("../patients/view.php?id=" . $patient_id);

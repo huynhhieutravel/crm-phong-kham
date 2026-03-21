@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$patient_id, $session_id, $history_data, $_SESSION['user_id']]);
     }
     
-    set_flash('Lưu phiếu tiền sử bệnh Chiropractic thành công!');
+    set_flash(__('medical.history.msg_success'));
     
     if ($session_id) {
         redirect("session_view.php?id=$session_id");
@@ -67,11 +67,11 @@ $stmt->execute([$patient_id]);
 $patient_name = $stmt->fetchColumn();
 
 if (!$patient_name) {
-    set_flash('Dữ liệu bệnh nhân không tồn tại!', 'error');
+    set_flash(__('medical.exam.err_no_patient'), 'error');
     redirect('index.php');
 }
 
-$page_title = 'Khám tiền sử bệnh Chiropractic';
+$page_title = __('medical.type.chiro_history_full');
 $current_page = 'medical';
 require_once '../../templates/header.php';
 ?>
@@ -79,37 +79,37 @@ require_once '../../templates/header.php';
 <div class="card" style="background: var(--glass-bg); backdrop-filter: blur(20px); max-width: 1000px; margin: 0 auto;">
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: start;">
         <div>
-            <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><i class="fas fa-history"></i> Khám Tiền Sử Bệnh Chiropractic</h2>
-            <p style="color: var(--text-muted); margin-top: 0.25rem;">Bệnh nhân: <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
+            <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><i class="fas fa-history"></i> <?php echo __('medical.type.chiro_history_full'); ?></h2>
+            <p style="color: var(--text-muted); margin-top: 0.25rem;"><?php echo __('medical.exam.patient_label'); ?> <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
         </div>
-        <div style="background: #f5f3ff; color: #7c3aed; padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700;">HISTORY</div>
+        <div style="background: #f5f3ff; color: #7c3aed; padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700;"><?php echo __('medical.history.badge_history'); ?></div>
     </div>
 
     <form method="POST">
         <!-- PART 1: THÔNG TIN CƠ BẢN & LỐI SỐNG -->
         <div style="margin-bottom: 4rem;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
-                <i class="fas fa-user-check"></i> PHẦN 1: THÔNG TIN CƠ BẢN & LỐI SỐNG
+                <i class="fas fa-user-check"></i> <?php echo __('medical.history.part1_title'); ?>
             </h3>
 
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-bottom: 3rem;">
                 <div class="form-group">
-                    <label class="form-label">Chiều cao (cm)</label>
+                    <label class="form-label"><?php echo __('medical.history.height_label'); ?></label>
                     <input type="number" name="exam[biometrics][height]" class="form-input" placeholder="..." value="<?php echo get_v('biometrics.height'); ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Cân nặng (kg)</label>
+                    <label class="form-label"><?php echo __('medical.history.weight_label'); ?></label>
                     <input type="number" name="exam[biometrics][weight]" class="form-input" placeholder="..." value="<?php echo get_v('biometrics.weight'); ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Huyết áp (mmHg)</label>
+                    <label class="form-label"><?php echo __('medical.history.blood_pressure_label'); ?></label>
                     <input type="text" name="exam[biometrics][blood_pressure]" class="form-input" placeholder="120/80" value="<?php echo get_v('biometrics.blood_pressure'); ?>">
                 </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
                 <div class="form-group">
-                    <label class="form-label">Đặc thù công việc</label>
+                    <label class="form-label"><?php echo __('medical.history.job_label'); ?></label>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem;">
                         <?php foreach (['Ngồi nhiều', 'Đứng nhiều', 'Lao động tay chân', 'Di chuyển nhiều'] as $job): ?>
                             <label class="checkbox-tag">
@@ -120,7 +120,7 @@ require_once '../../templates/header.php';
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Tần suất vận động</label>
+                    <label class="form-label"><?php echo __('medical.history.exercise_freq_label'); ?></label>
                     <div style="display: flex; gap: 1.5rem; margin-top: 1rem;">
                         <?php foreach (['Không tập', 'Thỉnh thoảng', 'Thường xuyên'] as $freq): ?>
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
@@ -132,7 +132,7 @@ require_once '../../templates/header.php';
             </div>
 
             <div class="form-group" style="margin-top: 2rem;">
-                <label class="form-label">Tiền sử bản thân (Birth History)</label>
+                <label class="form-label"><?php echo __('medical.history.birth_history_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 0.75rem; align-items: center;">
                     <?php foreach (['Sinh thường', 'Sinh mổ', 'Có dùng kẹp/giác hút'] as $birth): ?>
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
@@ -142,7 +142,7 @@ require_once '../../templates/header.php';
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
                         <input type="radio" name="exam[lifestyle][birth_history]" value="Khác" <?php echo checked_v('lifestyle.birth_history', 'Khác'); ?>> Khác
                     </label>
-                    <input type="text" name="exam[lifestyle][birth_history_other]" placeholder="Ghi chú thêm..." class="form-input" style="width: 300px;" value="<?php echo get_v('lifestyle.birth_history_other'); ?>">
+                    <input type="text" name="exam[lifestyle][birth_history_other]" placeholder="<?php echo __('medical.history.other_note'); ?>" class="form-input" style="width: 300px;" value="<?php echo get_v('lifestyle.birth_history_other'); ?>">
                 </div>
             </div>
         </div>
@@ -150,11 +150,11 @@ require_once '../../templates/header.php';
         <!-- PART 2: TÌNH TRẠNG BỆNH LÝ HIỆN TẠI -->
         <div style="margin-bottom: 4rem;">
             <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
-                <i class="fas fa-file-waveform" style="color: var(--primary);"></i> PHẦN 2: TÌNH TRẠNG BỆNH LÝ HIỆN TẠI
+                <i class="fas fa-file-waveform" style="color: var(--primary);"></i> <?php echo __('medical.history.part2_title'); ?>
             </h3>
             
             <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label">4. Vị trí đau chính (Có thể chọn nhiều)</label>
+                <label class="form-label"><?php echo __('medical.history.pain_locations_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; align-items: center;">
                     <?php foreach ([
                         'Cổ (Halswirbelsäule)', 
@@ -171,12 +171,12 @@ require_once '../../templates/header.php';
                         <input type="checkbox" name="exam[pathology][locations][]" value="Khác" <?php echo checked_v('pathology.locations', 'Khác'); ?>>
                         <span>Khác</span>
                     </label>
-                    <input type="text" name="exam[pathology][locations_other]" placeholder="Vị trí khác..." class="form-input" style="width: 250px;" value="<?php echo get_v('pathology.locations_other'); ?>">
+                    <input type="text" name="exam[pathology][locations_other]" placeholder="<?php echo __('medical.history.locations_other_placeholder'); ?>" class="form-input" style="width: 250px;" value="<?php echo get_v('pathology.locations_other'); ?>">
                 </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label">5. Tính chất cơn đau</label>
+                <label class="form-label"><?php echo __('medical.history.pain_nature_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
                     <?php foreach (['Đau nhói', 'Đau âm ỉ', 'Tê bì', 'Yêu cơ', 'Hạn chế vận động'] as $nature): ?>
                         <label class="checkbox-tag">
@@ -188,7 +188,7 @@ require_once '../../templates/header.php';
             </div>
 
             <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label">6. Yếu tố kích hoạt / Làm tăng đau</label>
+                <label class="form-label"><?php echo __('medical.history.pain_triggers_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
                     <?php foreach (['Đi bộ', 'Ngồi lâu', 'Đứng lâu', 'Lúc ngủ', 'Sau khi ngủ dậy', 'Vận động mạnh'] as $trigger): ?>
                         <label class="checkbox-tag">
@@ -201,7 +201,7 @@ require_once '../../templates/header.php';
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <div class="form-group">
-                    <label class="form-label">7. Mức độ đau (0-10)</label>
+                    <label class="form-label"><?php echo __('medical.history.pain_intensity_label'); ?></label>
                     <div style="display: flex; align-items: center; gap: 1.5rem; margin-top: 1.5rem;">
                         <span style="color: #10b981; font-weight: 700;">0</span>
                         <input type="range" name="exam[pathology][intensity]" min="0" max="10" value="<?php echo get_v('pathology.intensity', 5); ?>" class="slider" style="flex-grow: 1;" oninput="document.getElementById('pain-val').innerText = this.value">
@@ -210,7 +210,7 @@ require_once '../../templates/header.php';
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">8. Thời gian triệu chứng</label>
+                    <label class="form-label"><?php echo __('medical.history.symptom_duration_label'); ?></label>
                     <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
                         <?php foreach ([
                             'Cấp tính (vài ngày)', 
@@ -226,7 +226,7 @@ require_once '../../templates/header.php';
             </div>
 
             <div class="form-group">
-                <label class="form-label">9. Nguyên nhân kích hoạt (Có thể chọn nhiều)</label>
+                <label class="form-label"><?php echo __('medical.history.activating_causes_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
                     <?php foreach ([
                         'Ngã/Va chạm', 
@@ -242,14 +242,14 @@ require_once '../../templates/header.php';
             </div>
 
             <div class="form-group">
-                <label class="form-label">10. Mô tả triệu chứng chính</label>
-                <textarea name="exam[pathology][description]" class="form-input" rows="4" placeholder="Nhập chi tiết về cơn đau, vị trí, tính chất..."><?php echo get_v('pathology.description'); ?></textarea>
+                <label class="form-label"><?php echo __('medical.history.description_label'); ?></label>
+                <textarea name="exam[pathology][description]" class="form-input" rows="4" placeholder="<?php echo __('medical.history.description_placeholder'); ?>"><?php echo get_v('pathology.description'); ?></textarea>
             </div>
 
             <!-- SƠ ĐỒ ĐIỂM ĐAU / CẢNH BÁO -->
             <div style="margin-top: 3rem; margin-bottom: 3rem;">
                 <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-edit"></i> SƠ ĐỒ ĐIỂM ĐAU / CẢNH BÁO
+                    <i class="fas fa-edit"></i> <?php echo __('medical.history.pain_map_title'); ?>
                 </h3>
                 
                 <div style="display: flex; gap: 3rem;">
@@ -260,19 +260,19 @@ require_once '../../templates/header.php';
                     
                     <div style="width: 350px;">
                         <div style="background: #fff9f0; padding: 1.25rem; border-radius: 12px; border: 1px solid #ffedd5; margin-bottom: 2rem;">
-                            <h4 style="font-size: 0.8rem; color: #9a3412; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 800;">Hướng dẫn:</h4>
+                            <h4 style="font-size: 0.8rem; color: #9a3412; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 800;"><?php echo __('medical.history.guide_title'); ?></h4>
                             <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.8rem; color: #9a3412; line-height: 1.6;">
-                                <li><strong>O:</strong> Phẫu thuật (Màu vàng)</li>
-                                <li><strong>X:</strong> Gãy xương (Màu đỏ)</li>
-                                <li><strong>M:</strong> Điểm đau (Theo cường độ)</li>
+                                <li><strong>O:</strong> <?php echo __('medical.history.guide_surgery'); ?></li>
+                                <li><strong>X:</strong> <?php echo __('medical.history.guide_fracture'); ?></li>
+                                <li><strong>M:</strong> <?php echo __('medical.history.guide_pain'); ?></li>
                             </ul>
                         </div>
 
                         <div style="display: flex; gap: 0.75rem; margin-bottom: 2rem;">
-                            <button type="button" class="tool-btn active" id="tool-marker" title="Điểm đau"><i class="fas fa-pencil-alt"></i></button>
+                            <button type="button" class="tool-btn active" id="tool-marker" title="<?php echo __('medical.history.tool_pain'); ?>"><i class="fas fa-pencil-alt"></i></button>
                             <button type="button" class="tool-btn" id="tool-surgery" style="color: #f59e0b; font-weight: 900;">O</button>
                             <button type="button" class="tool-btn" id="tool-fracture" style="color: #ef4444; font-weight: 900;">X</button>
-                            <button type="button" class="tool-btn" id="marker-eraser" title="Tẩy"><i class="fas fa-eraser"></i></button>
+                            <button type="button" class="tool-btn" id="marker-eraser" title="<?php echo __('medical.history.tool_eraser'); ?>"><i class="fas fa-eraser"></i></button>
                             <button type="button" class="tool-btn" id="marker-clear" style="margin-left: auto; color: #ef4444;"><i class="fas fa-trash"></i></button>
                         </div>
 
@@ -300,13 +300,12 @@ require_once '../../templates/header.php';
         <!-- PART 3: TIỀN SỬ Y KHOA & CHẤN THƯƠNG -->
         <div style="margin-bottom: 4rem;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
-                <i class="fas fa-history"></i> PHẦN 3: TIỀN SỬ Y KHOA & CHẤN THƯƠNG
+                <i class="fas fa-history"></i> <?php echo __('medical.history.part3_title'); ?>
             </h3>
-            <p style="font-style: italic; color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">(Kiểm tra các yếu tố ảnh hưởng đến cột sống)</p>
+            <p style="font-style: italic; color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;"><?php echo __('medical.history.part3_desc'); ?></p>
 
-            <!-- Suspected Causes -->
             <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label">8. Nguyên nhân nghi ngờ (nếu có): (nếu chọn thì hiện ra khung trống để điền thời gian đã xảy ra)</label>
+                <label class="form-label"><?php echo __('medical.history.suspected_causes_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.75rem;">
                     <?php foreach ([
                         'Tai nhận xe' => 'tai_nan_xe', 
@@ -318,7 +317,7 @@ require_once '../../templates/header.php';
                                 <input type="checkbox" name="exam[medical_history][causes][]" value="<?php echo $label; ?>" <?php echo checked_v('medical_history.causes', $label); ?>> <?php echo $label; ?>
                             </label>
                             <?php if ($val !== 'khong_ro'): ?>
-                                <input type="text" name="exam[medical_history][cause_time][<?php echo $label; ?>]" class="form-input" placeholder="Thời gian..." style="width: 120px; padding: 0.25rem 0.5rem; font-size: 0.8rem;" value="<?php echo get_v('medical_history.cause_time.'.$label); ?>">
+                                <input type="text" name="exam[medical_history][cause_time][<?php echo $label; ?>]" class="form-input" placeholder="<?php echo __('medical.history.time_placeholder'); ?>" style="width: 120px; padding: 0.25rem 0.5rem; font-size: 0.8rem;" value="<?php echo get_v('medical_history.cause_time.'.$label); ?>">
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -327,39 +326,39 @@ require_once '../../templates/header.php';
 
             <!-- Intervention History -->
             <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label">9. Tiền sử can thiệp:</label>
+                <label class="form-label"><?php echo __('medical.history.intervention_history_label'); ?></label>
                 <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem; padding-left: 1rem;">
                     <!-- Surgery -->
                     <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
-                            <input type="checkbox" name="exam[medical_history][surgery_flag]" value="1" <?php echo checked_v('medical_history.surgery_flag', '1'); ?>> Đã từng phẫu thuật
+                            <input type="checkbox" name="exam[medical_history][surgery_flag]" value="1" <?php echo checked_v('medical_history.surgery_flag', '1'); ?>> <?php echo __('medical.history.surgery_flag_label'); ?>
                         </label>
-                        <span style="font-size: 0.9rem;">(Vùng: <input type="text" name="exam[medical_history][surgery_area]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.surgery_area'); ?>"></span>
-                        <span style="font-size: 0.9rem;">thời gian: <input type="text" name="exam[medical_history][surgery_time]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.surgery_time'); ?>">)</span>
-                        <span style="font-size: 0.75rem; color: #b45309; font-weight: 600;">(Đánh dấu O vàng lên hình trên)</span>
+                        <span style="font-size: 0.9rem;">(<?php echo __('medical.history.surgery_area_label'); ?> <input type="text" name="exam[medical_history][surgery_area]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.surgery_area'); ?>"></span>
+                        <span style="font-size: 0.9rem;"><?php echo __('medical.history.surgery_time_label'); ?> <input type="text" name="exam[medical_history][surgery_time]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.surgery_time'); ?>">)</span>
+                        <span style="font-size: 0.75rem; color: #b45309; font-weight: 600;"><?php echo __('medical.history.surgery_mark_help'); ?></span>
                     </div>
                     
                     <!-- Fracture -->
                     <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
-                            <input type="checkbox" name="exam[medical_history][fracture_flag]" value="1" <?php echo checked_v('medical_history.fracture_flag', '1'); ?>> Từng bị gãy xương
+                            <input type="checkbox" name="exam[medical_history][fracture_flag]" value="1" <?php echo checked_v('medical_history.fracture_flag', '1'); ?>> <?php echo __('medical.history.fracture_flag_label'); ?>
                         </label>
-                        <span style="font-size: 0.9rem;">(từ lúc nào: <input type="text" name="exam[medical_history][fracture_time]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.fracture_time'); ?>">)</span>
-                        <span style="font-size: 0.9rem;">Vị trí nào? <input type="text" name="exam[medical_history][fracture_area]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.fracture_area'); ?>"></span>
-                        <span style="font-size: 0.75rem; color: #b91c1c; font-weight: 600;">(Đánh dấu X đỏ vào hình trên)</span>
+                        <span style="font-size: 0.9rem;">(<?php echo __('medical.history.fracture_time_label'); ?> <input type="text" name="exam[medical_history][fracture_time]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.fracture_time'); ?>">)</span>
+                        <span style="font-size: 0.9rem;"><?php echo __('medical.history.fracture_area_label'); ?> <input type="text" name="exam[medical_history][fracture_area]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.fracture_area'); ?>"></span>
+                        <span style="font-size: 0.75rem; color: #b91c1c; font-weight: 600;"><?php echo __('medical.history.fracture_mark_help'); ?></span>
                     </div>
 
                     <!-- Dental -->
                     <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
-                            <input type="checkbox" name="exam[medical_history][implants]" value="1" <?php echo checked_v('medical_history.implants', '1'); ?>> Đang đeo răng niềng/Có cấy ghép implant nha khoa
+                            <input type="checkbox" name="exam[medical_history][implants]" value="1" <?php echo checked_v('medical_history.implants', '1'); ?>> <?php echo __('medical.history.implants_flag_label'); ?>
                         </label>
-                        <span style="font-size: 0.9rem;">(từ lúc nào: <input type="text" name="exam[medical_history][implant_time]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.implant_time'); ?>">)</span>
+                        <span style="font-size: 0.9rem;">(<?php echo __('medical.history.fracture_time_label'); ?> <input type="text" name="exam[medical_history][implant_time]" class="form-input" style="display: inline-block; width: 140px;" value="<?php echo get_v('medical_history.implant_time'); ?>">)</span>
                     </div>
 
                     <!-- Imaging -->
                     <div style="display: flex; align-items: center; gap: 1.5rem;">
-                         <span style="font-size: 0.9rem; font-weight: 800;">Đã có phim chụp: *</span>
+                         <span style="font-size: 0.9rem; font-weight: 800;"><?php echo __('medical.history.imaging_label'); ?></span>
                          <?php foreach (['X-Ray', 'MRI/CT'] as $p): ?>
                             <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; font-weight: 600;">
                                 <input type="checkbox" name="exam[medical_history][imaging][]" value="<?php echo $p; ?>" <?php echo checked_v('medical_history.imaging', $p); ?>> <?php echo $p; ?>
@@ -369,7 +368,7 @@ require_once '../../templates/header.php';
 
                      <!-- Treatments -->
                     <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-                         <span style="font-size: 0.9rem; font-weight: 800;">Đã từng điều trị tại: *</span>
+                         <span style="font-size: 0.9rem; font-weight: 800;"><?php echo __('medical.history.prev_treatments_label'); ?></span>
                          <?php foreach (['Chiropractic khác', 'Vật lý trị liệu', 'Osteopath'] as $t): ?>
                             <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; font-weight: 600;">
                                 <input type="checkbox" name="exam[medical_history][prev_treatments][]" value="<?php echo $t; ?>" <?php echo checked_v('medical_history.prev_treatments', $t); ?>> <?php echo $t; ?>
@@ -380,16 +379,16 @@ require_once '../../templates/header.php';
                     <!-- Accident (Moved here from redundant section) -->
                     <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
-                            <input type="checkbox" name="exam[medical_history][accident_flag]" value="1" <?php echo checked_v('medical_history.accident_flag', '1'); ?>> Từng bị tai nạn xe cộ/ngã mạnh
+                            <input type="checkbox" name="exam[medical_history][accident_flag]" value="1" <?php echo checked_v('medical_history.accident_flag', '1'); ?>> <?php echo __('medical.history.accident_flag_label'); ?>
                         </label>
-                        <span style="font-size: 0.9rem;">(Vùng chấn thương: <input type="text" name="exam[medical_history][accident_area]" class="form-input" style="display: inline-block; width: 250px;" value="<?php echo get_v('medical_history.accident_area'); ?>">)</span>
+                        <span style="font-size: 0.9rem;">(<?php echo __('medical.history.accident_area_label'); ?> <input type="text" name="exam[medical_history][accident_area]" class="form-input" style="display: inline-block; width: 250px;" value="<?php echo get_v('medical_history.accident_area'); ?>">)</span>
                     </div>
                 </div>
             </div>
 
             <!-- Disease Groups (Restored) -->
             <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label">Nhóm bệnh Cơ - Xương - Khớp (Cực kỳ quan trọng)</label>
+                <label class="form-label"><?php echo __('medical.history.ortho_diseases_label'); ?></label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                     <?php foreach ([
                         'Thoát vị đĩa đệm (Bandscheibenvorfall): Đã có chẩn đoán xác định.',
@@ -408,7 +407,7 @@ require_once '../../templates/header.php';
             </div>
 
             <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label">Nhóm bệnh Nội khoa & Hệ thống</label>
+                <label class="form-label"><?php echo __('medical.history.internal_diseases_label'); ?></label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                     <?php foreach ([
                         'Ung thư (Krebs): Bất kỳ loại nào, đặc biệt là ung thư xương hoặc di cá.',
@@ -427,10 +426,10 @@ require_once '../../templates/header.php';
 
             <!-- Medications -->
             <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label">Thuốc/Thực phẩm chức năng đang dùng (Ghi rõ tên thuốc)</label>
+                <label class="form-label"><?php echo __('medical.history.medications_label'); ?></label>
                 <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1rem;">
-                    <span style="font-size: 0.9rem; font-weight: 800; color: var(--primary);">Dùng từ:</span>
-                    <input type="text" name="exam[medical_history][meds_time]" class="form-input" placeholder="ví dụ: 6 tháng, 2 năm..." style="display: inline-block; width: 200px;" value="<?php echo get_v('medical_history.meds_time'); ?>">
+                    <span style="font-size: 0.9rem; font-weight: 800; color: var(--primary);"><?php echo __('medical.history.meds_time_label'); ?></span>
+                    <input type="text" name="exam[medical_history][meds_time]" class="form-input" placeholder="<?php echo __('medical.history.meds_time_placeholder'); ?>" style="display: inline-block; width: 200px;" value="<?php echo get_v('medical_history.meds_time'); ?>">
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
@@ -448,13 +447,13 @@ require_once '../../templates/header.php';
                     <?php endforeach; ?>
                 </div>
 
-                <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Ghi chú thuốc cụ thể / thuốc khác:</label>
-                <textarea name="exam[medical_history][meds_list]" class="form-input" rows="2" placeholder="Tên thuốc đang sử dụng..."><?php echo get_v('medical_history.meds_list'); ?></textarea>
+                <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;"><?php echo __('medical.history.meds_list_label'); ?></label>
+                <textarea name="exam[medical_history][meds_list]" class="form-input" rows="2" placeholder="<?php echo __('medical.history.meds_list_placeholder'); ?>"><?php echo get_v('medical_history.meds_list'); ?></textarea>
             </div>
 
             <!-- Red Flags -->
             <div class="form-group" style="margin-top: 2rem;">
-                <label class="form-label" style="color: #991b1b;"><i class="fas fa-exclamation-triangle"></i> Dấu hiệu thần kinh cấp cứu (Red Flags)</label>
+                <label class="form-label" style="color: #991b1b;"><i class="fas fa-exclamation-triangle"></i> <?php echo __('medical.history.red_flags_label'); ?></label>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
                     <?php foreach (['Mất kiểm soát đại/tiểu tiện', 'Tê vùng yên ngựa', 'Yếu liệt chi tiến triển nhanh'] as $flag): ?>
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #991b1b; font-weight: 600; cursor: pointer;">
@@ -468,14 +467,14 @@ require_once '../../templates/header.php';
         <!-- PART 4: RÀ SOÁT HỆ THỐNG (ROS) -->
         <div style="margin-bottom: 4rem;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
-                <i class="fas fa-stethoscope"></i> PHẦN 4: RÀ SOÁT HỆ THỐNG (ROS)
+                <i class="fas fa-stethoscope"></i> <?php echo __('medical.history.part4_title'); ?>
             </h3>
             <div class="form-group">
-                <label class="form-label">Chọn các triệu chứng liên quan:</label>
+                <label class="form-label"><?php echo __('medical.history.ros_label'); ?></label>
                 
                 <!-- Vùng đầu mặt -->
                 <div style="margin-bottom: 2rem; margin-top: 1rem;">
-                    <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;">Vùng đầu mặt:</div>
+                    <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;"><?php echo __('medical.history.ros_head_face'); ?></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
                         <?php foreach ([
                             'Đau đầu', 'Chóng mặt', 'Ù tai', 
@@ -491,7 +490,7 @@ require_once '../../templates/header.php';
 
                 <!-- Cơ quan liên quan -->
                 <div style="margin-bottom: 2rem;">
-                    <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;">Cơ quan liên quan:</div>
+                    <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;"><?php echo __('medical.history.ros_organs'); ?></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
                         <?php foreach ([
                             'Tê lan xuống ngón tay', 'Đau tức ngực (không do tim)', 
@@ -507,7 +506,7 @@ require_once '../../templates/header.php';
 
                 <!-- Cơ sở hạ tầng (Bàn chân) -->
                 <div>
-                    <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;">Cơ sở hạ tầng (Bàn chân):</div>
+                    <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;"><?php echo __('medical.history.ros_feet'); ?></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
                         <?php foreach ([
                             'Chênh lệch chiều dài chân', 
@@ -528,7 +527,7 @@ require_once '../../templates/header.php';
         <!-- PART 5: MỤC TIÊU ĐIỀU TRỊ -->
         <div style="margin-bottom: 4rem;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
-                <i class="fas fa-bullseye"></i> PHẦN 5: MỤC TIÊU ĐIỀU TRỊ
+                <i class="fas fa-bullseye"></i> <?php echo __('medical.history.part5_title'); ?>
             </h3>
             <div class="form-group">
                 <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem;">
@@ -543,14 +542,14 @@ require_once '../../templates/header.php';
         </div>
 
         <div class="form-group" style="margin-top: 2rem; margin-bottom: 3rem;">
-            <label class="form-label text-xs uppercase text-muted font-weight-800">Ghi chú bổ sung khác</label>
-            <textarea name="exam[additional_notes]" class="form-input" rows="3" placeholder="Ghi chú thêm về tiền sử..."><?php echo get_v('additional_notes'); ?></textarea>
+            <label class="form-label text-xs uppercase text-muted font-weight-800"><?php echo __('medical.history.additional_notes_label'); ?></label>
+            <textarea name="exam[additional_notes]" class="form-input" rows="3" placeholder="<?php echo __('medical.history.additional_notes_placeholder'); ?>"><?php echo get_v('additional_notes'); ?></textarea>
         </div>
 
         <div style="margin-top: 3.5rem; display: flex; gap: 1.5rem; justify-content: flex-end; border-top: 2px solid #f1f5f9; padding-top: 2rem;">
-            <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1.25rem 3rem; font-weight: 700; border-radius: 16px;">HỦY BỎ</a>
+            <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1.25rem 3rem; font-weight: 700; border-radius: 16px;"><?php echo __('common.cancel'); ?></a>
             <button type="submit" class="btn btn-primary" style="padding: 1.25rem 5rem; font-weight: 800; font-size: 1.25rem; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);">
-                <i class="fas fa-save" style="margin-right: 0.5rem;"></i> LƯU GIỮ HỒ SƠ
+                <i class="fas fa-save" style="margin-right: 0.5rem;"></i> <?php echo __('medical.history.btn_save'); ?>
             </button>
         </div>
     </form>

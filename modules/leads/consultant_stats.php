@@ -4,22 +4,22 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-$page_title = 'Thống kê Hiệu suất Tư vấn';
-$current_page = 'leads';
+$page_title = __('leads.consultant.title');
+$current_page = 'leads_consultant_stats';
 require_once '../../templates/header.php';
 
 $db = getDB();
 
 // Period Filter Logic
 $period = $_GET['period'] ?? 'month';
-$start_date = $_GET['start_date'] ?? '';
-$end_date = $_GET['end_date'] ?? '';
-$range = get_date_range($period, $start_date, $end_date);
+$start_date_filter = $_GET['start_date'] ?? '';
+$end_date_filter = $_GET['end_date'] ?? '';
+$range = get_date_range($period, $start_date_filter, $end_date_filter);
 $params = [$range['start'], $range['end']];
 
 // 1. Consultant Performance Data (Users with roles: doctor, cskh, admin)
 $stmt = $db->prepare("
-    SELECT u.id, u.full_name, 
+    SELECT u.id, u.full_name,
            COUNT(l.id) as total_assigned,
            SUM(CASE WHEN l.status = 'converted' THEN 1 ELSE 0 END) as successful_conversions,
            SUM(CASE WHEN l.status = 'scheduled' THEN 1 ELSE 0 END) as scheduled_count,
@@ -50,91 +50,237 @@ $global_conversion_rate = $total_assigned_all > 0 ? round(($total_success_all / 
 
 // 3. Unassigned Leads Count
 $stmt = $db->prepare("
-    SELECT COUNT(*) 
-    FROM leads 
+    SELECT COUNT(*)
+    FROM leads
     WHERE consultant_id IS NULL AND created_at BETWEEN ? AND ?
 ");
 $stmt->execute($params);
 $unassigned_count = $stmt->fetchColumn();
 // 3. Status map for visual consistency
 $status_map = [
-    'converted' => ['label' => 'Thành công', 'color' => '#10b981'],
-    'scheduled' => ['label' => 'Đã hẹn', 'color' => '#8b5cf6'],
-    'contacted' => ['label' => 'Đang xử lý', 'color' => '#f59e0b'],
-    'pending' => ['label' => 'Chờ duyệt', 'color' => '#94a3b8']
+    'converted' => ['label' => __('leads.status.converted'), 'color' => '#10b981'],
+    'scheduled' => ['label' => __('leads.status.scheduled'), 'color' => '#8b5cf6'],
+    'contacted' => ['label' => __('leads.status.contacted'), 'color' => '#f59e0b'],
+    'pending' => ['label' => __('leads.status.pending'), 'color' => '#94a3b8']
 ];
 ?>
 
 <div class="consultant-stats-container" style="max-width: 1400px; margin: 0 auto; padding: 1.5rem;">
-    <!-- Adaptive Filter Hub -->
-    <div class="filter-bar-leads" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem; padding: 1.5rem; background: white; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-        <div class="period-toggle-leads" style="display: flex; background: #f1f5f9; padding: 5px; border-radius: 14px; gap: 4px;">
-            <?php foreach (['today' => 'Hôm nay', 'week' => 'Tuần', 'month' => 'Tháng', 'quarter' => 'Quý', 'year' => 'Năm'] as $p => $label): ?>
-                <a href="?period=<?php echo $p; ?>" class="btn-toggle-lead <?php echo $period === $p ? 'active' : ''; ?>" style="padding: 0.7rem 1.5rem; border-radius: 11px; font-size: 0.9rem; font-weight: 600; color: #64748b; text-decoration: none; transition: all 0.25s ease; border: none; background: transparent; cursor: pointer; <?php echo $period === $p ? 'background: white; color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);' : ''; ?>">
-                    <?php echo $label; ?>
+    <div class="page-header" style="margin-bottom: 2rem;">
+        <div>
+            <h1 class="page-title"><?php echo __('leads.consultant.title'); ?></h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                <?php echo __('leads.consultant.subtitle'); ?>
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <a href="dashboard.php" class="btn btn-secondary">
+                <i class="fas fa-chart-bar"></i> <?php echo __('leads.consultant.btn_dashboard'); ?>
+            </a>
+        </div>
+    </div>
+
+    <!-- Premium Filter Hub -->
+    <style>
+    .premium-filter-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+        padding: 1.25rem 2rem;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 24px;
+        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+    }
+    .filter-group-main {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .filter-label-fancy {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+    }
+    .modern-period-group {
+        display: flex;
+        background: #f1f5f9;
+        padding: 0.35rem;
+        border-radius: 14px;
+        gap: 0.25rem;
+    }
+    .modern-filter-btn {
+        padding: 0.5rem 1.25rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #64748b;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: none;
+        background: transparent;
+    }
+    .modern-filter-btn:hover {
+        color: #1e293b;
+        background: rgba(255,255,255,0.5);
+    }
+    .modern-filter-btn.active {
+        color: white;
+        background: var(--primary);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .custom-range-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .custom-date-input {
+        border: none;
+        background: transparent;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
+        outline: none;
+        width: 130px;
+    }
+    .filter-apply-btn {
+        background: #0f172a;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        border: none;
+    }
+    .filter-apply-btn:hover {
+        background: #1e293b;
+        transform: scale(1.05);
+    }
+    </style>
+
+    <form method="GET" class="premium-filter-container" id="filterForm">
+        <div class="filter-group-main">
+            <div class="filter-label-fancy">
+                <i class="fas fa-calendar-alt" style="color: var(--primary);"></i>
+                <span><?php echo __('leads.index.filter_time'); ?></span>
+            </div>
+            
+            <div class="modern-period-group">
+                <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
+                <a href="#" class="modern-filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod(event, '')"><?php echo __('common.all'); ?></a>
+                <a href="#" class="modern-filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod(event, 'today')"><?php echo __('filter.today'); ?></a>
+                <a href="#" class="modern-filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod(event, 'week')"><?php echo __('filter.week'); ?></a>
+                <a href="#" class="modern-filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod(event, 'month')"><?php echo __('filter.month'); ?></a>
+                <a href="#" class="modern-filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod(event, 'quarter')"><?php echo __('filter.quarter'); ?></a>
+                <a href="#" class="modern-filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod(event, 'year')"><?php echo __('filter.year'); ?></a>
+                <a href="#" class="modern-filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod(event, 'custom')">
+                    <i class="fas fa-sliders-h"></i> <?php echo __('filter.custom'); ?>
                 </a>
-            <?php endforeach; ?>
+            </div>
+
+            <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
+                <div class="custom-range-card" style="border-color: var(--primary-light);">
+                    <?php if($period === 'month'): ?>
+                        <select name="sel_month" class="custom-date-input" style="width: auto;" onchange="this.form.submit()">
+                            <?php for($m=1; $m<=12; $m++): ?>
+                                <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    <?php endif; ?>
+                    
+                    <?php if($period === 'quarter'): ?>
+                        <select name="sel_quarter" class="custom-date-input" style="width: auto;" onchange="this.form.submit()">
+                            <?php for($q=1; $q<=4; $q++): ?>
+                                <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    <?php endif; ?>
+
+                    <select name="sel_year" class="custom-date-input" style="width: auto;" onchange="this.form.submit()">
+                        <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
+                            <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+
+            <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; align-items: center; gap: 0.75rem;">
+                <div class="custom-range-card">
+                    <input type="date" name="start_date" class="custom-date-input" value="<?php echo e($start_date_filter); ?>">
+                    <span style="color: #cbd5e1; font-weight: 800;">→</span>
+                    <input type="date" name="end_date" class="custom-date-input" value="<?php echo e($end_date_filter); ?>">
+                </div>
+                <button type="submit" class="filter-apply-btn" title="<?php echo __('common.apply'); ?>">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
         </div>
         
-        <form method="GET" style="display: flex; align-items: center; gap: 0.8rem;">
-            <input type="hidden" name="period" value="custom">
-            <div style="display: flex; align-items: center; background: #f8fafc; padding: 0.3rem 0.8rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <input type="date" name="start_date" value="<?php echo e($range['start_val'] ?? ''); ?>" style="border:none; background:transparent; font-size: 0.9rem; font-weight: 600; color: #1e293b; outline:none;">
-                <span style="padding: 0 0.5rem; color: #94a3b8;"><i class="fas fa-arrow-right"></i></span>
-                <input type="date" name="end_date" value="<?php echo e($range['end_val'] ?? ''); ?>" style="border:none; background:transparent; font-size: 0.9rem; font-weight: 600; color: #1e293b; outline:none;">
-            </div>
-            <button type="submit" class="btn btn-primary" style="padding: 0.7rem 1.5rem; border-radius: 12px; font-weight: 700;">Áp dụng</button>
-        </form>
-    </div>
+        <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">
+            <i class="fas fa-info-circle"></i> Tùy chọn xem báo cáo theo thời gian
+        </div>
+    </form>
 
     <!-- KPI Display Cards -->
     <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2.5rem;">
         <div class="kpi-card" style="padding: 2rem; border-radius: 24px; color: white; background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%); position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.3);">
             <i class="fas fa-user-check" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.2; transform: rotate(-15deg);"></i>
-            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;">Tổng Lead Phân Bổ</span>
+            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;"><?php echo __('leads.consultant.kpi_total_assigned'); ?></span>
             <span style="display: block; font-size: 3rem; font-weight: 900; line-height: 1;"><?php echo number_format($total_assigned_all); ?></span>
-            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;">Số lượng lead đã được giao cho đội ngũ</span>
+            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;"><?php echo __('leads.consultant.kpi_total_assigned_desc'); ?></span>
         </div>
 
         <div class="kpi-card" style="padding: 2rem; border-radius: 24px; color: white; background: linear-gradient(135deg, #10b981 0%, #34d399 100%); position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);">
             <i class="fas fa-trophy" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.2; transform: rotate(-15deg);"></i>
-            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;">Chốt Thành Công</span>
+            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;"><?php echo __('leads.consultant.kpi_successful_conversions'); ?></span>
             <span style="display: block; font-size: 3rem; font-weight: 900; line-height: 1;"><?php echo number_format($total_success_all); ?></span>
-            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;">KPI quan trọng nhất của đội ngũ tư vấn</span>
+            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;"><?php echo __('leads.consultant.kpi_successful_conversions_desc'); ?></span>
         </div>
 
         <div class="kpi-card" style="padding: 2rem; border-radius: 24px; color: white; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3);">
             <i class="fas fa-chart-line" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.2; transform: rotate(-15deg);"></i>
-            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;">Tỷ Lệ Chốt Tổng</span>
+            <span style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 1rem;"><?php echo __('leads.consultant.kpi_conversion_rate'); ?></span>
             <span style="display: block; font-size: 3rem; font-weight: 900; line-height: 1;"><?php echo $global_conversion_rate; ?><small style="font-size: 1.5rem;">%</small></span>
-            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;">Chỉ số hiệu quả trung bình của toàn bộ nhân sự</span>
+            <span style="display: block; font-size: 0.85rem; margin-top: 1rem; opacity: 0.8; font-weight: 500;"><?php echo __('leads.consultant.kpi_conversion_rate_desc'); ?></span>
         </div>
     </div>
 
     <!-- Ranking Table -->
-    <div class="ranking-card" style="background: white; border-radius: 24px; padding: 2.5rem; box-shadow: 0 4px 24px rgba(0,0,0,0.03);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
-            <div>
-                <h3 style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin: 0;">Bảng Xếp Hạng Nhân Sự</h3>
-                <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.25rem;">Xếp hạng dựa trên số lượng khách hàng chốt thành công</p>
-            </div>
-            <button class="btn btn-outline" style="padding: 0.6rem 1.2rem; border-radius: 12px; font-weight: 700; border: 1.5px solid #e2e8f0; color: #64748b;">
-                <i class="fas fa-download" style="margin-right: 0.5rem;"></i> Xuất báo cáo
-            </button>
-        </div>
 
-        <div class="table-responsive">
-            <table class="ranking-table" style="width: 100%; border-collapse: separate; border-spacing: 0 0.75rem;">
-                <thead>
-                    <tr style="text-align: left;">
-                        <th style="padding: 0.75rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Xếp hạng</th>
-                        <th style="padding: 0.75rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Tư vấn viên</th>
-                        <th style="padding: 0.75rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Tổng Giao</th>
-                        <th style="padding: 0.75rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Thành công</th>
-                        <th style="padding: 0.75rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Tỷ lệ Chốt</th>
-                        <th style="padding: 0.75rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Hoa hồng dự tính</th>
-                    </tr>
-                </thead>
+<div class="card" style="padding: 1.5rem; overflow-x: auto;">
+    <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+        <thead>
+            <tr style="text-align: left; background: #f8fafc;">
+                <th style="padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;"><?php echo __('leads.consultant.table_name'); ?></th>
+                <th style="padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;"><?php echo __('leads.consultant.table_total'); ?></th>
+                <th style="padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;"><?php echo __('leads.consultant.table_contacted'); ?></th>
+                <th style="padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;"><?php echo __('leads.consultant.table_scheduled'); ?></th>
+                <th style="padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;"><?php echo __('leads.consultant.table_converted'); ?></th>
+                <th style="padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;"><?php echo __('leads.consultant.table_rate'); ?></th>
+            </tr>
+        </thead>
                 <tbody>
                     <?php if ($unassigned_count > 0): ?>
                         <tr style="background: #fff1f2; transition: all 0.2s ease;">
@@ -149,8 +295,8 @@ $status_map = [
                                         ?
                                     </div>
                                     <div>
-                                        <div style="font-weight: 700; color: #991b1b;">Chưa phân bổ</div>
-                                        <div style="font-size: 0.75rem; color: #b91c1c; font-weight: 500;">Cần được giao cho nhân sự</div>
+                                        <div style="font-weight: 700; color: #991b1b;"><?php echo __('leads.consultant.unassigned_title'); ?></div>
+                                        <div style="font-size: 0.75rem; color: #b91c1c; font-weight: 500;"><?php echo __('leads.consultant.unassigned_desc'); ?></div>
                                     </div>
                                 </div>
                             </td>
@@ -168,9 +314,6 @@ $status_map = [
                                     <span style="font-weight: 800; color: #991b1b; font-size: 0.85rem;">0%</span>
                                 </div>
                             </td>
-                            <td style="padding: 1.5rem 1rem; border-radius: 0 16px 16px 0;">
-                                <span style="font-weight: 800; color: #94a3b8; background: #f1f5f9; padding: 0.4rem 0.8rem; border-radius: 8px;">0đ</span>
-                            </td>
                         </tr>
                     <?php endif; ?>
 
@@ -178,7 +321,6 @@ $status_map = [
                     $rank = 1;
                     foreach ($consultant_stats as $s): 
                         $rate = $s['total_assigned'] > 0 ? round(($s['successful_conversions'] / $s['total_assigned']) * 100, 1) : 0;
-                        $commission = $s['successful_conversions'] * 50000; // Example: 50k per conversion
                     ?>
                         <tr style="background: #f8fafc; transition: all 0.2s ease;">
                             <td style="padding: 1.5rem 1rem; border-radius: 16px 0 0 16px;">
@@ -211,11 +353,6 @@ $status_map = [
                                     <span style="font-weight: 800; color: #1e293b; font-size: 0.85rem;"><?php echo $rate; ?>%</span>
                                 </div>
                             </td>
-                            <td style="padding: 1.5rem 1rem; border-radius: 0 16px 16px 0;">
-                                <span style="font-weight: 800; color: #6366f1; background: rgba(99, 102, 241, 0.1); padding: 0.4rem 0.8rem; border-radius: 8px;">
-                                    <?php echo number_format($commission, 0, ',', '.'); ?>đ
-                                </span>
-                            </td>
                         </tr>
                     <?php 
                         $rank++;
@@ -246,6 +383,25 @@ $status_map = [
         </div>
     </div>
 </div>
+
+<script>
+function setPeriod(event, p) {
+    if(event) event.preventDefault();
+    document.getElementById('periodInput').value = p;
+    if (p !== 'custom') {
+        const s = document.querySelector('input[name="start_date"]');
+        const e = document.querySelector('input[name="end_date"]');
+        if (s) s.value = '';
+        if (e) e.value = '';
+        const form = document.getElementById('filterForm');
+        if(form) form.submit();
+    } else {
+        document.getElementById('customDates').style.display = 'flex';
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        if(event && event.target) event.target.classList.add('active');
+    }
+}
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>

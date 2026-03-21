@@ -9,7 +9,7 @@ $db = getDB();
 $session_id = $_GET['id'] ?? 0;
 
 if (!$session_id) {
-    die("Thiếu mã buổi khám.");
+    die(__('medical.print.err_missing_id'));
 }
 
 // Fetch Session Info
@@ -25,7 +25,7 @@ $stmt->execute([$session_id]);
 $session = $stmt->fetch();
 
 if (!$session) {
-    die("Không tìm thấy dữ liệu buổi khám.");
+    die(__('medical.print.err_not_found'));
 }
 
 // Fetch Med History Records
@@ -39,7 +39,7 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>In Phiếu Khám - <?php echo e($session['patient_name']); ?></title>
+    <title><?php echo sprintf(__('medical.print.page_title'), e($session['patient_name'])); ?></title>
     <style>
         @media print {
             .no-print { display: none; }
@@ -140,66 +140,66 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
 </head>
 <body>
     <div class="no-print" style="text-align: center;">
-        <button onclick="window.print()" class="btn-print">XÁC NHẬN IN PHIẾU</button>
+        <button onclick="window.print()" class="btn-print"><?php echo __('medical.print.btn_print'); ?></button>
     </div>
 
     <div class="print-container">
         <div class="header">
             <div class="clinic-info">
-                <h1>PHÒNG KHÁM CHUYÊN KHOA</h1>
-                <p>Địa chỉ: 123 Đường ABC, Quận XYZ, TP.HCM</p>
-                <p>Hotline: 0123 456 789 - Website: example.com</p>
+                <h1><?php echo __('medical.print.clinic_name'); ?></h1>
+                <p><?php echo __('medical.print.clinic_address'); ?></p>
+                <p><?php echo __('medical.print.clinic_contact'); ?></p>
             </div>
             <div style="text-align: right;">
-                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Mã buổi khám: #<?php echo str_pad($session_id, 6, '0', STR_PAD_LEFT); ?></p>
-                <p style="margin: 5px 0 0 0; font-weight: 700; color: #3b82f6;">Ngày: <?php echo $session['session_date'] ? date('d/m/Y', strtotime($session['session_date'])) : date('d/m/Y'); ?></p>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.session_code_label'); ?><?php echo str_pad($session_id, 6, '0', STR_PAD_LEFT); ?></p>
+                <p style="margin: 5px 0 0 0; font-weight: 700; color: #3b82f6;"><?php echo __('medical.print.date_label'); ?><?php echo $session['session_date'] ? date('d/m/Y', strtotime($session['session_date'])) : date('d/m/Y'); ?></p>
             </div>
         </div>
 
         <div class="doc-title">
-            <h2>PHIẾU KẾT LUẬN & ĐIỀU TRỊ</h2>
+            <h2><?php echo __('medical.print.doc_title'); ?></h2>
         </div>
 
         <div class="patient-box">
             <div class="col">
-                <div class="info-item"><label>Họ tên:</label> <strong><?php echo e($session['patient_name']); ?></strong></div>
-                <div class="info-item"><label>Ngày sinh:</label> <?php echo $session['birthday'] ? date('d/m/Y', strtotime($session['birthday'])) : 'N/A'; ?> (<?php echo $age; ?> tuổi)</div>
-                <div class="info-item"><label>Giới tính:</label> <?php echo $session['gender'] === 'male' ? 'Nam' : 'Nữ'; ?></div>
+                <div class="info-item"><label><?php echo __('medical.print.patient_name'); ?></label> <strong><?php echo e($session['patient_name']); ?></strong></div>
+                <div class="info-item"><label><?php echo __('medical.print.dob'); ?></label> <?php echo $session['birthday'] ? date('d/m/Y', strtotime($session['birthday'])) : 'N/A'; ?> <?php echo sprintf(__('medical.print.age_format'), $age); ?></div>
+                <div class="info-item"><label><?php echo __('medical.print.gender_label'); ?></label> <?php echo $session['gender'] === 'male' ? __('common.male') : __('common.female'); ?></div>
             </div>
             <div class="col">
-                <div class="info-item"><label>SĐT:</label> <?php echo e($session['phone']); ?></div>
-                <div class="info-item"><label>Địa chỉ:</label> <?php echo e($session['address']); ?></div>
-                <div class="info-item"><label>Bác sĩ:</label> <strong><?php echo e($session['doctor_name']); ?></strong></div>
+                <div class="info-item"><label><?php echo __('medical.print.phone'); ?></label> <?php echo e($session['phone']); ?></div>
+                <div class="info-item"><label><?php echo __('medical.print.address'); ?></label> <?php echo e($session['address']); ?></div>
+                <div class="info-item"><label><?php echo __('medical.print.doctor'); ?></label> <strong><?php echo e($session['doctor_name']); ?></strong></div>
             </div>
         </div>
 
         <div class="section">
-            <div class="section-title">I. ĐÁNH GIÁ LÂM SÀNG (ASSESSMENT)</div>
+            <div class="section-title"><?php echo __('medical.print.sec1_title'); ?></div>
             <div class="rich-content">
-                <?php echo $session['assessment'] ?: '<i>(Chưa có thông tin)</i>'; ?>
+                <?php echo $session['assessment'] ?: __('medical.print.no_info'); ?>
             </div>
         </div>
 
         <div class="section">
-            <div class="section-title">II. KẾ HOẠCH ĐIỀU TRỊ (PLAN)</div>
+            <div class="section-title"><?php echo __('medical.print.sec2_title'); ?></div>
             <div class="rich-content">
-                <?php echo $session['treatment_plan'] ?: '<i>(Chưa có thông tin)</i>'; ?>
+                <?php echo $session['treatment_plan'] ?: __('medical.print.no_info'); ?>
             </div>
         </div>
 
         <div class="section">
-            <div class="section-title">III. GHI CHÚ THÀNH PHẦN</div>
+            <div class="section-title"><?php echo __('medical.print.sec3_title'); ?></div>
             <div style="font-size: 13px; color: #64748b;">
-                Đã thực hiện: 
+                <?php echo __('medical.print.performed_label'); ?>
                 <?php 
                 $done = [];
                 foreach($history_records as $rec) {
-                    if($rec['type'] === 'chiro_history') $done[] = "Tiền sử Chiropractic";
-                    if($rec['type'] === 'chiro_exam') $done[] = "Khám thực thể";
-                    if($rec['type'] === 'chiropractic' || $rec['type'] === 'soap_note') $done[] = "Theo dõi nội bộ (SOAP)";
-                    if($rec['type'] === 'dong_y') $done[] = "Khám Đông Y";
+                    if($rec['type'] === 'chiro_history') $done[] = __('medical.print.type_chiro_history');
+                    if($rec['type'] === 'chiro_exam') $done[] = __('medical.print.type_chiro_exam');
+                    if($rec['type'] === 'chiropractic' || $rec['type'] === 'soap_note') $done[] = __('medical.print.type_soap');
+                    if($rec['type'] === 'dong_y') $done[] = __('medical.print.type_dong_y');
                 }
-                echo implode(', ', $done) ?: 'Chưa có thành phần nào';
+                echo implode(', ', $done) ?: __('medical.print.no_components');
                 ?>
             </div>
         </div>
@@ -216,7 +216,7 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
         if (!empty($all_att)):
         ?>
         <div class="section" style="page-break-inside: avoid;">
-            <div class="section-title">IV. HÌNH ẢNH ĐÍNH KÈM</div>
+            <div class="section-title"><?php echo __('medical.print.sec4_title'); ?></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                 <?php foreach ($all_att as $att): ?>
                 <?php if (strpos($att['type'] ?? '', 'image') !== false): ?>
@@ -232,12 +232,12 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
 
         <div class="footer-sig">
             <div class="sig-box">
-                <p>Khách hàng ký nhận</p>
-                <p style="font-weight: 400; font-size: 12px; color: #94a3b8;">(Ký và ghi rõ họ tên)</p>
+                <p><?php echo __('medical.print.sig_customer'); ?></p>
+                <p style="font-weight: 400; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.sig_note_1'); ?></p>
             </div>
             <div class="sig-box">
-                <p>Bác sĩ chuyên khoa</p>
-                <div style="font-size: 20px; color: #cbd5e1; margin: 20px 0;">(Ký và đóng dấu)</div>
+                <p><?php echo __('medical.print.sig_doctor'); ?></p>
+                <div style="font-size: 20px; color: #cbd5e1; margin: 20px 0;"><?php echo __('medical.print.sig_note_2'); ?></div>
                 <p><?php echo e($session['doctor_name']); ?></p>
             </div>
         </div>

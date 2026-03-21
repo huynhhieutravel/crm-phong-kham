@@ -24,13 +24,13 @@ $period_label = $range['label'];
         <!-- Tabs -->
         <div class="dashboard-tabs" style="display: flex; background: #f1f5f9; padding: 0.35rem; border-radius: 12px; gap: 0.25rem;">
             <a href="index.php?tab=overview&period=<?php echo $period; ?>" class="tab-item <?php echo $tab === 'overview' ? 'active' : ''; ?>" style="padding: 0.6rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; color: <?php echo $tab === 'overview' ? 'var(--primary)' : 'var(--text-muted)'; ?>; background: <?php echo $tab === 'overview' ? 'white' : 'transparent'; ?>; box-shadow: <?php echo $tab === 'overview' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'; ?>;">
-                <i class="fas fa-th-large"></i> Tổng quan
+                <i class="fas fa-th-large"></i> <?php echo __('menu.dashboard'); ?>
             </a>
             <a href="index.php?tab=marketing&period=<?php echo $period; ?>" class="tab-item <?php echo $tab === 'marketing' ? 'active' : ''; ?>" style="padding: 0.6rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; color: <?php echo $tab === 'marketing' ? 'var(--primary)' : 'var(--text-muted)'; ?>; background: <?php echo $tab === 'marketing' ? 'white' : 'transparent'; ?>; box-shadow: <?php echo $tab === 'marketing' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'; ?>;">
-                <i class="fas fa-bullhorn"></i> Marketing
+                <i class="fas fa-bullhorn"></i> <?php echo __('menu.leads'); ?>
             </a>
             <a href="index.php?tab=clinical&period=<?php echo $period; ?>" class="tab-item <?php echo $tab === 'clinical' ? 'active' : ''; ?>" style="padding: 0.6rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; color: <?php echo $tab === 'clinical' ? 'var(--primary)' : 'var(--text-muted)'; ?>; background: <?php echo $tab === 'clinical' ? 'white' : 'transparent'; ?>; box-shadow: <?php echo $tab === 'clinical' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'; ?>;">
-                <i class="fas fa-stethoscope"></i> Lâm sàng
+                <i class="fas fa-stethoscope"></i> <?php echo __('dashboard.clinical'); ?>
             </a>
         </div>
 
@@ -38,19 +38,27 @@ $period_label = $range['label'];
         <form method="GET" class="period-filter-form" style="display: flex; align-items: center; gap: 0.5rem;">
             <input type="hidden" name="tab" value="<?php echo e($tab); ?>">
             <div class="btn-group" style="display: flex; background: #f1f5f9; padding: 0.25rem; border-radius: 10px; gap: 0.1rem;">
-                <?php foreach(['today' => 'Hôm nay', 'week' => 'Tuần', 'month' => 'Tháng', 'quarter' => 'Quý', 'year' => 'Năm'] as $val => $lbl): ?>
+                <?php 
+                $periodLabels = [
+                    'today' => __('filter.today'),
+                    'week' => __('filter.week'),
+                    'month' => __('filter.month'),
+                    'quarter' => __('filter.quarter'),
+                    'year' => __('filter.year')
+                ];
+                foreach($periodLabels as $val => $lbl): ?>
                     <a href="index.php?tab=<?php echo $tab; ?>&period=<?php echo $val; ?>" class="btn <?php echo $period === $val ? 'btn-primary' : ''; ?>" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border: none; background: <?php echo $period === $val ? 'var(--primary)' : 'transparent'; ?>; color: <?php echo $period === $val ? 'white' : 'var(--text-muted)'; ?>; border-radius: 8px;">
                         <?php echo $lbl; ?>
                     </a>
                 <?php endforeach; ?>
                 <button type="button" onclick="toggleCustomRange()" class="btn <?php echo $period === 'custom' ? 'btn-primary' : ''; ?>" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border: none; background: <?php echo $period === 'custom' ? 'var(--primary)' : 'transparent'; ?>; color: <?php echo $period === 'custom' ? 'white' : 'var(--text-muted)'; ?>; border-radius: 8px;">
-                    Tùy chọn
+                    <?php echo __('filter.custom'); ?>
                 </button>
             </div>
             
             <div id="customRangeBlock" style="display: <?php echo $period === 'custom' ? 'flex' : 'none'; ?>; align-items: center; gap: 0.5rem; margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid var(--border-color);">
                 <input type="date" name="start" value="<?php echo e($start ?: date('Y-m-d')); ?>" class="form-control" style="width: 140px; padding: 0.4rem;">
-                <span>đến</span>
+                <span><?php echo __('common.to'); ?></span>
                 <input type="date" name="end" value="<?php echo e($end ?: date('Y-m-d')); ?>" class="form-control" style="width: 140px; padding: 0.4rem;">
                 <input type="hidden" name="period" value="custom">
                 <button type="submit" class="btn btn-icon" style="background: var(--primary); color: white; height: 34px; width: 34px;">
@@ -60,7 +68,7 @@ $period_label = $range['label'];
         </form>
     </div>
     <div style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">
-        <i class="fas fa-calendar-day"></i> Đang xem: <span style="color: var(--primary);"><?php echo $period_label; ?></span>
+        <i class="fas fa-calendar-day"></i> <?php echo __('dashboard.viewing'); ?>: <span style="color: var(--primary);"><?php echo $period_label; ?></span>
     </div>
 </div>
 

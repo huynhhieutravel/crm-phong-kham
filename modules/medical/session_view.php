@@ -9,7 +9,7 @@ $db = getDB();
 $session_id = $_GET['id'] ?? 0;
 
 if (!$session_id) {
-    set_flash('Thiếu mã buổi khám.', 'error');
+    set_flash(__('medical.session.err_missing_id'), 'error');
     redirect('../patients/index.php');
 }
 
@@ -26,7 +26,7 @@ $stmt->execute([$session_id]);
 $session = $stmt->fetch();
 
 if (!$session) {
-    set_flash('Không tìm thấy buổi khám.', 'error');
+    set_flash(__('medical.session.err_not_found'), 'error');
     redirect('../patients/index.php');
 }
 
@@ -34,7 +34,7 @@ if (!$session) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check Lock: If completed and not admin, block editing
     if ($session['status'] === 'completed' && !has_role('admin')) {
-        set_flash('Buổi khám đã hoàn tất và được khóa. Vui lòng liên hệ Admin để sửa.', 'error');
+        set_flash(__('medical.session.err_locked'), 'error');
         header("Location: session_view.php?id=$session_id");
         exit;
     }
@@ -47,12 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $interval = $now->diff($session_date);
         
         if ($interval->days > 7) {
-            set_flash('Quá hạn 7 ngày. Không thể mở lại buổi khám này nữa.', 'error');
+            set_flash(__('medical.session.err_reopen_expired'), 'error');
         } else {
             $stmt = $db->prepare("UPDATE medical_sessions SET status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$session_id]);
             log_audit($_SESSION['user_id'], 'reopen_session', 'medical_sessions', $session_id, ['status' => 'completed'], ['status' => 'active']);
-            set_flash('Đã mở lại buổi khám.');
+            set_flash(__('medical.session.msg_reopened'));
         }
         redirect("session_view.php?id=$session_id");
     }
@@ -82,10 +82,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$assessment, $plan, $status, $session_id]);
         
         log_audit($_SESSION['user_id'], 'update', 'medical_sessions', $session_id, $old_data, $new_data);
-        set_flash('Cập nhật buổi khám thành công!');
+        set_flash(__('medical.session.msg_updated'));
     }
     
     if ($status === 'completed' && $old_data['status'] !== 'completed') {
+        // Find today's arrived appointment for this patient and mark as completed
+        $today = date('Y-m-d');
+        $stmt_app = $db->prepare("
+            UPDATE appointments 
+            SET status = 'completed'
+            WHERE patient_id = ? AND DATE(appointment_date) = ? AND status = 'arrived'
+        ");
+        $stmt_app->execute([$session['patient_id'], $today]);
+        
         redirect("../patients/view.php?id=" . $session['patient_id']);
     }
     // Refresh
@@ -105,7 +114,7 @@ $stmt = $db->prepare("SELECT id FROM treatments WHERE session_id = ?");
 $stmt->execute([$session_id]);
 $treatment_records = $stmt->fetchAll();
 
-$page_title = 'Chi tiết Buổi khám';
+$page_title = __('medical.session.title_detail');
 $current_page = 'medical';
 require_once '../../templates/header.php';
 ?>
@@ -126,26 +135,26 @@ require_once '../../templates/header.php';
     <div style="flex: 1; display: flex; flex-direction: column; gap: 1.5rem;">
         <div class="card" style="border-left: 5px solid var(--primary);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0;">Buổi khám ngày <?php echo date('d/m/Y', strtotime($session['session_date'])); ?></h3>
+                <h3 style="margin: 0;"><?php echo __('medical.session.date_prefix'); ?> <?php echo date('d/m/Y', strtotime($session['session_date'])); ?></h3>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
                     <a href="print_session.php?id=<?php echo $session_id; ?>" target="_blank" class="btn btn-outline btn-sm" style="border-radius: 50px;">
-                        <i class="fas fa-print"></i> In buổi khám
+                        <i class="fas fa-print"></i> <?php echo __('medical.session.print'); ?>
                     </a>
                     <span class="badge <?php echo $session['status'] === 'completed' ? 'badge-success' : 'badge-warning'; ?>">
-                        <?php echo $session['status'] === 'completed' ? 'Đã hoàn tất' : 'Đang xử lý'; ?>
+                        <?php echo $session['status'] === 'completed' ? __('medical.session.status_completed') : __('medical.session.status_processing'); ?>
                     </span>
                 </div>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.95rem;">
-                <div>Bệnh nhân: <strong><?php echo e($session['patient_name']); ?></strong></div>
-                <div>Bác sĩ: <strong><?php echo e($session['doctor_name']); ?></strong></div>
+                <div><?php echo __('medical.session.patient_label'); ?> <strong><?php echo e($session['patient_name']); ?></strong></div>
+                <div><?php echo __('medical.session.doctor_label'); ?> <strong><?php echo e($session['doctor_name']); ?></strong></div>
             </div>
         </div>
 
         <div class="card">
             <h4 style="margin: 0 0 1.5rem 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem;">
-                <i class="fas fa-tasks"></i> Các thành phần buổi khám
+                <i class="fas fa-tasks"></i> <?php echo __('medical.session.components_title'); ?>
             </h4>
             
             <style>
@@ -168,11 +177,11 @@ require_once '../../templates/header.php';
 
             <?php
                 $components = [
-                    'chiro_exam'    => ['label' => 'Khám bệnh lần đầu Chiropractic', 'url' => 'chiro_exam.php', 'icon' => 'fa-stethoscope'],
-                    'chiro_history' => ['label' => 'Khám tiền sử bệnh Chiropractic', 'url' => 'chiro_history.php', 'icon' => 'fa-hospital-user'],
-                    'chiropractic'  => ['label' => 'Theo dõi SOAP', 'url' => 'follow_up.php', 'icon' => 'fa-notes-medical'],
-                    'dong_y'        => ['label' => 'Phiếu khám Đông Y', 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
-                    'treatment'     => ['label' => 'Phác đồ điều trị', 'url' => 'add_treatment.php', 'icon' => 'fa-file-signature']
+                    'chiro_exam'    => ['label' => __('medical.type.chiro_exam_full'), 'url' => 'chiro_exam.php', 'icon' => 'fa-stethoscope'],
+                    'chiro_history' => ['label' => __('medical.type.chiro_history_full'), 'url' => 'chiro_history.php', 'icon' => 'fa-hospital-user'],
+                    'chiropractic'  => ['label' => __('medical.type.chiropractic_full'), 'url' => 'follow_up.php', 'icon' => 'fa-notes-medical'],
+                    'dong_y'        => ['label' => __('medical.type.dong_y_full'), 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
+                    'treatment'     => ['label' => __('medical.type.treatment_full'), 'url' => 'add_treatment.php', 'icon' => 'fa-file-signature']
                 ];
 
             foreach ($components as $type => $info):
@@ -207,12 +216,12 @@ require_once '../../templates/header.php';
                             <div style="font-weight: 700; color: #1e293b;"><?php echo $info['label']; ?></div>
                             <div class="component-status <?php echo $is_done ? 'status-done' : 'status-pending'; ?>">
                                 <i class="fas <?php echo $is_done ? 'fa-check-circle' : 'fa-hourglass-half'; ?>"></i>
-                                <?php echo $is_done ? 'Đã hoàn thành' : 'Chưa nhập'; ?>
+                                <?php echo $is_done ? __('medical.session.status_done') : __('medical.session.status_pending'); ?>
                             </div>
                         </div>
                     </div>
                     <a href="<?php echo $edit_url; ?>" class="btn btn-sm <?php echo $is_done ? 'btn-outline' : 'btn-primary'; ?>" style="border-radius: 50px;">
-                        <?php echo $is_done ? 'Xem/Sửa' : 'Bắt đầu'; ?>
+                        <?php echo $is_done ? __('medical.session.btn_edit') : __('medical.session.btn_start'); ?>
                     </a>
                 </div>
             <?php endforeach; ?>
@@ -221,7 +230,7 @@ require_once '../../templates/header.php';
         <!-- IMAGE UPLOAD SECTION -->
         <div class="card" style="margin-top: 0;">
             <h4 style="margin: 0 0 1rem 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem;">
-                <i class="fas fa-images" style="color: #7c3aed;"></i> <?php echo t('attachments'); ?>
+                <i class="fas fa-images" style="color: #7c3aed;"></i> <?php echo __('common.attachments'); ?>
             </h4>
 
             <?php
@@ -257,8 +266,8 @@ require_once '../../templates/header.php';
             <?php if (!$is_locked): ?>
             <div id="upload-zone" style="border: 2px dashed #cbd5e1; border-radius: 16px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s; background: #fafbfc;" ondragover="event.preventDefault(); this.style.borderColor='#6366f1'; this.style.background='#eef2ff'" ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='#fafbfc'" ondrop="handleDrop(event)">
                 <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #94a3b8; margin-bottom: 0.5rem;"></i>
-                <div style="font-weight: 700; color: #64748b; font-size: 0.9rem;"><?php echo t('upload_images'); ?></div>
-                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;">Kéo thả hoặc click để chọn ảnh (JPG, PNG, PDF — Max 10MB)</div>
+                <div style="font-weight: 700; color: #64748b; font-size: 0.9rem;"><?php echo __('common.upload_images'); ?></div>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;"><?php echo __('medical.session.upload_hint'); ?></div>
                 <input type="file" id="file-input" multiple accept="image/*,.pdf" style="display: none;" onchange="uploadFiles(this.files)">
             </div>
             <div id="upload-progress" style="display: none; margin-top: 1rem;">
@@ -278,9 +287,9 @@ require_once '../../templates/header.php';
                 <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #fecaca; display: flex; align-items: center; gap: 0.75rem;">
                     <i class="fas fa-lock"></i>
                     <div style="font-size: 0.85rem; font-weight: 700;">
-                        BUỔI KHÁM ĐÃ KHÓA 
+                        <?php echo __('medical.session.locked_title'); ?>
                         <?php if ($is_locked): ?>
-                            <br><span style="font-weight: 500; font-size: 0.75rem;">Chỉ giới hạn quyền Xem. Liên hệ Admin để sửa.</span>
+                            <br><span style="font-weight: 500; font-size: 0.75rem;"><?php echo __('medical.session.locked_desc'); ?></span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -288,19 +297,19 @@ require_once '../../templates/header.php';
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #eef2f6; padding-bottom: 1rem;">
                 <h4 style="margin: 0; color: var(--primary); font-weight: 800;">
-                    <i class="fas fa-user-md"></i> TỔNG KẾT LÂM SÀNG
+                    <i class="fas fa-user-md"></i> <?php echo __('medical.session.clinical_summary'); ?>
                 </h4>
-                <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;">DR. <?php echo strtoupper($session['doctor_name']); ?></div>
+                <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;"><?php echo __('medical.session.dr_prefix'); ?> <?php echo strtoupper($session['doctor_name']); ?></div>
             </div>
             
             <div class="editor-wrapper">
-                <label class="editor-label">1. Đánh giá chung (Assessment)</label>
+                <label class="editor-label"><?php echo __('medical.session.assessment_label'); ?></label>
                 <div id="assessment-editor" style="height: 200px;"><?php echo $session['assessment']; ?></div>
                 <input type="hidden" name="assessment" id="assessment-input">
             </div>
 
             <div class="editor-wrapper">
-                <label class="editor-label">2. Kế hoạch điều trị (Plan)</label>
+                <label class="editor-label"><?php echo __('medical.session.plan_label'); ?></label>
                 <div id="plan-editor" style="height: 200px;"><?php echo $session['treatment_plan']; ?></div>
                 <input type="hidden" name="treatment_plan" id="plan-input">
             </div>
@@ -308,23 +317,23 @@ require_once '../../templates/header.php';
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <?php if (!$is_locked): ?>
                     <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                        <i class="fas fa-save"></i> <?php echo $session['status'] === 'completed' ? 'Cập nhật (Admin)' : 'Lưu ghi chú'; ?>
+                        <i class="fas fa-save"></i> <?php echo $session['status'] === 'completed' ? __('medical.session.btn_update_admin') : __('medical.session.btn_save_notes'); ?>
                     </button>
                     <?php if ($session['status'] !== 'completed'): ?>
                         <button type="submit" name="complete" value="1" class="btn" style="width: 100%; justify-content: center; background: #10b981; color: white;">
-                            <i class="fas fa-check-double"></i> Hoàn tất Buổi khám
+                            <i class="fas fa-check-double"></i> <?php echo __('medical.session.btn_complete'); ?>
                         </button>
                     <?php endif; ?>
                 <?php endif; ?>
 
                 <?php if ($session['status'] === 'completed' && has_role('admin')): ?>
                     <button type="submit" name="reopen" value="1" class="btn btn-outline" style="width: 100%; justify-content: center; border-color: #f59e0b; color: #b45309;">
-                        <i class="fas fa-unlock"></i> Mở lại buổi khám
+                        <i class="fas fa-unlock"></i> <?php echo __('medical.session.btn_reopen'); ?>
                     </button>
                 <?php endif; ?>
 
                 <a href="../patients/view.php?id=<?php echo $session['patient_id']; ?>" class="btn" style="width: 100%; justify-content: center; background: #f1f5f9; color: var(--text-main);">
-                    Quay lại Bệnh nhân
+                    <?php echo __('medical.session.btn_back_patient'); ?>
                 </a>
             </div>
         </form>
@@ -386,7 +395,7 @@ function uploadFiles(files) {
     var status = document.getElementById('upload-status');
     progress.style.display = 'block';
     bar.style.width = '30%';
-    status.textContent = 'Đang tải lên ' + files.length + ' ảnh...';
+    status.textContent = '<?php echo __('medical.session.uploading'); ?> ' + files.length + '...';
     
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/includes/upload_handler.php');
@@ -402,18 +411,18 @@ function uploadFiles(files) {
         try {
             var res = JSON.parse(xhr.responseText);
             if (res.success) {
-                status.textContent = '✅ Tải thành công ' + res.files.length + ' ảnh!';
+                status.textContent = '✅ <?php echo __('medical.session.upload_success'); ?> ' + res.files.length + '!';
                 setTimeout(function() { location.reload(); }, 1000);
             } else {
-                status.textContent = '❌ ' + (res.error || 'Lỗi không xác định');
+                status.textContent = '❌ ' + (res.error || '<?php echo __('medical.session.err_unknown'); ?>');
             }
         } catch(e) {
-            status.textContent = '❌ Lỗi phản hồi từ server';
+            status.textContent = '❌ <?php echo __('medical.session.err_server'); ?>';
         }
     };
     
     xhr.onerror = function() {
-        status.textContent = '❌ Lỗi kết nối';
+        status.textContent = '❌ <?php echo __('medical.session.err_conn'); ?>';
     };
     
     xhr.send(fd);

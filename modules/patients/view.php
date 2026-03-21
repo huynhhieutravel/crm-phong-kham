@@ -1,7 +1,8 @@
 <?php
 // modules/patients/view.php
 require_once '../../includes/db.php';
-$page_title = 'Chi tiết Bệnh nhân';
+require_once '../../includes/functions.php';
+$page_title = __('patient.detail.title');
 $current_page = 'patients';
 require_once '../../templates/header.php';
 
@@ -18,7 +19,7 @@ $stmt->execute([$id]);
 $patient = $stmt->fetch();
 
 if (!$patient) {
-    echo "<div class='card'>Bệnh nhân không tồn tại.</div>";
+    echo "<div class='card'>" . __('patient.not_found') . "</div>";
     require_once '../../templates/footer.php';
     exit;
 }
@@ -70,16 +71,16 @@ $treatments = $stmt->fetchAll();
                     <span><i class="fas fa-phone-alt" style="color: var(--primary-light); margin-right: 0.4rem;"></i> <?php echo e($patient['phone']); ?></span>
                     <span style="display: flex; align-items: center; gap: 0.5rem;">
                          <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></span> 
-                         Đang hoạt động
+                         <?php echo __('patient.status.active'); ?>
                     </span>
                 </div>
             </div>
             <div style="display: flex; gap: 1rem;">
                 <a href="../appointments/add.php?patient_id=<?php echo $patient['id']; ?>" class="btn btn-primary" style="background: #db2777; border: none; box-shadow: 0 4px 12px rgba(219, 39, 119, 0.4);">
-                    <i class="fas fa-calendar-plus"></i> Đặt lịch hẹn
+                    <i class="fas fa-calendar-plus"></i> <?php echo __('appointment.book_title'); ?>
                 </a>
                 <a href="edit.php?id=<?php echo $patient['id']; ?>" class="btn" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
-                    <i class="fas fa-user-edit"></i> Chỉnh sửa
+                    <i class="fas fa-user-edit"></i> <?php echo __('common.edit'); ?>
                 </a>
             </div>
         </div>
@@ -87,21 +88,21 @@ $treatments = $stmt->fetchAll();
         <!-- Info Grid -->
         <div style="padding: 2.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem; border-bottom: 1px solid var(--border-color);">
             <div class="info-group">
-                <h4 class="info-section-title"><i class="fas fa-info-circle"></i> Hành chính</h4>
-                <div class="info-item"><span>Sinh nhật:</span> <strong><?php echo $patient['birthday'] ? date('d/m/Y', strtotime($patient['birthday'])) : '—'; ?></strong></div>
-                <div class="info-item"><span>Giới tính:</span> <strong><?php echo $patient['gender'] === 'male' ? 'Nam' : ($patient['gender'] === 'female' ? 'Nữ' : 'Khác'); ?></strong></div>
-                <div class="info-item"><span>Nghề nghiệp:</span> <strong><?php echo e($patient['occupation'] ?: '—'); ?></strong></div>
+                <h4 class="info-section-title"><i class="fas fa-info-circle"></i> <?php echo __('patient.info.administrative'); ?></h4>
+                <div class="info-item"><span><?php echo __('patient.info.dob'); ?></span> <strong><?php echo $patient['birthday'] ? date('d/m/Y', strtotime($patient['birthday'])) : '—'; ?></strong></div>
+                <div class="info-item"><span><?php echo __('patient.gender'); ?></span> <strong><?php echo $patient['gender'] === 'male' ? __('patient.gender.male') : ($patient['gender'] === 'female' ? __('patient.gender.female') : __('patient.gender.other')); ?></strong></div>
+                <div class="info-item"><span><?php echo __('patient.info.occupation'); ?></span> <strong><?php echo e($patient['occupation'] ?: '—'); ?></strong></div>
             </div>
             <div class="info-group">
-                <h4 class="info-section-title"><i class="fas fa-map-marker-alt"></i> Liên hệ</h4>
-                <div class="info-item"><span>Địa chỉ:</span> <strong><?php echo e($patient['address'] ?: '—'); ?></strong></div>
-                <div class="info-item"><span>Chi nhánh:</span> <strong><?php echo e($patient['branch'] ?: 'Trụ sở chính'); ?></strong></div>
-                <div class="info-item"><span>Nguồn:</span> <strong style="color: var(--primary); font-weight: 800;"><?php echo e($patient['source'] ?: '—'); ?></strong></div>
+                <h4 class="info-section-title"><i class="fas fa-map-marker-alt"></i> <?php echo __('patient.info.contact'); ?></h4>
+                <div class="info-item"><span><?php echo __('patient.info.address'); ?></span> <strong><?php echo e($patient['address'] ?: '—'); ?></strong></div>
+                <div class="info-item"><span><?php echo __('patient.info.branch'); ?></span> <strong><?php echo e($patient['branch'] ?: __('common.main_branch')); ?></strong></div>
+                <div class="info-item"><span><?php echo __('patient.info.source'); ?></span> <strong style="color: var(--primary); font-weight: 800;"><?php echo e($patient['source'] ?: '—'); ?></strong></div>
             </div>
             <div class="info-group">
-                <h4 class="info-section-title"><i class="fas fa-user-tie"></i> Phụ trách</h4>
-                <div class="info-item"><span>Sale/CSKH:</span> <strong style="color: #6366f1;"><?php echo e($patient['consultant_name'] ?: '—'); ?></strong></div>
-                <div class="info-item"><span>ID Hồ sơ:</span> <strong><?php echo e($patient['customer_id'] ?: '—'); ?></strong></div>
+                <h4 class="info-section-title"><i class="fas fa-user-tie"></i> <?php echo __('patient.info.assigned_to'); ?></h4>
+                <div class="info-item"><span><?php echo __('patient.info.consultant'); ?></span> <strong style="color: #6366f1;"><?php echo e($patient['consultant_name'] ?: '—'); ?></strong></div>
+                <div class="info-item"><span><?php echo __('patient.info.file_id'); ?></span> <strong><?php echo e($patient['customer_id'] ?: '—'); ?></strong></div>
                 <div style="margin-top: 1rem; display: flex; gap: 1rem;">
                     <?php if ($patient['zalo_number']): ?>
                         <a href="https://zalo.me/<?php echo $patient['zalo_number']; ?>" target="_blank" class="social-icon" style="background: #0068ff;"><i class="fas fa-comment"></i></a>
@@ -116,13 +117,13 @@ $treatments = $stmt->fetchAll();
         <div style="padding: 1.5rem 2.5rem; background: #f8fafc; display: flex; align-items: center; gap: 1.5rem;">
             <i class="fas fa-quote-left" style="color: #cbd5e1; font-size: 1.5rem;"></i>
             <div style="font-size: 0.95rem; color: var(--text-muted); font-style: italic; font-weight: 500; flex: 1;">
-                <?php echo nl2br(e($patient['notes'] ?: 'Chưa có ghi chú đặc biệt cho bệnh nhân này.')); ?>
+                <?php echo nl2br(e($patient['notes'] ?: __('patient.info.no_notes'))); ?>
             </div>
             <?php if ($patient['guardian_name']): ?>
                 <div style="background: white; padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid #fed7aa; display: flex; align-items: center; gap: 1rem;">
                     <div style="width: 32px; height: 32px; background: #fff7ed; color: #f97316; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-user-shield"></i></div>
                     <div>
-                        <div style="font-size: 0.75rem; font-weight: 800; color: #ea580c; text-transform: uppercase;">Người giám hộ</div>
+                        <div style="font-size: 0.75rem; font-weight: 800; color: #ea580c; text-transform: uppercase;"><?php echo __('patient.info.guardian'); ?></div>
                         <div style="font-size: 0.85rem; font-weight: 700; color: #9a3412;"><?php echo e($patient['guardian_name']); ?> <small>(<?php echo e($patient['guardian_phone']); ?>)</small></div>
                     </div>
                 </div>
@@ -141,9 +142,9 @@ $treatments = $stmt->fetchAll();
         <!-- Left: Medical Timeline -->
         <div class="card" style="border: none; box-shadow: var(--shadow-sm);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
-                <h3 style="margin: 0; font-weight: 800;"><i class="fas fa-stream" style="color: var(--primary);"></i> Lịch sử thăm khám & Điều trị</h3>
+                <h3 style="margin: 0; font-weight: 800;"><i class="fas fa-stream" style="color: var(--primary);"></i> <?php echo __('patient.history.title'); ?></h3>
                 <a href="../medical/session_add.php?patient_id=<?php echo $id; ?>" class="btn btn-primary shadow-sm" style="border-radius: 50px; font-size: 0.85rem;">
-                    <i class="fas fa-plus"></i> Buổi khám mới
+                    <i class="fas fa-plus"></i> <?php echo __('patient.history.new_session'); ?>
                 </a>
             </div>
 
@@ -208,7 +209,7 @@ $treatments = $stmt->fetchAll();
                 ?>
 
                 <?php if (empty($timeline_items)): ?>
-                    <p style="text-align: center; color: var(--text-muted); padding: 2rem;">Chưa có dữ liệu lịch sử.</p>
+                    <p style="text-align: center; color: var(--text-muted); padding: 2rem;"><?php echo __('patient.history.no_data'); ?></p>
                 <?php else: ?>
                     <style>
                         .session-card {
@@ -249,11 +250,11 @@ $treatments = $stmt->fetchAll();
                                             <?php echo date('d/m/Y - H:i', strtotime($s['session_date'])); ?>
                                         </div>
                                         <h4 style="margin: 0.25rem 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;">
-                                            Buổi khám tổng quát
+                                            <?php echo __('medical.general_session'); ?>
                                         </h4>
                                     </div>
                                     <a href="../medical/session_view.php?id=<?php echo $s['id']; ?>" class="btn btn-sm btn-outline" style="border-radius: 50px;">
-                                        Chi tiết <i class="fas fa-arrow-right"></i>
+                                        <?php echo __('common.details'); ?> <i class="fas fa-arrow-right"></i>
                                     </a>
                                 </div>
 
@@ -261,13 +262,13 @@ $treatments = $stmt->fetchAll();
                                     <div style="background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; border: 1px solid #f1f5f9;">
                                         <?php if ($s['assessment']): ?>
                                             <div style="margin-bottom: 0.75rem;">
-                                                <small style="color: var(--primary); font-weight: 800; text-transform: uppercase; font-size: 0.65rem;">Đánh giá:</small>
+                                                <small style="color: var(--primary); font-weight: 800; text-transform: uppercase; font-size: 0.65rem;"><?php echo __('medical.assessment'); ?></small>
                                                 <div style="margin-top: 0.25rem; font-size: 0.9rem; line-height: 1.4; color: #475569;"><?php echo $s['assessment']; ?></div>
                                             </div>
                                         <?php endif; ?>
                                         <?php if ($s['treatment_plan']): ?>
                                             <div>
-                                                <small style="color: #10b981; font-weight: 800; text-transform: uppercase; font-size: 0.65rem;">Kế hoạch:</small>
+                                                <small style="color: #10b981; font-weight: 800; text-transform: uppercase; font-size: 0.65rem;"><?php echo __('medical.plan'); ?></small>
                                                 <div style="margin-top: 0.25rem; font-size: 0.9rem; line-height: 1.4; color: #475569;"><?php echo $s['treatment_plan']; ?></div>
                                             </div>
                                         <?php endif; ?>
@@ -279,12 +280,12 @@ $treatments = $stmt->fetchAll();
                                         $p_is_tr = isset($part['session_data']);
                                         $p_type = $p_is_tr ? 'treatment' : $part['type'];
                                         $p_label = [
-                                            'chiro_history' => 'Tiền sử',
-                                            'chiro_exam' => 'Khám',
-                                            'chiropractic' => 'SOAP',
-                                            'dong_y' => 'Đông Y',
-                                            'treatment' => 'KTV'
-                                        ][$p_type] ?? 'Khác';
+                                            'chiro_history' => __('medical.part.history'),
+                                            'chiro_exam' => __('medical.part.exam'),
+                                            'chiropractic' => __('medical.part.soap'),
+                                            'dong_y' => __('medical.part.dong_y'),
+                                            'treatment' => __('medical.part.treatment')
+                                        ][$p_type] ?? __('medical.part.other');
                                         $p_icon = [
                                             'chiro_history' => 'fa-history',
                                             'chiro_exam' => 'fa-stethoscope',
@@ -304,13 +305,13 @@ $treatments = $stmt->fetchAll();
                             // Render orphan history/treatment as a simple node
                             $i = $item['data'];
                             $is_tr = ($item['type'] === 'treatment');
-                            $type_label = $is_tr ? 'Điều trị KTV' : [
-                                'chiro_exam' => 'Khám bệnh lần đầu (Chiro)',
-                                'chiro_history' => 'Khám tiền sử bệnh Chiropractic',
-                                'chiropractic' => 'Theo dõi SOAP',
-                                'soap_note' => 'Theo dõi SOAP',
-                                'dong_y' => 'Đông Y'
-                            ][$i['type']] ?? 'Y tế';
+                            $type_label = $is_tr ? __('medical.type.treatment') : [
+                                'chiro_exam' => __('medical.type.chiro_exam'),
+                                'chiro_history' => __('medical.type.chiro_history'),
+                                'chiropractic' => __('medical.type.chiropractic'),
+                                'soap_note' => __('medical.type.chiropractic'),
+                                'dong_y' => __('medical.type.dong_y')
+                            ][$i['type']] ?? __('medical.type.general');
                             $color = $is_tr ? '#10b981' : '#6366f1';
                         ?>
                             <div class="timeline-node" data-type="<?php echo $item['type']; ?>" style="position: relative; margin-bottom: 2rem; padding-left: 1rem;">
@@ -319,8 +320,8 @@ $treatments = $stmt->fetchAll();
                                 </div>
                                 <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;"><?php echo date('d/m/Y', strtotime($item['date'])); ?></div>
                                 <div style="font-weight: 700; color: #1e293b;"><?php echo $type_label; ?></div>
-                                <div style="font-size: 0.85rem; color: var(--text-muted);"><?php echo $is_tr ? 'Ghi nhận điều trị' : 'Kết quả ghi nhận y tế'; ?></div>
-                                <a href="<?php echo $is_tr ? '#' : '../medical/view_form.php?id='.$i['id']; ?>" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 700;">Xem lại</a>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);"><?php echo $is_tr ? __('medical.record.treatment') : __('medical.record.medical'); ?></div>
+                                <a href="<?php echo $is_tr ? '#' : '../medical/view_form.php?id='.$i['id']; ?>" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 700;"><?php echo __('medical.record.review'); ?></a>
                             </div>
                         <?php endif; ?>
 
@@ -337,14 +338,14 @@ $treatments = $stmt->fetchAll();
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
             <!-- Financial Card -->
             <div class="card" style="padding: 2rem; border: none; background: white; box-shadow: var(--shadow-sm);">
-                <h4 style="margin: 0 0 1.5rem 0; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px;">Tài chính & Gói dịch vụ</h4>
+                <h4 style="margin: 0 0 1.5rem 0; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px;"><?php echo __('patient.finance.title'); ?></h4>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 12px; border: 1px solid #dcfce7; text-align: center;">
-                        <div style="font-size: 0.65rem; font-weight: 800; color: #166534; text-transform: uppercase;">Đã thanh toán</div>
+                        <div style="font-size: 0.65rem; font-weight: 800; color: #166534; text-transform: uppercase;"><?php echo __('patient.finance.paid'); ?></div>
                         <div style="font-size: 1.1rem; font-weight: 800; color: #15803d; margin-top: 0.25rem;">0</div>
                     </div>
                     <div style="background: #fef2f2; padding: 1rem; border-radius: 12px; border: 1px solid #fee2e2; text-align: center;">
-                        <div style="font-size: 0.65rem; font-weight: 800; color: #991b1b; text-transform: uppercase;">Còn nợ</div>
+                        <div style="font-size: 0.65rem; font-weight: 800; color: #991b1b; text-transform: uppercase;"><?php echo __('patient.finance.debt'); ?></div>
                         <div style="font-size: 1.1rem; font-weight: 800; color: #b91c1c; margin-top: 0.25rem;">0</div>
                     </div>
                 </div>
@@ -353,15 +354,15 @@ $treatments = $stmt->fetchAll();
                 <?php if (empty($packages)): ?>
                     <div style="padding: 1.5rem; text-align: center; background: #f8fafc; border-radius: 16px; border: 1px dashed #e2e8f0; margin-bottom: 1.5rem;">
                         <i class="fas fa-shopping-basket" style="font-size: 1.5rem; color: #cbd5e1; margin-bottom: 0.75rem;"></i>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Chưa mua gói dịch vụ nào.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><?php echo __('patient.finance.no_packages'); ?></p>
                     </div>
                 <?php else: ?>
                     <?php foreach ($packages as $pkg): ?>
                         <div style="padding: 1rem; background: #fffcf0; border: 1px solid #fde68a; border-radius: 12px; margin-bottom: 0.75rem;">
                             <div style="font-weight: 800; font-size: 0.9rem; color: #92400e;"><?php echo e($pkg['package_name']); ?></div>
                             <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 0.25rem;">
-                                <span>Còn: <strong><?php echo $pkg['remaining_sessions']; ?>/<?php echo $pkg['total_sessions']; ?></strong></span>
-                                <span style="color: var(--text-muted);">Hết hạn: <?php echo date('d/m/y', strtotime($pkg['expiry_date'])); ?></span>
+                                <span><?php echo __('patient.finance.remaining'); ?> <strong><?php echo $pkg['remaining_sessions']; ?>/<?php echo $pkg['total_sessions']; ?></strong></span>
+                                <span style="color: var(--text-muted);"><?php echo __('patient.finance.expired'); ?> <?php echo date('d/m/y', strtotime($pkg['expiry_date'])); ?></span>
                             </div>
                             <div style="margin-top: 0.5rem; background: #fef3c7; height: 4px; border-radius: 2px; overflow: hidden;">
                                 <div style="background: #f59e0b; height: 100%; width: <?php echo ($pkg['remaining_sessions'] / $pkg['total_sessions']) * 100; ?>%;"></div>
@@ -371,14 +372,14 @@ $treatments = $stmt->fetchAll();
                 <?php endif; ?>
 
                 <a href="../sales/add_package.php?patient_id=<?php echo $id; ?>" class="btn shadow-sm" style="width: 100%; justify-content: center; background: #0f172a; color: white;">
-                    <i class="fas fa-cart-plus"></i> Đăng ký gói mới
+                    <i class="fas fa-cart-plus"></i> <?php echo __('patient.finance.new_package'); ?>
                 </a>
             </div>
 
             <!-- Re-exam & Follow-up Section -->
             <div class="card" style="padding: 2rem; border: none; background: #fffbeb; box-shadow: var(--shadow-sm); border-left: 4px solid #f59e0b;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h4 style="margin: 0; font-size: 0.75rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Kế hoạch tái khám</h4>
+                    <h4 style="margin: 0; font-size: 0.75rem; font-weight: 800; color: #92400e; text-transform: uppercase;"><?php echo __('patient.reexam.title'); ?></h4>
                     <button onclick="toggleReexamForm()" class="btn btn-sm" style="background: #fef3c7; color: #92400e; border-radius: 50% !important; width: 28px; height: 28px; padding: 0; justify-content: center;"><i class="fas fa-plus"></i></button>
                 </div>
                 
@@ -386,46 +387,46 @@ $treatments = $stmt->fetchAll();
                     <form action="manage_reexam.php" method="POST">
                         <input type="hidden" name="patient_id" value="<?php echo $id; ?>">
                         <div class="form-group" style="margin-bottom: 1rem;">
-                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Dịch vụ / Ghi chú</label>
-                            <input type="text" name="service_name" class="form-input" placeholder="Tái khám Chiro..." required style="padding: 0.5rem; font-size: 0.85rem;">
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.service_note'); ?></label>
+                            <input type="text" name="service_name" class="form-input" placeholder="<?php echo __('patient.reexam.service_placeholder'); ?>" required style="padding: 0.5rem; font-size: 0.85rem;">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
-                                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Định kỳ (tháng)</label>
+                                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.frequency'); ?></label>
                                 <select name="frequency" class="form-input" style="padding: 0.5rem; font-size: 0.85rem;">
-                                    <option value="1">1 tháng</option>
-                                    <option value="3" selected>3 tháng</option>
-                                    <option value="6">6 tháng</option>
-                                    <option value="12">1 năm</option>
-                                    <option value="0">Chỉ một lần</option>
+                                    <option value="1"><?php echo __('patient.reexam.freq_1'); ?></option>
+                                    <option value="3" selected><?php echo __('patient.reexam.freq_3'); ?></option>
+                                    <option value="6"><?php echo __('patient.reexam.freq_6'); ?></option>
+                                    <option value="12"><?php echo __('patient.reexam.freq_12'); ?></option>
+                                    <option value="0"><?php echo __('patient.reexam.freq_0'); ?></option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Ngày bắt đầu</label>
+                                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.start_date'); ?></label>
                                 <input type="date" name="first_date" class="form-input" value="<?php echo date('Y-m-d', strtotime('+3 months')); ?>" style="padding: 0.4rem; font-size: 0.85rem;">
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                             <button type="submit" class="btn btn-sm btn-primary" style="background: #d97706; border: none; font-weight: 700;">Thiết lập</button>
-                             <button type="button" onclick="toggleReexamForm()" class="btn btn-sm" style="background: #f1f5f9; font-weight: 700;">Hủy</button>
+                             <button type="submit" class="btn btn-sm btn-primary" style="background: #d97706; border: none; font-weight: 700;"><?php echo __('common.setup'); ?></button>
+                             <button type="button" onclick="toggleReexamForm()" class="btn btn-sm" style="background: #f1f5f9; font-weight: 700;"><?php echo __('common.cancel'); ?></button>
                         </div>
                     </form>
                 </div>
 
                 <?php if (empty($rules)): ?>
-                    <p style="font-size: 0.85rem; color: #92400e; opacity: 0.7;">Chưa thiết lập nhắc nhở.</p>
+                    <p style="font-size: 0.85rem; color: #92400e; opacity: 0.7;"><?php echo __('patient.reexam.no_data'); ?></p>
                 <?php else: ?>
                     <?php foreach ($rules as $rule): ?>
                         <div style="background: white; padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1;">
                                 <div style="font-weight: 800; color: var(--text-main); font-size: 0.9rem;"><?php echo e($rule['service_name']); ?></div>
                                 <div style="font-size: 0.85rem; font-weight: 700; color: <?php echo strtotime($rule['next_due_at']) <= time() ? '#dc2626' : '#ea580c'; ?>; margin-top: 0.25rem;">
-                                    Hẹn: <?php echo date('d/m/Y', strtotime($rule['next_due_at'])); ?>
+                                    <?php echo __('patient.reexam.appointment'); ?> <?php echo date('d/m/Y', strtotime($rule['next_due_at'])); ?>
                                 </div>
                             </div>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <a href="../appointments/add.php?contact_id=patient:<?php echo $id; ?>&type=re_exam&reexam_rule_id=<?php echo $rule['id']; ?>" class="btn btn-sm" style="background: #fef3c7; color: #92400e; font-size: 0.7rem; padding: 0.25rem 0.5rem;">Đặt lịch</a>
-                                <form action="manage_reexam.php" method="POST" style="margin: 0;" onsubmit="return confirm('Xóa nhắc nhở này?')">
+                                <a href="../appointments/add.php?contact_id=patient:<?php echo $id; ?>&type=re_exam&reexam_rule_id=<?php echo $rule['id']; ?>" class="btn btn-sm" style="background: #fef3c7; color: #92400e; font-size: 0.7rem; padding: 0.25rem 0.5rem;"><?php echo __('appointment.book_title'); ?></a>
+                                <form action="manage_reexam.php" method="POST" style="margin: 0;" onsubmit="return confirm('<?php echo __('common.confirm_delete'); ?>')">
                                     <input type="hidden" name="patient_id" value="<?php echo $id; ?>">
                                     <input type="hidden" name="id" value="<?php echo $rule['id']; ?>">
                                     <input type="hidden" name="action" value="delete">

@@ -1,6 +1,7 @@
 <?php
 // includes/functions.php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/i18n.php';
 
 /**
  * Escape HTML for output
@@ -9,13 +10,7 @@ function e($string) {
     return htmlspecialchars($string ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-/**
- * Translation helper (to be implemented)
- */
-function __($key, $default = '') {
-    // Basic placeholder for now
-    return $key;
-}
+
 
 /**
  * Format currency
@@ -54,30 +49,46 @@ function get_date_range($period = 'month', $start = null, $end = null) {
     $end_date = $now->format('Y-m-d 23:59:59');
     $label = '';
 
+    $sel_date = isset($_GET['sel_date']) && !empty($_GET['sel_date']) ? $_GET['sel_date'] : $now->format('Y-m-d');
+    $sel_week = isset($_GET['sel_week']) && !empty($_GET['sel_week']) ? $_GET['sel_week'] : $now->format('Y') . '-W' . $now->format('W');
+    $sel_month = isset($_GET['sel_month']) && is_numeric($_GET['sel_month']) ? (int)$_GET['sel_month'] : (int)$now->format('n');
+    $sel_quarter = isset($_GET['sel_quarter']) && is_numeric($_GET['sel_quarter']) ? (int)$_GET['sel_quarter'] : ceil((int)$now->format('n') / 3);
+    $sel_year = isset($_GET['sel_year']) && is_numeric($_GET['sel_year']) ? (int)$_GET['sel_year'] : (int)$now->format('Y');
+
     switch ($period) {
         case 'today':
-            $start_date = $now->format('Y-m-d 00:00:00');
-            $label = 'Hôm nay';
+            $start_date = $sel_date . ' 00:00:00';
+            $end_date = $sel_date . ' 23:59:59';
+            $label = ($sel_date === $now->format('Y-m-d')) ? 'Hôm nay' : 'Ngày ' . date('d/m/Y', strtotime($sel_date));
             break;
         case 'week':
-            $now->modify('monday this week');
-            $start_date = $now->format('Y-m-d 00:00:00');
-            $label = 'Tuần này';
+            $week_date = new DateTime();
+            $week_year = (int)substr($sel_week, 0, 4);
+            $week_num = (int)substr($sel_week, -2);
+            $week_date->setISODate($week_year, $week_num);
+            $start_date = $week_date->format('Y-m-d 00:00:00');
+            $week_date->modify('+6 days');
+            $end_date = $week_date->format('Y-m-d 23:59:59');
+            
+            $current_week = (int)$now->format('Y') . '-W' . $now->format('W');
+            $label = ($sel_week === $now->format('Y') . '-W' . $now->format('W')) ? 'Tuần này' : "Tuần $week_num/$week_year";
             break;
         case 'month':
-            $start_date = $now->format('Y-m-01 00:00:00');
-            $label = 'Tháng này (' . $now->format('m/Y') . ')';
+            $start_date = sprintf("%04d-%02d-01 00:00:00", $sel_year, $sel_month);
+            $end_date = date('Y-m-t 23:59:59', strtotime($start_date));
+            $label = "Tháng $sel_month/$sel_year";
             break;
         case 'quarter':
-            $month = (int)$now->format('n');
-            $quarter = ceil($month / 3);
-            $start_month = ($quarter - 1) * 3 + 1;
-            $start_date = $now->format("Y-") . sprintf("%02d", $start_month) . "-01 00:00:00";
-            $label = "Quý $quarter (" . $now->format('Y') . ")";
+            $start_month = ($sel_quarter - 1) * 3 + 1;
+            $start_date = sprintf("%04d-%02d-01 00:00:00", $sel_year, $start_month);
+            $end_date_tmp = sprintf("%04d-%02d-01", $sel_year, $start_month + 2);
+            $end_date = date('Y-m-t 23:59:59', strtotime($end_date_tmp));
+            $label = "Quý $sel_quarter ($sel_year)";
             break;
         case 'year':
-            $start_date = $now->format('Y-01-01 00:00:00');
-            $label = 'Năm ' . $now->format('Y');
+            $start_date = sprintf("%04d-01-01 00:00:00", $sel_year);
+            $end_date = sprintf("%04d-12-31 23:59:59", $sel_year);
+            $label = "Năm $sel_year";
             break;
         case 'custom':
             $start_date = $start ? $start . ' 00:00:00' : $now->format('Y-m-01 00:00:00');

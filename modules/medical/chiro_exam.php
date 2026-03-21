@@ -51,7 +51,7 @@ if ($session_id) {
 // 2. Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($is_locked) {
-        set_flash('Buổi khám đã khóa. Không thể lưu thay đổi.', 'error');
+        set_flash(__('medical.exam.err_locked'), 'error');
         redirect("session_view.php?id=$session_id");
     }
 
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         log_audit($_SESSION['user_id'], 'create', 'medical_history', $new_id, null, $exam);
     }
     
-    set_flash('Lưu phiếu khám bệnh Chiropractic thành công!');
+    set_flash(__('medical.exam.msg_success'));
     
     if ($session_id) {
         redirect("session_view.php?id=$session_id");
@@ -96,17 +96,17 @@ $stmt->execute([$patient_id]);
 $patient_name = $stmt->fetchColumn();
 
 if (!$patient_name) {
-    set_flash('Dữ liệu bệnh nhân không tồn tại!', 'error');
+    set_flash(__('medical.exam.err_no_patient'), 'error');
     redirect('index.php');
 }
 
-$page_title = 'Khám bệnh lần đầu Chiropractic';
+$page_title = __('medical.type.chiro_exam_full');
 $current_page = 'medical';
 require_once '../../templates/header.php';
 
 // Define Spine Nodes matching the text file
 $spine_nodes = [
-    'Đốt sống Cổ (Cervical)' => [
+    __('medical.exam.spine_cervical') => [
         'C1' => 'Atlas', 
         'C2' => 'Axis 2', 
         'C3' => 'C3', 
@@ -115,18 +115,18 @@ $spine_nodes = [
         'C6' => 'C6', 
         'C7' => 'C7'
     ],
-    'Đốt sống Ngực (Thoracic)' => [
+    __('medical.exam.spine_thoracic') => [
         'D1' => 'D1', 'D2' => 'D2', 'D3' => 'D3', 'D4' => 'D4', 'D5' => 'D5', 'D6' => 'D6',
         'D7' => 'D7', 'D8' => 'D8', 'D9' => 'D9', 'D10' => 'D10', 'D11' => 'D11', 'D12' => 'D12'
     ],
-    'Đốt sống Thắt lưng (Lumbar)' => [
+    __('medical.exam.spine_lumbar') => [
         'L1' => 'L1', 'L2' => 'L2', 'L3' => 'L3', 'L4' => 'L4', 'L5' => 'L5'
     ],
-    'Xương Cùng & Cụt' => [
+    __('medical.exam.spine_sacrum') => [
         'Sac' => 'Sacrum (S1-S5)', 
         'Coc' => 'Coccyx (X. Cụt)'
     ],
-    'Vùng Chậu (Becken)' => [
+    __('medical.exam.spine_becken') => [
         'Rlli' => 'P. Ilium (R)', 
         'Llli' => 'T. Ilium (L)'
     ]
@@ -178,8 +178,8 @@ $markers = $existing_data['markers'] ?? [];
     <div class="card" style="background: var(--glass-bg); backdrop-filter: blur(20px);">
         <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <h2 style="margin: 0; font-weight: 800; color: #7c3aed;"><i class="fas fa-stethoscope"></i> Khám Bệnh Lần Đầu Chiropractic</h2>
-                <p style="color: var(--text-muted); margin-top: 0.25rem;">Bệnh nhân: <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
+                <h2 style="margin: 0; font-weight: 800; color: #7c3aed;"><i class="fas fa-stethoscope"></i> <?php echo __('medical.type.chiro_exam_full'); ?></h2>
+                <p style="color: var(--text-muted); margin-top: 0.25rem;"><?php echo __('medical.exam.patient_label'); ?> <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
             </div>
             <div style="background: #f5f3ff; color: #7c3aed; padding: 0.5rem 1.25rem; border-radius: 50px; font-weight: 700; font-size: 0.85rem; border: 1px solid #ddd6fe;">
                 CHIR-PHYSICAL-EXAM
@@ -191,8 +191,8 @@ $markers = $existing_data['markers'] ?? [];
                 <div style="background: #fef2f2; color: #991b1b; padding: 1.25rem; border-radius: 20px; margin-bottom: 2rem; border: 1px solid #fecaca; display: flex; align-items: center; gap: 1rem; box-shadow: var(--premium-shadow);">
                     <i class="fas fa-lock fa-2x"></i>
                     <div>
-                        <div style="font-weight: 800; font-size: 1rem;">HỒ SƠ ĐÃ KHÓA (CHỈ XEM)</div>
-                        <div style="font-size: 0.85rem; font-weight: 600; opacity: 0.9;">Hồ sơ này thuộc buổi khám đã hoàn tất. Vui lòng liên hệ Admin nếu cần chỉnh sửa.</div>
+                        <div style="font-weight: 800; font-size: 1rem;"><?php echo __('medical.exam.locked_title'); ?></div>
+                        <div style="font-size: 0.85rem; font-weight: 600; opacity: 0.9;"><?php echo __('medical.exam.locked_desc'); ?></div>
                     </div>
                 </div>
             <?php endif; ?>
@@ -201,7 +201,7 @@ $markers = $existing_data['markers'] ?? [];
                 <!-- 1. Spine Matrix -->
                 <div style="margin-bottom: 3rem;">
                     <h3 style="font-size: 1.1rem; text-transform: uppercase; color: #7c3aed; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="fas fa-bone"></i> I. MA TRẬN CỘT SỐNG (SUBLUXATION)
+                        <i class="fas fa-bone"></i> <?php echo __('medical.exam.matrix_spine'); ?>
                     </h3>
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
@@ -212,7 +212,7 @@ $markers = $existing_data['markers'] ?? [];
                                     <thead>
                                         <tr style="font-size: 0.65rem; color: #94a3b8; text-align: center;">
                                             <th style="width: 30%;">L</th>
-                                            <th style="width: 40%;">ĐỐT</th>
+                                            <th style="width: 40%;"><?php echo __('medical.exam.spine_node'); ?></th>
                                             <th style="width: 30%;">R</th>
                                         </tr>
                                     </thead>
@@ -244,7 +244,7 @@ $markers = $existing_data['markers'] ?? [];
                         <!-- Becken section -->
                         <div class="info-box">
                             <h4 style="font-size: 0.9rem; margin-bottom: 1.5rem; color: #64748b; text-transform: uppercase; text-align: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
-                                <i class="fas fa-venus-mars"></i> Vùng Chậu (Becken)
+                                <i class="fas fa-venus-mars"></i> <?php echo __('medical.exam.becken_area'); ?>
                             </h4>
                             <table style="width: 100%;">
                                 <?php foreach ($becken_nodes as $node): ?>
@@ -270,7 +270,7 @@ $markers = $existing_data['markers'] ?? [];
                         <!-- Joints section -->
                         <div class="info-box">
                             <h4 style="font-size: 0.9rem; margin-bottom: 1.5rem; color: #64748b; text-transform: uppercase; text-align: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
-                                <i class="fas fa-joint"></i> Khớp ngoại vi
+                                <i class="fas fa-joint"></i> <?php echo __('medical.exam.joints_area'); ?>
                             </h4>
                             <table style="width: 100%;">
                                 <?php foreach ($joint_nodes as $node): ?>
@@ -298,13 +298,13 @@ $markers = $existing_data['markers'] ?? [];
                 <!-- 2. Pain Marker section (Existing Logic) -->
                 <div style="margin-bottom: 3rem;">
                     <h3 style="font-size: 1.1rem; text-transform: uppercase; color: #7c3aed; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="fas fa-map-marker-alt"></i> II. SƠ ĐỒ ĐIỂM ĐAU & CẢNH BÁO
+                        <i class="fas fa-map-marker-alt"></i> <?php echo __('medical.exam.pain_map'); ?>
                     </h3>
 
                     <!-- Symptom Correlation Panel (NEW) -->
                     <div id="symptom-correlation" style="display: none; margin-bottom: 2rem; background: #f8fafc; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 20px; box-shadow: var(--premium-shadow);">
                         <h4 style="margin: 0 0 1.5rem 0; font-size: 1rem; color: #1e293b; display: flex; align-items: center; gap: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;">
-                            <i class="fas fa-microscope" style="color: #7c3aed;"></i> BẢNG TRA CỨU BIỂU HIỆN CƠ THỂ THEO ĐỐT SỐNG
+                            <i class="fas fa-microscope" style="color: #7c3aed;"></i> <?php echo __('medical.exam.symptom_table_title'); ?>
                         </h4>
                         <div id="symptom-list">
                             <!-- Symptoms will be injected here via JS -->
@@ -312,10 +312,10 @@ $markers = $existing_data['markers'] ?? [];
                     </div>
 
         <div style="margin-top: 3rem; display: flex; gap: 1rem; justify-content: flex-end;">
-            <a href="session_view.php?id=<?php echo $session_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;">Quay lại</a>
+            <a href="session_view.php?id=<?php echo $session_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;"><?php echo __('common.back'); ?></a>
             <?php if (!$is_locked): ?>
                 <button type="submit" class="btn btn-primary" style="padding: 1rem 3rem; font-weight: 700; font-size: 1.1rem;">
-                    <i class="fas fa-save"></i> LƯU PHIẾU KHÁM BỆNH
+                    <i class="fas fa-save"></i> <?php echo __('medical.exam.btn_save'); ?>
                 </button>
             <?php endif; ?>
         </div>
@@ -472,9 +472,9 @@ function updateSymptomPanel() {
                 <table class="premium-table-symptom">
                     <thead>
                         <tr>
-                            <th style="width: 15%;">Đốt sống</th>
-                            <th style="width: 35%;">Cơ quan ảnh hưởng</th>
-                            <th>Triệu chứng/Vấn đề có thể gặp phải</th>
+                            <th style="width: 15%;"><?php echo __('medical.exam.symptom_node'); ?></th>
+                            <th style="width: 35%;"><?php echo __('medical.exam.symptom_organ'); ?></th>
+                            <th><?php echo __('medical.exam.symptom_issue'); ?></th>
                         </tr>
                     </thead>
                     <tbody>

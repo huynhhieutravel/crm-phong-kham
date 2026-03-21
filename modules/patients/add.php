@@ -71,117 +71,117 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['notes']
     ]);
     
-    set_flash('Thêm bệnh nhân thành công!');
+    set_flash(__('patient.msg.add_success'));
     redirect('index.php');
 }
 
-$page_title = 'Thêm Bệnh nhân mới';
+$page_title = __('patient.add.title');
 $current_page = 'patients';
 require_once '../../templates/header.php';
 ?>
 
 <div style="max-width: 1000px; margin: 0 auto;">
     <div style="margin-bottom: 2rem;">
-        <h2 style="font-weight: 800; color: var(--text-main); margin: 0;"><i class="fas fa-user-plus" style="color: var(--primary);"></i> Hồ sơ Bệnh nhân</h2>
-        <p style="color: var(--text-muted); margin-top: 0.25rem;">Tạo mới thông tin khách hàng đầy đủ</p>
+        <h2 style="font-weight: 800; color: var(--text-main); margin: 0;"><i class="fas fa-user-plus" style="color: var(--primary);"></i> <?php echo __('patient.profile_title'); ?></h2>
+        <p style="color: var(--text-muted); margin-top: 0.25rem;"><?php echo __('patient.add.subtitle'); ?></p>
     </div>
 
     <form method="POST">
         <!-- Section 1: General Info -->
         <div class="card" style="margin-bottom: 1.5rem; padding: 2rem;">
             <h3 style="font-size: 1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem;">
-                <i class="fas fa-info-circle"></i> Thông tin chung
+                <i class="fas fa-info-circle"></i> <?php echo __('patient.info.general'); ?>
             </h3>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="form-group" style="grid-column: span 2;">
-                    <label class="form-label">Họ và tên <span style="color: red;">*</span></label>
-                    <input type="text" name="full_name" class="form-input" required placeholder="Nguyễn Văn A" style="font-size: 1.1rem; font-weight: 600;">
+                    <label class="form-label"><?php echo __('patient.info.fullname'); ?> <span style="color: red;">*</span></label>
+                    <input type="text" name="full_name" class="form-input" required placeholder="<?php echo __('patient.placeholder.fullname'); ?>" style="font-size: 1.1rem; font-weight: 600;">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Số điện thoại <span style="color: red;">*</span></label>
-                    <input type="text" name="phone" class="form-input" required placeholder="0912345678">
+                    <label class="form-label"><?php echo __('patient.info.phone'); ?> <span style="color: red;">*</span></label>
+                    <input type="text" name="phone" class="form-input" required placeholder="<?php echo __('patient.placeholder.phone'); ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Mã khách hàng (Tùy chọn)</label>
-                    <input type="text" name="customer_id" class="form-input" placeholder="Ví dụ: BN-1001">
+                    <label class="form-label"><?php echo __('patient.info.customer_id_opt'); ?></label>
+                    <input type="text" name="customer_id" class="form-input" placeholder="<?php echo __('patient.placeholder.customer_id'); ?>">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Giới tính</label>
+                    <label class="form-label"><?php echo __('patient.gender'); ?></label>
                     <div style="display: flex; gap: 1.5rem; padding: 0.5rem 0;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="radio" name="gender" value="male" checked> Nam
+                            <input type="radio" name="gender" value="male" checked> <?php echo __('patient.gender.male'); ?>
                         </label>
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="radio" name="gender" value="female"> Nữ
+                            <input type="radio" name="gender" value="female"> <?php echo __('patient.gender.female'); ?>
                         </label>
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="radio" name="gender" value="other"> Khác
+                            <input type="radio" name="gender" value="other"> <?php echo __('patient.gender.other'); ?>
                         </label>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Ngày sinh</label>
+                    <label class="form-label"><?php echo __('patient.info.dob'); ?></label>
                     <input type="date" name="birthday" class="form-input">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Chi nhánh</label>
+                    <label class="form-label"><?php echo __('patient.info.branch'); ?></label>
                     <select name="branch" class="form-input">
-                        <option value="Trụ sở chính">Trụ sở chính</option>
+                        <option value="Trụ sở chính"><?php echo __('common.main_branch'); ?></option>
                         <option value="Chi nhánh 1">Chi nhánh 1</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Nguồn khách hàng</label>
+                    <label class="form-label"><?php echo __('patient.info.source'); ?></label>
                     <select name="source" class="form-input">
                         <?php foreach (get_lead_sources() as $key => $label): ?>
                             <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
                         <?php endforeach; ?>
-                        <option value="Walk-in">Tự đến (Walk-in)</option>
+                        <option value="Walk-in"><?php echo __('patient.source.walk_in'); ?></option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Sale/CSKH</label>
+                    <label class="form-label"><?php echo __('patient.info.consultant'); ?></label>
                     <select name="consultant_id" class="form-input">
-                        <option value="">-- Chọn tư vấn viên --</option>
+                        <option value=""><?php echo __('patient.placeholder.select_consultant'); ?></option>
                         <?php foreach ($consultants as $con): ?>
                             <option value="<?php echo $con['id']; ?>"><?php echo e($con['full_name']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
-                    <label class="form-label">Phân loại / Nhãn (Ví dụ: VIP, Khách mới...)</label>
-                    <input type="text" name="label" class="form-input" placeholder="Nhập nhãn phân loại...">
+                    <label class="form-label"><?php echo __('patient.info.label_desc'); ?></label>
+                    <input type="text" name="label" class="form-input" placeholder="<?php echo __('patient.placeholder.label'); ?>">
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
-                    <label class="form-label">Nghề nghiệp / Công việc</label>
-                    <input type="text" name="occupation" class="form-input" placeholder="Ví dụ: Nhân viên văn phòng, Kinh doanh tự do...">
+                    <label class="form-label"><?php echo __('patient.info.occupation_desc'); ?></label>
+                    <input type="text" name="occupation" class="form-input" placeholder="<?php echo __('patient.placeholder.occupation'); ?>">
                 </div>
             </div>
             
             <div class="form-group" style="margin-top: 1.5rem;">
-                <label class="form-label">Địa chỉ</label>
-                <input type="text" name="address" class="form-input" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
+                <label class="form-label"><?php echo __('patient.info.address'); ?></label>
+                <input type="text" name="address" class="form-input" placeholder="<?php echo __('patient.placeholder.address'); ?>">
             </div>
         </div>
 
         <!-- Section 2: Contact & Social -->
         <div class="card" style="margin-bottom: 1.5rem; padding: 2rem;">
             <h3 style="font-size: 1rem; text-transform: uppercase; color: #10b981; margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem;">
-                <i class="fas fa-address-book"></i> Liên hệ & Mạng xã hội
+                <i class="fas fa-address-book"></i> <?php echo __('patient.info.contact_social'); ?>
             </h3>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="form-group">
-                    <label class="form-label">Số Zalo</label>
-                    <input type="text" name="zalo_number" class="form-input" placeholder="Thường mặc định là SĐT">
+                    <label class="form-label"><?php echo __('patient.info.zalo'); ?></label>
+                    <input type="text" name="zalo_number" class="form-input" placeholder="<?php echo __('patient.placeholder.zalo'); ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-input" placeholder="example@gmail.com">
+                    <input type="email" name="email" class="form-input" placeholder="<?php echo __('patient.placeholder.email'); ?>">
                 </div>
                 
                 <div class="form-group">
@@ -201,35 +201,35 @@ require_once '../../templates/header.php';
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
                 <div>
                     <h3 style="font-size: 1rem; text-transform: uppercase; color: #d97706; margin: 0;">
-                        <i class="fas fa-user-shield"></i> Người Giám Hộ
+                        <i class="fas fa-user-shield"></i> <?php echo __('patient.info.guardian'); ?>
                     </h3>
-                    <p style="font-size: 0.8rem; color: #92400e; margin-top: 0.25rem;">(Bắt buộc nếu khách hàng nhỏ hơn 16 tuổi)</p>
+                    <p style="font-size: 0.8rem; color: #92400e; margin-top: 0.25rem;"><?php echo __('patient.guardian.desc'); ?></p>
                 </div>
                 <i class="fas fa-child fa-2x" style="color: #f59e0b; opacity: 0.5;"></i>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="form-group">
-                    <label class="form-label">Họ tên người giám hộ</label>
-                    <input type="text" name="guardian_name" class="form-input" placeholder="Nhập tên người giám hộ">
+                    <label class="form-label"><?php echo __('patient.guardian.name'); ?></label>
+                    <input type="text" name="guardian_name" class="form-input" placeholder="<?php echo __('patient.guardian.placeholder_name'); ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Số CMND/CCCD</label>
-                    <input type="text" name="guardian_id_card" class="form-input" placeholder="Nhập số CMND/CCCD">
+                    <label class="form-label"><?php echo __('patient.guardian.id_card'); ?></label>
+                    <input type="text" name="guardian_id_card" class="form-input" placeholder="<?php echo __('patient.guardian.placeholder_id_card'); ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Số điện thoại</label>
-                    <input type="text" name="guardian_phone" class="form-input" placeholder="Nhập số điện thoại liên hệ">
+                    <label class="form-label"><?php echo __('patient.info.phone'); ?></label>
+                    <input type="text" name="guardian_phone" class="form-input" placeholder="<?php echo __('patient.guardian.placeholder_phone'); ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Mối quan hệ</label>
+                    <label class="form-label"><?php echo __('patient.guardian.relationship'); ?></label>
                     <select name="guardian_relationship" class="form-input">
-                        <option value="">-- Chọn mối quan hệ --</option>
-                        <option value="Cha">Cha</option>
-                        <option value="Mẹ">Mẹ</option>
-                        <option value="Ông/Bà">Ông/Bà</option>
-                        <option value="Anh/Chị">Anh/Chị</option>
-                        <option value="Người thân khác">Người thân khác</option>
+                        <option value=""><?php echo __('patient.guardian.placeholder_relation'); ?></option>
+                        <option value="Cha"><?php echo __('patient.guardian.rel_father'); ?></option>
+                        <option value="Mẹ"><?php echo __('patient.guardian.rel_mother'); ?></option>
+                        <option value="Ông/Bà"><?php echo __('patient.guardian.rel_grandparent'); ?></option>
+                        <option value="Anh/Chị"><?php echo __('patient.guardian.rel_sibling'); ?></option>
+                        <option value="Người thân khác"><?php echo __('patient.guardian.rel_other_relative'); ?></option>
                     </select>
                 </div>
             </div>
@@ -237,17 +237,17 @@ require_once '../../templates/header.php';
 
         <div class="card" style="margin-bottom: 2rem; padding: 2rem;">
             <h3 style="font-size: 1rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem;">
-                <i class="fas fa-sticky-note"></i> Ghi chú & Tiểu sử bệnh
+                <i class="fas fa-sticky-note"></i> <?php echo __('patient.info.notes'); ?>
             </h3>
             <div class="form-group">
-                <textarea name="notes" class="form-input" rows="4" placeholder="Nhập các lưu ý đặc biệt hoặc tình trạng bệnh sơ bộ..."></textarea>
+                <textarea name="notes" class="form-input" rows="4" placeholder="<?php echo __('patient.placeholder.notes'); ?>"></textarea>
             </div>
         </div>
         
         <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end; padding-bottom: 4rem;">
-            <a href="index.php" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;">Hủy bỏ</a>
+            <a href="index.php" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;"><?php echo __('common.cancel_action'); ?></a>
             <button type="submit" class="btn btn-primary" style="padding: 1rem 3rem; font-weight: 700; font-size: 1.1rem; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);">
-                <i class="fas fa-save" style="margin-right: 0.5rem;"></i> LƯU HỒ SƠ
+                <i class="fas fa-save" style="margin-right: 0.5rem;"></i> <?php echo __('patient.btn.save_profile'); ?>
             </button>
         </div>
     </form>

@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $db->commit();
-        set_flash('Lưu nhật ký điều trị thành công!');
+        set_flash(__('medical.treatment.msg_success'));
         
         if ($session_id) {
             redirect("session_view.php?id=$session_id");
@@ -53,11 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } catch (Exception $e) {
         $db->rollBack();
-        $error = "Lỗi: " . $e->getMessage();
+        $error = __('medical.treatment.msg_error') . $e->getMessage();
     }
 }
 
-$page_title = 'Ghi nhật ký điều trị';
+$page_title = __('medical.treatment.page_title');
 $current_page = 'medical';
 require_once '../../templates/header.php';
 
@@ -75,8 +75,8 @@ $available_packages = $stmt->fetchAll();
 
 <div class="card" style="max-width: 600px; margin: 0 auto;">
     <div style="margin-bottom: 2rem;">
-        <h2 style="margin: 0;">Nhật ký điều trị</h2>
-        <p style="color: var(--text-muted);">Bệnh nhân: <strong><?php echo e($patient_name); ?></strong></p>
+        <h2 style="margin: 0;"><?php echo __('medical.treatment.title'); ?></h2>
+        <p style="color: var(--text-muted);"><?php echo __('medical.treatment.patient_label'); ?><strong><?php echo e($patient_name); ?></strong></p>
     </div>
 
     <?php if (isset($error)): ?>
@@ -86,32 +86,32 @@ $available_packages = $stmt->fetchAll();
     <form method="POST">
         <?php if (!empty($available_packages)): ?>
             <div class="form-group" style="margin-bottom: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 12px; border: 1px solid #bbf7d0;">
-                <label class="form-label" style="color: #166534; font-weight: 700;">Áp dụng Gói dịch vụ</label>
+                <label class="form-label" style="color: #166534; font-weight: 700;"><?php echo __('medical.treatment.apply_package_label'); ?></label>
                 <select name="patient_package_id" class="form-input" style="border-color: #86efac;">
-                    <option value="">-- Không dùng gói (Khách lẻ) --</option>
+                    <option value=""><?php echo __('medical.treatment.no_package'); ?></option>
                     <?php foreach ($available_packages as $ap): ?>
                         <option value="<?php echo $ap['id']; ?>">
-                            <?php echo e($ap['package_name']); ?> (Còn <?php echo $ap['sessions_remaining']; ?> buổi)
-                            <?php echo $ap['is_corporate'] ? '[Corporate]' : ''; ?>
+                            <?php echo e($ap['package_name']); ?> <?php echo sprintf(__('medical.treatment.sessions_remaining'), $ap['sessions_remaining']); ?>
+                            <?php echo $ap['is_corporate'] ? __('medical.treatment.package_corporate') : ''; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <p style="font-size: 0.8rem; color: #166534; margin-top: 0.5rem; opacity: 0.8;">Hệ thống sẽ tự động trừ 01 buổi trong gói khi hoàn tất.</p>
+                <p style="font-size: 0.8rem; color: #166534; margin-top: 0.5rem; opacity: 0.8;"><?php echo __('medical.treatment.package_note'); ?></p>
             </div>
         <?php endif; ?>
 
         <div class="form-group">
-            <label class="form-label">Chi tiết buổi điều trị</label>
-            <textarea name="session_data" class="form-input" rows="6" required placeholder="Ghi nhận tình trạng hiện tại, các kỹ thuật đã thực hiện..."></textarea>
+            <label class="form-label"><?php echo __('medical.treatment.details_label'); ?></label>
+            <textarea name="session_data" class="form-input" rows="6" required placeholder="<?php echo __('medical.treatment.details_placeholder'); ?>"></textarea>
         </div>
 
         <div style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--border-color);">
-            <p style="font-size: 0.9rem; text-align: center; color: var(--text-muted);"><i class="fas fa-camera"></i> Chụp ảnh Trước/Sau (Sẽ triển khai sau)</p>
+            <p style="font-size: 0.9rem; text-align: center; color: var(--text-muted);"><i class="fas fa-camera"></i> <?php echo __('medical.treatment.photo_label'); ?></p>
         </div>
 
         <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-primary">Hoàn tất buổi khám</button>
-            <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main);">Hủy</a>
+            <button type="submit" class="btn btn-primary"><?php echo __('medical.treatment.btn_complete'); ?></button>
+            <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main);"><?php echo __('common.cancel'); ?></a>
         </div>
     </form>
 </div>

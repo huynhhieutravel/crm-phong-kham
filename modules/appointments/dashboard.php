@@ -4,7 +4,7 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-$page_title = 'Thống kê Lịch hẹn';
+$page_title = __('appointment.dashboard.title');
 $current_page = 'appointments';
 require_once '../../templates/header.php';
 
@@ -34,12 +34,12 @@ $stmt->execute($params);
 $status_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $status_map = [
-    'scheduled' => ['label' => 'Đã hẹn', 'color' => '#64748b'],
-    'confirmed' => ['label' => 'Đã xác nhận', 'color' => '#3b82f6'],
-    'arrived'   => ['label' => 'Đã đến', 'color' => '#8b5cf6'],
-    'completed' => ['label' => 'Hoàn thành', 'color' => '#10b981'],
-    'no_show'   => ['label' => 'Khách vắng', 'color' => '#f59e0b'],
-    'cancelled' => ['label' => 'Đã hủy', 'color' => '#ef4444']
+    'scheduled' => ['label' => __('appointment.status.scheduled'), 'color' => '#64748b'],
+    'confirmed' => ['label' => __('appointment.status.confirmed'), 'color' => '#3b82f6'],
+    'arrived'   => ['label' => __('appointment.status.arrived'), 'color' => '#8b5cf6'],
+    'completed' => ['label' => __('appointment.status.completed'), 'color' => '#10b981'],
+    'no_show'   => ['label' => __('appointment.status.no_show'), 'color' => '#f59e0b'],
+    'cancelled' => ['label' => __('appointment.status.cancelled'), 'color' => '#ef4444']
 ];
 
 // 3. Type Breakdown
@@ -54,10 +54,10 @@ $stmt->execute($params);
 $type_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $type_map = [
-    'consultation' => 'Tư vấn',
-    'treatment'    => 'Điều trị',
-    're_exam'      => 'Tái khám',
-    'adjustment'   => 'Nắn chỉnh'
+    'consultation' => __('appointment.type.consultation'),
+    'treatment'    => __('appointment.type.treatment'),
+    're_exam'      => __('appointment.type.re_exam'),
+    'adjustment'   => __('appointment.type.adjustment')
 ];
 
 // 4. Provider Performance
@@ -144,65 +144,127 @@ $noshow_rate = $total_apts > 0 ? round(($noshow_count / $total_apts) * 100, 1) :
 <div class="content-body">
     <div class="apt-dashboard-outer">
         <div class="breadcrumb mb-2" style="font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; color: #94a3b8;">
-            CRM / APPOINTMENTS / THỐNG KÊ
+            <?php echo __('appointment.dashboard.breadcrumb'); ?>
         </div>
         <div class="header-section mb-4">
-            <h1 class="page-title" style="font-size: 2rem; font-weight: 800; color: #0f172a;">Phân tích Lịch hẹn</h1>
+            <h1 class="page-title" style="font-size: 2rem; font-weight: 800; color: #0f172a;"><?php echo __('appointment.dashboard.heading'); ?></h1>
         </div>
 
         <!-- Filter Hub -->
-        <div class="filter-bar-apt">
-            <div class="period-toggle-apt">
-                <?php foreach(['today' => 'Hôm nay', 'week' => 'Tuần', 'month' => 'Tháng', 'quarter' => 'Quý', 'year' => 'Năm'] as $p => $l): ?>
-                    <a href="?period=<?php echo $p; ?>" class="btn-toggle-apt <?php echo $period === $p ? 'active' : ''; ?>"><?php echo $l; ?></a>
-                <?php endforeach; ?>
+        <form method="GET" class="filter-bar-apt">
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div class="period-toggle-apt">
+                    <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
+                    
+                    <a href="#" class="btn-toggle-apt <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod(event, 'today')"><?php echo __('common.today'); ?></a>
+                    <a href="#" class="btn-toggle-apt <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod(event, 'week')"><?php echo __('common.week'); ?></a>
+                    <a href="#" class="btn-toggle-apt <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod(event, 'month')"><?php echo __('common.month'); ?></a>
+                    <a href="#" class="btn-toggle-apt <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod(event, 'quarter')"><?php echo __('common.quarter'); ?></a>
+                    <a href="#" class="btn-toggle-apt <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod(event, 'year')"><?php echo __('common.year'); ?></a>
+                    <a href="#" class="btn-toggle-apt <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod(event, 'custom')"><?php echo __('common.custom'); ?></a>
+                </div>
+
+                <?php if($period === 'today' || $period === 'week' || $period === 'month' || $period === 'quarter' || $period === 'year'): ?>
+                    <div style="display: flex; gap: 0.25rem; align-items: center; margin-left: -0.5rem;">
+                        <?php if($period === 'today'): ?>
+                            <input type="date" name="sel_date" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.3rem 0.5rem; color: var(--text-main); outline: none; width: auto;" value="<?php echo isset($_GET['sel_date']) ? e($_GET['sel_date']) : date('Y-m-d'); ?>" onchange="this.form.submit()">
+                        <?php endif; ?>
+
+                        <?php if($period === 'week'): ?>
+                            <input type="week" name="sel_week" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.3rem 0.5rem; color: var(--text-main); outline: none; width: auto;" value="<?php echo isset($_GET['sel_week']) ? e($_GET['sel_week']) : date('Y').'-W'.date('W'); ?>" onchange="this.form.submit()">
+                        <?php endif; ?>
+
+                        <?php if($period === 'month'): ?>
+                            <select name="sel_month" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none; width: auto;" onchange="this.form.submit()">
+                                <?php for($m=1; $m<=12; $m++): ?>
+                                    <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        <?php endif; ?>
+                        
+                        <?php if($period === 'quarter'): ?>
+                            <select name="sel_quarter" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none; width: auto;" onchange="this.form.submit()">
+                                <?php for($q=1; $q<=4; $q++): ?>
+                                    <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        <?php endif; ?>
+
+                        <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
+                            <select name="sel_year" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none; width: auto;" onchange="this.form.submit()">
+                                <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
+                                    <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
             
-            <form method="GET" style="display: flex; align-items: center; gap: 0.8rem;">
-                <input type="hidden" name="period" value="custom">
+            <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; align-items: center; gap: 0.8rem;">
                 <div style="display: flex; align-items: center; background: #f8fafc; padding: 0.3rem 0.8rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                    <input type="date" name="start_date" value="<?php echo date('Y-m-d', strtotime($range['start'])); ?>" style="border:none; background:transparent; font-size: 0.9rem; font-weight: 600; color: #1e293b; outline:none;">
+                    <input type="date" name="start_date" id="start_date" value="<?php echo date('Y-m-d', strtotime($range['start'])); ?>" style="border:none; background:transparent; font-size: 0.9rem; font-weight: 600; color: #1e293b; outline:none;">
                     <span style="padding: 0 0.5rem; color: #94a3b8;"><i class="fas fa-arrow-right"></i></span>
-                    <input type="date" name="end_date" value="<?php echo date('Y-m-d', strtotime($range['end'])); ?>" style="border:none; background:transparent; font-size: 0.9rem; font-weight: 600; color: #1e293b; outline:none;">
+                    <input type="date" name="end_date" id="end_date" value="<?php echo date('Y-m-d', strtotime($range['end'])); ?>" style="border:none; background:transparent; font-size: 0.9rem; font-weight: 600; color: #1e293b; outline:none;">
                 </div>
-                <button type="submit" class="btn btn-primary" style="padding: 0.7rem 1.5rem; border-radius: 12px; font-weight: 700;">Áp dụng</button>
-            </form>
-        </div>
+                <button type="submit" class="btn btn-primary" style="padding: 0.7rem 1.5rem; border-radius: 12px; font-weight: 700;"><?php echo __('appointment.filter.apply'); ?></button>
+            </div>
+        </form>
+
+<script>
+function setPeriod(event, p) {
+    if (event) event.preventDefault();
+    document.getElementById('periodInput').value = p;
+    if (p !== 'custom') {
+        const s = document.getElementById('start_date');
+        const e = document.getElementById('end_date');
+        if (s) s.value = '';
+        if (e) e.value = '';
+        event.target.closest('form').submit();
+    } else {
+        document.getElementById('customDates').style.display = 'flex';
+        document.querySelectorAll('.btn-toggle-apt').forEach(btn => btn.classList.remove('active'));
+        if (event && event.target) {
+            event.target.classList.add('active');
+        }
+    }
+}
+</script>
 
         <!-- KPI Stats -->
         <div class="apt-grid-stats">
             <div class="stat-card-apt indigo">
                 <i class="fas fa-calendar-alt"></i>
-                <span class="stat-tag">Tổng lịch hẹn</span>
+                <span class="stat-tag"><?php echo __('appointment.dashboard.total_appts'); ?></span>
                 <span class="stat-val"><?php echo number_format($total_apts); ?></span>
-                <span class="stat-desc">Tổng số lịch trong khoảng thời gian</span>
+                <span class="stat-desc"><?php echo __('appointment.dashboard.total_desc'); ?></span>
             </div>
 
             <div class="stat-card-apt emerald">
                 <i class="fas fa-check-circle"></i>
-                <span class="stat-tag">Tỷ lệ Hoàn thành</span>
+                <span class="stat-tag"><?php echo __('appointment.dashboard.completion_rate'); ?></span>
                 <span class="stat-val"><?php echo $completion_rate; ?>%</span>
-                <span class="stat-desc"><?php echo number_format($completed_count); ?> khách đã được phục vụ</span>
+                <span class="stat-desc"><?php echo number_format($completed_count); ?> <?php echo __('appointment.dashboard.served_desc'); ?></span>
             </div>
 
             <div class="stat-card-apt amber">
                 <i class="fas fa-user-slash"></i>
-                <span class="stat-tag">Tỷ lệ No-show</span>
+                <span class="stat-tag"><?php echo __('appointment.dashboard.noshow_rate'); ?></span>
                 <span class="stat-val"><?php echo $noshow_rate; ?>%</span>
-                <span class="stat-desc"><?php echo number_format($noshow_count); ?> khách không đến/hủy</span>
+                <span class="stat-desc"><?php echo number_format($noshow_count); ?> <?php echo __('appointment.dashboard.noshow_desc'); ?></span>
             </div>
         </div>
 
         <!-- Layer 1: Trends & Distribution -->
         <div class="dashboard-grid-apt">
             <div class="card-apt">
-                <h3 class="card-title-apt"><i class="fas fa-chart-line"></i> Biến động Lịch hẹn</h3>
+                <h3 class="card-title-apt"><i class="fas fa-chart-line"></i> <?php echo __('appointment.dashboard.trend_title'); ?></h3>
                 <div class="chart-container-apt">
                     <canvas id="aptTrendChart"></canvas>
                 </div>
             </div>
             <div class="card-apt">
-                <h3 class="card-title-apt"><i class="fas fa-chart-pie"></i> Trạng thái</h3>
+                <h3 class="card-title-apt"><i class="fas fa-chart-pie"></i> <?php echo __('appointment.status'); ?></h3>
                 <div class="chart-container-apt">
                     <canvas id="aptStatusChart"></canvas>
                 </div>
@@ -212,19 +274,19 @@ $noshow_rate = $total_apts > 0 ? round(($noshow_count / $total_apts) * 100, 1) :
         <!-- Layer 2: Types & Performance -->
         <div class="dashboard-grid-apt">
             <div class="card-apt">
-                <h3 class="card-title-apt"><i class="fas fa-tags"></i> Loại hình dịch vụ</h3>
+                <h3 class="card-title-apt"><i class="fas fa-tags"></i> <?php echo __('appointment.dashboard.type_title'); ?></h3>
                 <div class="chart-container-apt" style="height: 300px;">
                     <canvas id="aptTypeChart"></canvas>
                 </div>
             </div>
             <div class="card-apt">
-                <h3 class="card-title-apt"><i class="fas fa-user-md"></i> Hiệu suất Bác sĩ</h3>
+                <h3 class="card-title-apt"><i class="fas fa-user-md"></i> <?php echo __('appointment.dashboard.perf_title'); ?></h3>
                 <div class="perf-list-apt">
                     <table class="perf-table-apt">
                         <thead>
                             <tr>
-                                <th>Bác sĩ</th>
-                                <th>Tỷ lệ Xong</th>
+                                <th><?php echo __('appointment.doctor'); ?></th>
+                                <th><?php echo __('appointment.dashboard.completion_col'); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -234,7 +296,7 @@ $noshow_rate = $total_apts > 0 ? round(($noshow_count / $total_apts) * 100, 1) :
                                     <td>
                                         <div style="font-weight: 700; color: #334155;"><?php echo e($p['full_name']); ?></div>
                                         <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">
-                                            <span style="color: var(--primary);"><?php echo $p['completed']; ?></span> / <?php echo $p['total']; ?> lịch
+                                            <span style="color: var(--primary);"><?php echo $p['completed']; ?></span> / <?php echo $p['total']; ?> <?php echo __('appointment.dashboard.appt_unit'); ?>
                                         </div>
                                     </td>
                                     <td>
@@ -291,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: [<?php foreach($trend_data as $t) echo "'" . date('d/m', strtotime($t['date'])) . "',"; ?>],
             datasets: [{
-                label: 'Số lịch hẹn',
+                label: '<?php echo __('appointment.dashboard.chart_label'); ?>',
                 data: [<?php foreach($trend_data as $t) echo $t['count'] . ","; ?>],
                 borderColor: '#6366f1', borderWidth: 4, backgroundColor: gradient, fill: true, tension: 0.4,
                 pointRadius: 0, pointHoverRadius: 6, pointHoverBackgroundColor: '#6366f1', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 3

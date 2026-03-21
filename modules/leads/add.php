@@ -2,6 +2,7 @@
 // modules/leads/add.php
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
 
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $source, $medical_group, $consultant_id, $notes, $status
     ]);
     
-    set_flash('Đã thêm Lead mới thành công!');
+    set_flash(__('lead.msg_add_success'));
     redirect('index.php');
 }
 
@@ -46,88 +47,81 @@ $consultants_stmt = $db->query("
 ");
 $consultants = $consultants_stmt->fetchAll();
 
-$page_title = 'Thêm Lead mới';
+$page_title = __('leads.form.add_title');
 $current_page = 'leads';
 require_once '../../templates/header.php';
 ?>
 
 <div class="card" style="max-width: 900px; margin: 0 auto; padding: 2.5rem;">
-    <div style="margin-bottom: 2rem;">
-        <h2 style="font-weight: 800; color: var(--text-main);"><i class="fas fa-plus-circle" style="color: var(--primary);"></i> Tạo Lead Marketing Mới</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Thông tin chi tiết hỗ trợ tư vấn và chuyển đổi thành bệnh nhân.</p>
+    <div class="page-header" style="margin-bottom: 2rem;">
+        <div>
+            <h1 class="page-title"><?php echo __('leads.form.add_title'); ?></h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                <?php echo __('leads.form.add_subtitle'); ?>
+            </p>
+        </div>
+        <a href="index.php" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> <?php echo __('common.back'); ?>
+        </a>
     </div>
 
     <form method="POST">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
             <div class="form-group">
-                <label class="form-label">Họ và tên <span style="color: red;">*</span></label>
-                <input type="text" name="full_name" class="form-input" required placeholder="Nguyễn Văn A">
+                <label class="form-label"><?php echo __('leads.form.label_full_name'); ?> <span style="color: red;">*</span></label>
+                <input type="text" name="full_name" class="form-input" required placeholder="<?php echo __('leads.form.placeholder_name', 'Nguyễn Văn A'); ?>">
             </div>
             <div class="form-group">
-                <label class="form-label">Số điện thoại <span style="color: red;">*</span></label>
-                <input type="text" name="phone" class="form-input" required placeholder="0912345678">
+                <label class="form-label"><?php echo __('leads.form.label_phone'); ?> <span style="color: red;">*</span></label>
+                <input type="text" name="phone" class="form-input" required placeholder="<?php echo __('leads.form.placeholder_phone', '0912345678'); ?>">
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label"><?php echo __('leads.form.label_gender'); ?></label>
+                    <select name="gender" class="form-input">
+                        <option value="male"><?php echo __('patient.gender.male'); ?></option>
+                        <option value="female"><?php echo __('patient.gender.female'); ?></option>
+                        <option value="other"><?php echo __('patient.gender.other'); ?></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><?php echo __('leads.form.label_birthday'); ?></label>
+                    <input type="date" name="birthday" class="form-input">
+                </div>
             </div>
             <div class="form-group">
-                <label class="form-label">Giới tính</label>
-                <select name="gender" class="form-input">
-                    <option value="male">Nam</option>
-                    <option value="female">Nữ</option>
-                    <option value="other">Khác</option>
+                <label class="form-label"><?php echo __('leads.form.label_email'); ?></label>
+                <input type="email" name="email" class="form-input" placeholder="<?php echo __('leads.form.placeholder_email', 'example@gmail.com'); ?>">
+            </div>
+            <div class="form-group">
+                <label class="form-label"><?php echo __('leads.form.label_source'); ?></label>
+                <select name="source" class="form-input">
+                    <?php foreach ($lead_sources as $key => $label): ?>
+                        <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Ngày sinh</label>
-                <input type="date" name="birthday" class="form-input">
+                <label class="form-label"><?php echo __('leads.form.label_consultant'); ?></label>
+                <select name="consultant_id" class="form-input">
+                    <option value=""><?php echo __('leads.form.label_consultant_placeholder', '-- Chọn tư vấn viên --'); ?></option>
+                    <?php foreach ($consultants as $con): ?>
+                        <option value="<?php echo $con['id']; ?>"><?php echo e($con['full_name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" name="email" class="form-input" placeholder="example@gmail.com">
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                <div class="form-group">
-                    <label class="form-label">Nguồn khách hàng</label>
-                    <select name="source" class="form-input">
-                        <?php foreach ($lead_sources as $key => $label): ?>
-                            <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tư vấn viên (CSKH)</label>
-                    <select name="consultant_id" class="form-input">
-                        <option value="">-- Chọn tư vấn viên --</option>
-                        <?php foreach ($consultants as $con): ?>
-                            <option value="<?php echo $con['id']; ?>"><?php echo e($con['full_name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Nhóm bệnh (Tư vấn)</label>
+                <label class="form-label"><?php echo __('leads.form.label_medical_group'); ?></label>
                 <select name="medical_group" class="form-input">
-                    <option value="">-- Chọn nhóm bệnh --</option>
+                    <option value=""><?php echo __('leads.form.label_medical_group_placeholder', '-- Chọn nhóm bệnh --'); ?></option>
                     <?php foreach ($medical_groups as $mg): ?>
                         <option value="<?php echo $mg; ?>"><?php echo $mg; ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Trạng thái hiện tại</label>
+                <label class="form-label"><?php echo __('leads.form.label_status'); ?></label>
                 <select name="status" class="form-input">
-                    <option value="new">Mới (New)</option>
-                    <option value="contacted">Đã liên hệ (Contacted)</option>
-                    <option value="scheduled">Đã đặt lịch (Scheduled)</option>
-                </select>
-            </div>
-        </div>
-        
-        <div class="form-group" style="margin-top: 1.5rem;">
-            <label class="form-label">Địa chỉ</label>
-            <textarea name="address" class="form-input" rows="2" placeholder="Số nhà, đường, phường/xã..."></textarea>
-        </div>
-        
-        <div class="form-group" style="margin-top: 1.5rem;">
-            <label class="form-label">Ghi chú chi tiết</label>
             <textarea name="notes" class="form-input" rows="3" placeholder="Ghi chú về tình trạng, nhu cầu của khách..."></textarea>
         </div>
         

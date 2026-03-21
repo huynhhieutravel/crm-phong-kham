@@ -14,12 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lead_id = ($type === 'lead') ? $cid : null;
 
     $stmt = $db->prepare("
-        INSERT INTO appointments (patient_id, lead_id, doctor_id, branch_id, appointment_date, type, reexam_rule_id, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO appointments (patient_id, lead_id, doctor_id, branch_id, appointment_date, appointment_end_time, type, reexam_rule_id, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     $doctor_id = !empty($_POST['doctor_id']) ? $_POST['doctor_id'] : null;
     $rule_id = !empty($_GET['reexam_rule_id']) ? $_GET['reexam_rule_id'] : null;
+    $end_time = !empty($_POST['appointment_end_time']) ? $_POST['appointment_end_time'] : null;
 
     $stmt->execute([
         $patient_id,
@@ -27,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $doctor_id,
         $_SESSION['branch_id'] ?? 1,
         $_POST['appointment_date'] . ' ' . $_POST['appointment_time'],
+        $end_time,
         $_POST['type'] ?? 'consultation',
         $rule_id,
         $_POST['notes']
@@ -38,11 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
            ->execute([$lead_id]);
     }
 
-    set_flash('Đặt lịch hẹn thành công!');
+    set_flash(__('appointment.msg.add_success'));
     redirect('index.php');
 }
 
-$page_title = 'Đặt lịch hẹn mới';
+$page_title = __('appointment.add.title');
 $current_page = 'appointments';
 require_once '../../templates/header.php';
 
@@ -65,40 +67,40 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
         <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 1rem;">
             <i class="fas fa-calendar-check" style="color: var(--primary); font-size: 1.5rem;"></i>
         </div>
-        <h2 style="font-weight: 900; color: #1e293b; margin: 0; letter-spacing: -0.025em; font-size: 1.75rem;">Lên Lịch Thông Minh</h2>
-        <p style="color: #64748b; font-size: 0.95rem; margin-top: 0.5rem; font-weight: 500;">Hệ thống tự động kiểm tra xung đột và tối ưu hóa lịch trình</p>
+        <h2 style="font-weight: 900; color: #1e293b; margin: 0; letter-spacing: -0.025em; font-size: 1.75rem;"><?php echo __('appointment.add.smart_schedule'); ?></h2>
+        <p style="color: #64748b; font-size: 0.95rem; margin-top: 0.5rem; font-weight: 500;"><?php echo __('appointment.add.smart_desc'); ?></p>
     </div>
 
     <form method="POST" id="appointmentForm" style="padding: 2.5rem;">
         <div class="form-group" style="margin-bottom: 2rem;">
-            <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.75rem;">Loại lịch hẹn <span style="color: #ef4444;">*</span></label>
+            <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.75rem;"><?php echo __('appointment.add.type_label'); ?> <span style="color: #ef4444;">*</span></label>
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
                 <label class="type-btn">
                     <input type="radio" name="type" value="consultation" checked required>
                     <div class="type-content">
                         <i class="fas fa-comments"></i>
-                        <span>Tư vấn</span>
+                        <span><?php echo __('appointment.type.consultation'); ?></span>
                     </div>
                 </label>
                 <label class="type-btn">
                     <input type="radio" name="type" value="treatment">
                     <div class="type-content">
                         <i class="fas fa-hand-holding-medical"></i>
-                        <span>Điều trị</span>
+                        <span><?php echo __('appointment.type.treatment'); ?></span>
                     </div>
                 </label>
                 <label class="type-btn">
                     <input type="radio" name="type" value="re_exam">
                     <div class="type-content">
                         <i class="fas fa-redo"></i>
-                        <span>Tái khám</span>
+                        <span><?php echo __('appointment.type.re_exam'); ?></span>
                     </div>
                 </label>
                 <label class="type-btn">
                     <input type="radio" name="type" value="adjustment">
                     <div class="type-content">
                         <i class="fas fa-tools"></i>
-                        <span>Hỗ trợ</span>
+                        <span><?php echo __('appointment.type.adjustment'); ?></span>
                     </div>
                 </label>
             </div>
@@ -106,17 +108,17 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
 
         <div class="premium-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
             <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;">Khách hàng <span style="color: #ef4444;">*</span></label>
+                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;"><?php echo __('appointment.add.customer_label'); ?> <span style="color: #ef4444;">*</span></label>
                 <select name="contact_id" class="form-premium-input" required>
-                    <option value="">-- Chọn đại diện --</option>
-                    <optgroup label="Bệnh nhân (Patients)">
+                    <option value=""><?php echo __('appointment.add.select_customer'); ?></option>
+                    <optgroup label="<?php echo __('appointment.add.patients_group'); ?>">
                         <?php foreach ($patients as $p): ?>
                             <option value="patient:<?php echo $p['id']; ?>" <?php echo (int)$prefill_patient_id === (int)$p['id'] ? 'selected' : ''; ?>>
                                 <?php echo e($p['full_name']); ?> (<?php echo e($p['phone']); ?>)
                             </option>
                         <?php endforeach; ?>
                     </optgroup>
-                    <optgroup label="Leads (Marketing)">
+                    <optgroup label="<?php echo __('appointment.add.leads_group'); ?>">
                         <?php foreach ($leads as $l): ?>
                             <option value="lead:<?php echo $l['id']; ?>" <?php echo (int)$prefill_lead_id === (int)$l['id'] ? 'selected' : ''; ?>>
                                 <?php echo e($l['full_name']); ?> (<?php echo e($l['phone']); ?>)
@@ -127,9 +129,9 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
             </div>
             
             <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;">Nhân sự tiếp đón</label>
+                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;"><?php echo __('appointment.add.doctor_label'); ?></label>
                 <select name="doctor_id" id="doctor_id" class="form-premium-input">
-                    <option value="">-- Chọn người hỗ trợ --</option>
+                    <option value=""><?php echo __('appointment.add.select_doctor'); ?></option>
                     <?php foreach ($doctors as $d): ?>
                         <option value="<?php echo $d['id']; ?>"><?php echo e($d['full_name']); ?> (<?php echo e($d['role_name']); ?>)</option>
                     <?php endforeach; ?>
@@ -139,10 +141,10 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
 
         <div id="doctorTimeline" style="display: none; margin-bottom: 2rem; background: white; padding: 1.25rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.75rem; font-weight: 800; color: #475569; text-transform: uppercase;">Lịch trình trong ngày</span>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #475569; text-transform: uppercase;"><?php echo __('appointment.add.daily_schedule'); ?></span>
                 <div style="display: flex; gap: 0.75rem; font-size: 0.7rem; font-weight: 700;">
-                    <span style="display: flex; align-items: center; gap: 0.25rem;"><i class="fas fa-circle" style="color: #22c55e; font-size: 0.5rem;"></i> Trống</span>
-                    <span style="display: flex; align-items: center; gap: 0.25rem;"><i class="fas fa-circle" style="color: #ef4444; font-size: 0.5rem;"></i> Bận</span>
+                    <span style="display: flex; align-items: center; gap: 0.25rem;"><i class="fas fa-circle" style="color: #22c55e; font-size: 0.5rem;"></i> <?php echo __('appointment.add.slot_free'); ?></span>
+                    <span style="display: flex; align-items: center; gap: 0.25rem;"><i class="fas fa-circle" style="color: #ef4444; font-size: 0.5rem;"></i> <?php echo __('appointment.add.slot_busy'); ?></span>
                 </div>
             </div>
             <div id="timelineSlots" class="timeline-row"></div>
@@ -157,12 +159,12 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
         </div>
 
         <div id="doctorConflict" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #fff1f2; color: #e11d48; border-radius: 12px; font-size: 0.85rem; border: 1px solid #fecdd3; font-weight: 600;">
-            <i class="fas fa-exclamation-circle" style="margin-right: 0.25rem;"></i> Cảnh báo: Nhân sự này đã có lịch hẹn khác trong khung giờ này!
+            <i class="fas fa-exclamation-circle" style="margin-right: 0.25rem;"></i> <?php echo __('appointment.add.conflict_warning'); ?>
         </div>
 
-        <div class="premium-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="premium-grid" style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
             <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;">Ngày hẹn <span style="color: #ef4444;">*</span></label>
+                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;"><?php echo __('appointment.add.date_label'); ?> <span style="color: #ef4444;">*</span></label>
                 <input type="date" name="appointment_date" id="appointment_date" class="form-premium-input" required value="<?php echo date('Y-m-d'); ?>">
                 
                 <div class="quick-date-btns" style="display: flex; gap: 0.35rem; margin-top: 0.75rem;">
@@ -179,22 +181,31 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
                 </div>
             </div>
             <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;">Giờ hẹn <span style="color: #ef4444;">*</span></label>
+                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;"><?php echo __('appointment.add.time_label'); ?> <span style="color: #ef4444;">*</span></label>
                 <input type="time" name="appointment_time" id="appointment_time" class="form-premium-input" required>
-                <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #94a3b8; font-style: italic;">Gợi ý: Lịch vắng nhất lúc 10:00 & 15:30</p>
+                <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #94a3b8; font-style: italic;"><?php echo __('appointment.add.time_hint'); ?></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;"><?php echo __('appointment.add.end_time_label'); ?></label>
+                <input type="time" name="appointment_end_time" id="appointment_end_time" class="form-premium-input">
+                <div class="quick-time-btns" style="display: flex; gap: 0.35rem; margin-top: 0.75rem;">
+                    <button type="button" class="q-time-btn" onclick="addMinutes(30)">+30p</button>
+                    <button type="button" class="q-time-btn" onclick="addMinutes(60)">+60p</button>
+                    <button type="button" class="q-time-btn" onclick="addMinutes(90)">+90p</button>
+                </div>
             </div>
         </div>
         
         <div class="form-group" style="margin-top: 1rem;">
-            <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;">Ghi chú liệu trình</label>
-            <textarea name="notes" class="form-premium-input" rows="3" placeholder="Lý do khám, biểu hiện bệnh hoặc yêu cầu đặc biệt..."></textarea>
+            <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;"><?php echo __('appointment.add.notes_label'); ?></label>
+            <textarea name="notes" class="form-premium-input" rows="3" placeholder="<?php echo __('appointment.add.notes_placeholder'); ?>"></textarea>
         </div>
         
         <div style="margin-top: 3rem; display: flex; gap: 1rem; align-items: stretch;">
             <button type="submit" class="btn-confirm" style="flex: 2;">
-                <i class="fas fa-check-circle"></i> XÁC NHẬN ĐẶT LỊCH
+                <i class="fas fa-check-circle"></i> <?php echo __('appointment.add.submit_btn'); ?>
             </button>
-            <a href="index.php" class="btn-cancel" style="flex: 1;">Hủy</a>
+            <a href="index.php" class="btn-cancel" style="flex: 1;"><?php echo __('common.cancel'); ?></a>
         </div>
     </form>
 </div>
@@ -304,7 +315,7 @@ body {
     outline: none;
 }
 
-.q-date-btn {
+.q-date-btn, .q-time-btn {
     flex: 1;
     background: #f1f5f9;
     border: 1px solid #e2e8f0;
@@ -316,14 +327,14 @@ body {
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.q-date-btn:hover {
+.q-date-btn:hover, .q-time-btn:hover {
     background: white;
     color: var(--primary);
     border-color: var(--primary);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.q-date-btn:active {
+.q-date-btn:active, .q-time-btn:active {
     transform: translateY(0);
 }
 
@@ -424,6 +435,21 @@ document.addEventListener('DOMContentLoaded', function() {
         checkAvailability();
     };
 
+    window.addMinutes = function(minutes) {
+        const startTime = timeInput.value;
+        if (!startTime) return;
+        
+        const [hours, mins] = startTime.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours);
+        date.setMinutes(mins + minutes);
+        
+        const endHours = String(date.getHours()).padStart(2, '0');
+        const endMins = String(date.getMinutes()).padStart(2, '0');
+        
+        document.getElementById('appointment_end_time').value = `${endHours}:${endMins}`;
+    };
+
     function checkAvailability() {
         const date = dateInput.value;
         const time = timeInput.value;
@@ -436,8 +462,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 // Update load indicator
                 loadIndicator.style.display = 'block';
-                morningLoad.textContent = `Sáng: ${data.morning_count}${data.morning_count > 5 ? ' (Đông)' : ''}`;
-                afternoonLoad.textContent = `Chiều: ${data.afternoon_count}${data.afternoon_count > 5 ? ' (Đông)' : ''}`;
+                morningLoad.textContent = `<?php echo __('appointment.add.morning'); ?>${data.morning_count}${data.morning_count > 5 ? '<?php echo __('appointment.add.crowded'); ?>' : ''}`;
+                afternoonLoad.textContent = `<?php echo __('appointment.add.afternoon'); ?>${data.afternoon_count}${data.afternoon_count > 5 ? '<?php echo __('appointment.add.crowded'); ?>' : ''}`;
                 
                 // Color coding based on load
                 morningLoad.style.color = data.morning_count > 8 ? '#dc2626' : (data.morning_count > 5 ? '#d97706' : '#64748b');

@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$patient_id, $session_id, $soap_data, $_SESSION['user_id']]);
     }
     
-    set_flash('Lưu phiếu theo dõi điều trị (SOAP) thành công!');
+    set_flash(__('medical.followup.msg_success'));
     
     if ($session_id) {
         redirect("session_view.php?id=$session_id");
@@ -47,11 +47,11 @@ $stmt->execute([$patient_id]);
 $patient_name = $stmt->fetchColumn();
 
 if (!$patient_name) {
-    set_flash('Dữ liệu bệnh nhân không tồn tại!', 'error');
+    set_flash(__('medical.followup.msg_err_no_patient'), 'error');
     redirect('index.php');
 }
 
-$page_title = 'Bản theo dõi điều trị Chiropractic (SOAP)';
+$page_title = __('medical.followup.page_title');
 $current_page = 'medical';
 require_once '../../templates/header.php';
 
@@ -69,10 +69,10 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
 <div class="card" style="background: var(--glass-bg); backdrop-filter: blur(20px); max-width: 1000px; margin: 0 auto;">
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: start;">
         <div>
-            <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><i class="fas fa-notes-medical"></i> Theo dõi Điều trị Chiro</h2>
-            <p style="color: var(--text-muted); margin-top: 0.25rem;">Bệnh nhân: <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
+            <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><i class="fas fa-notes-medical"></i> <?php echo __('medical.followup.title'); ?></h2>
+            <p style="color: var(--text-muted); margin-top: 0.25rem;"><?php echo __('medical.followup.patient_label'); ?><strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
         </div>
-        <div style="background: #eef2ff; color: #4f46e5; padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700;">SOAP NOTE</div>
+        <div style="background: #eef2ff; color: #4f46e5; padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700;"><?php echo __('medical.followup.badge'); ?></div>
     </div>
 
     <form method="POST">
@@ -80,13 +80,13 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
         <div style="margin-bottom: 3rem;">
             <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
                 <span style="background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">S</span>
-                1. CHỦ QUAN (SUBJECTIVE)
+                <?php echo __('medical.followup.part1_title'); ?>
             </h3>
             
             <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; border: 1px solid #e2e8f0;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                     <div>
-                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Tiến triển chung</h4>
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.progress_label'); ?></h4>
                         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                             <?php foreach (['Cải thiện rõ rệt', 'Cải thiện nhẹ', 'Không thay đổi', 'Tệ hơn'] as $progress): ?>
                                 <label class="checkbox-tag">
@@ -97,7 +97,7 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
                         </div>
 
                         <div style="margin-top: 1.5rem;">
-                            <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Tần suất triệu chứng</h4>
+                            <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.freq_label'); ?></h4>
                             <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr;">
                                 <?php foreach (['Thỉnh thoảng (0-25%)', 'Lúc có lúc không (25-50%)', 'Thường xuyên (50-75%)', 'Liên tục (75-100%)'] as $freq): ?>
                                     <label class="checkbox-card small">
@@ -110,7 +110,7 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
                     </div>
 
                     <div>
-                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Đau khi hoạt động</h4>
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.pain_act_label'); ?></h4>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr;">
                             <?php foreach (['Đứng', 'Ngồi', 'Nằm', 'Đi bộ', 'Cúi người', 'Nâng vật nặng', 'Toàn bộ HĐ'] as $act): ?>
                                 <label class="checkbox-card small">
@@ -121,7 +121,7 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
                         </div>
 
                         <div style="margin-top: 1.5rem;">
-                            <label class="form-label" style="text-transform: uppercase; font-size: 0.85rem; color: var(--text-muted);">Thang điểm đau hiện tại (VAS): <span id="pain-val" style="color: var(--primary); font-weight: 800;">5</span>/10</label>
+                            <label class="form-label" style="text-transform: uppercase; font-size: 0.85rem; color: var(--text-muted);"><?php echo __('medical.followup.vas_label'); ?><span id="pain-val" style="color: var(--primary); font-weight: 800;">5</span>/10</label>
                             <input type="range" name="soap[s][vas]" min="0" max="10" value="5" class="slider">
                         </div>
                     </div>
@@ -133,17 +133,17 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
         <div style="margin-bottom: 3rem;">
             <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
                 <span style="background: #10b981; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">O</span>
-                2. KHÁCH QUAN (OBJECTIVE)
+                <?php echo __('medical.followup.part2_title'); ?>
             </h3>
             
             <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; border: 1px solid #e2e8f0;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                     <div>
-                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Trương lực cơ (Hypertonicity)</h4>
-                        <textarea name="soap[o][muscle_tone]" class="form-input" rows="2" placeholder="Vị trí cơ co thắt..." style="padding: 0.75rem; border-radius: 12px;"></textarea>
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.muscle_tone_label'); ?></h4>
+                        <textarea name="soap[o][muscle_tone]" class="form-input" rows="2" placeholder="<?php echo __('medical.followup.muscle_tone_placeholder'); ?>" style="padding: 0.75rem; border-radius: 12px;"></textarea>
                         
                         <div style="margin-top: 1rem;">
-                            <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Mức độ co thắt</h4>
+                            <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.severity_label'); ?></h4>
                             <div style="display: flex; gap: 0.5rem;">
                                 <?php foreach (['Nhẹ (Mild)', 'Vừa (Mod)', 'Nặng (Sev)'] as $sev): ?>
                                     <label class="checkbox-tag">
@@ -156,7 +156,7 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
                     </div>
 
                     <div>
-                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Hạn chế tầm vận động (ROM)</h4>
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.rom_limit_label'); ?></h4>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
                             <?php foreach (['Cổ', 'Ngực', 'Thắt lưng'] as $rom): ?>
                                 <label class="checkbox-card small">
@@ -166,8 +166,8 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
                             <?php endforeach; ?>
                         </div>
                         <div style="margin-top: 1rem;">
-                            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">GHI CHÚ O</h4>
-                            <input type="text" name="soap[o][notes]" class="form-input" style="padding: 0.5rem;" placeholder="Cố định khớp/Fixation...">
+                            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);"><?php echo __('medical.followup.notes_o_label'); ?></h4>
+                            <input type="text" name="soap[o][notes]" class="form-input" style="padding: 0.5rem;" placeholder="<?php echo __('medical.followup.notes_o_placeholder'); ?>">
                         </div>
                     </div>
                 </div>
@@ -178,7 +178,7 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
         <div style="margin-bottom: 3rem;">
             <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
                 <span style="background: #f59e0b; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">A</span>
-                3. ĐÁNH GIÁ & NẮN CHỈNH (ASSESSMENT)
+                <?php echo __('medical.followup.part3_title'); ?>
             </h3>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
@@ -189,7 +189,7 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
                             <thead>
                                 <tr style="font-size: 0.7rem; color: #94a3b8; text-align: center;">
                                     <th style="width: 33%;">L</th>
-                                    <th style="width: 33%;">ĐỐT</th>
+                                    <th style="width: 33%;"><?php echo __('medical.followup.vert_label'); ?></th>
                                     <th style="width: 33%;">R</th>
                                 </tr>
                             </thead>
@@ -218,7 +218,7 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
             </div>
 
             <div style="margin-top: 1.5rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 16px; padding: 1.5rem;">
-                <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: #92400e; text-transform: uppercase;">Vật lý trị liệu / Phục hồi chức năng</h4>
+                <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: #92400e; text-transform: uppercase;"><?php echo __('medical.followup.physio_rehab_label'); ?></h4>
                 <div class="medical-form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
                     <?php foreach ([
                         'Nhiệt/Lạnh', 'Điện xung (DEMS)', 'Siêu âm (Ultrasound)',
@@ -238,13 +238,13 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
         <div style="margin-bottom: 3rem;">
             <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
                 <span style="background: #6366f1; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">P</span>
-                4. KẾ HOẠCH (PLAN)
+                <?php echo __('medical.followup.part4_title'); ?>
             </h3>
             
             <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; border: 1px solid #e2e8f0;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                     <div>
-                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Đánh giá hôm nay</h4>
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.eval_today_label'); ?></h4>
                         <div style="display: flex; gap: 0.5rem;">
                             <?php foreach (['Tiến triển tốt', 'Tiến triển chậm', 'Chưa cải thiện'] as $eval): ?>
                                 <label class="checkbox-tag">
@@ -255,7 +255,7 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
                         </div>
                     </div>
                     <div>
-                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;">Tần suất đề xuất</h4>
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.freq_proposal_label'); ?></h4>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <?php foreach (['3 lần/tuần', '2 lần/tuần', '1 lần/tuần', 'PRN (Khi cần)'] as $freq): ?>
                                 <label class="checkbox-tag">
@@ -267,16 +267,16 @@ $joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp h
                     </div>
                 </div>
                 <div class="form-group" style="margin-top: 1.5rem;">
-                    <label class="form-label" style="font-size: 0.85rem;">Ghi chú Kế hoạch Tiếp theo</label>
-                    <textarea name="soap[p][notes]" class="form-input" rows="3" placeholder="Yêu cầu bài tập về nhà hoặc thay đổi liệu trình..."></textarea>
+                    <label class="form-label" style="font-size: 0.85rem;"><?php echo __('medical.followup.plan_notes_label'); ?></label>
+                    <textarea name="soap[p][notes]" class="form-input" rows="3" placeholder="<?php echo __('medical.followup.plan_notes_placeholder'); ?>"></textarea>
                 </div>
             </div>
         </div>
 
         <div style="margin-top: 3rem; display: flex; gap: 1rem; justify-content: flex-end;">
-            <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;">Hủy bỏ</a>
+            <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1rem 2.5rem;"><?php echo __('common.cancel'); ?></a>
             <button type="submit" class="btn btn-primary" style="padding: 1rem 3rem; font-weight: 700; font-size: 1.1rem;">
-                <i class="fas fa-save"></i> LƯU PHIẾU SOAP
+                <i class="fas fa-save"></i> <?php echo __('medical.followup.btn_save'); ?>
             </button>
         </div>
     </form>

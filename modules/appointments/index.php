@@ -4,8 +4,9 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-$page_title = 'Quản lý Lịch hẹn';
+$page_title = __('appointment.list.title');
 $current_page = 'appointments';
+$base_url = '../../';
 require_once '../../templates/header.php';
 
 $db = getDB();
@@ -18,12 +19,7 @@ $type_filter = $_GET['type'] ?? '';
 $period = $_GET['period'] ?? '';
 $start_date_param = $_GET['start_date'] ?? '';
 $end_date_param = $_GET['end_date'] ?? '';
-$view = $_GET['view'] ?? 'list';
-
-// Default behavior for timeline views if no period/date is set
-if (!$period && !$date_filter) {
-    if ($view === 'timeline') $period = 'today';
-}
+$view = 'list'; // Strictly List view for index.php
 
 $query = "
     SELECT 
@@ -68,30 +64,6 @@ if ($period) {
     $conditions[] = "a.appointment_date BETWEEN ? AND ?";
     $params[] = $range['start'];
     $params[] = $range['end'];
-    
-    // Sync date_filter for visual consistency in timeline views if needed
-    if (!$date_filter && ($period === 'today' || $period === 'custom')) {
-        $date_filter = date('Y-m-d', strtotime($range['start']));
-    }
-} elseif ($date_filter) {
-    if ($view === 'timeline_week') {
-        $ts = strtotime($date_filter);
-        $start = date('Y-m-d 00:00:00', strtotime('monday this week', $ts));
-        $end = date('Y-m-d 23:59:59', strtotime('sunday this week', $ts));
-        $conditions[] = "a.appointment_date BETWEEN ? AND ?";
-        $params[] = $start;
-        $params[] = $end;
-    } elseif ($view === 'timeline_month') {
-        $ts = strtotime($date_filter);
-        $start = date('Y-m-01 00:00:00', $ts);
-        $end = date('Y-m-t 23:59:59', $ts);
-        $conditions[] = "a.appointment_date BETWEEN ? AND ?";
-        $params[] = $start;
-        $params[] = $end;
-    } else {
-        $conditions[] = "DATE(a.appointment_date) = ?";
-        $params[] = $date_filter;
-    }
 }
 
 if ($conditions) {
@@ -138,22 +110,22 @@ $doctors_stmt = $db->query("
 $doctors = $doctors_stmt->fetchAll();
 
 $status_map = [
-    'scheduled' => ['label' => 'Đã đặt lịch', 'color' => '#6366f1', 'icon' => 'fa-calendar-alt'],
-    'confirmed' => ['label' => 'Đã xác nhận', 'color' => '#8b5cf6', 'icon' => 'fa-check-double'],
-    'arrived'   => ['label' => 'Đã đến', 'color' => '#10b981', 'icon' => 'fa-walking'],
-    'completed' => ['label' => 'Hoàn thành', 'color' => '#059669', 'icon' => 'fa-check-circle'],
-    'no_show'   => ['label' => 'Vắng mặt', 'color' => '#f59e0b', 'icon' => 'fa-user-slash'],
-    'cancelled' => ['label' => 'Đã hủy', 'color' => '#ef4444', 'icon' => 'fa-times-circle']
+    'scheduled' => ['label' => __('appointment.status.scheduled'), 'color' => '#6366f1', 'icon' => 'fa-calendar-alt'],
+    'confirmed' => ['label' => __('appointment.status.confirmed'), 'color' => '#8b5cf6', 'icon' => 'fa-check-double'],
+    'arrived'   => ['label' => __('appointment.status.arrived'), 'color' => '#10b981', 'icon' => 'fa-walking'],
+    'completed' => ['label' => __('appointment.status.completed'), 'color' => '#059669', 'icon' => 'fa-check-circle'],
+    'no_show'   => ['label' => __('appointment.status.no_show'), 'color' => '#f59e0b', 'icon' => 'fa-user-slash'],
+    'cancelled' => ['label' => __('appointment.status.cancelled'), 'color' => '#ef4444', 'icon' => 'fa-times-circle']
 ];
 
 $type_map = [
-    'consultation' => ['label' => 'Tư vấn', 'color' => '#3b82f6', 'icon' => 'fa-comments'],
-    'treatment'    => ['label' => 'Điều trị', 'color' => '#10b981', 'icon' => 'fa-hand-holding-medical'],
-    're_exam'      => ['label' => 'Tái khám', 'color' => '#8b5cf6', 'icon' => 'fa-redo'],
-    'adjustment'   => ['label' => 'Hỗ trợ', 'color' => '#64748b', 'icon' => 'fa-tools']
+    'consultation' => ['label' => __('appointment.type.consultation'), 'color' => '#3b82f6', 'icon' => 'fa-comments'],
+    'treatment'    => ['label' => __('appointment.type.treatment'), 'color' => '#10b981', 'icon' => 'fa-hand-holding-medical'],
+    're_exam'      => ['label' => __('appointment.type.re_exam'), 'color' => '#8b5cf6', 'icon' => 'fa-redo'],
+    'adjustment'   => ['label' => __('appointment.type.adjustment'), 'color' => '#64748b', 'icon' => 'fa-tools']
 ];
 
-$is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $period || ($date_filter && $date_filter != date('Y-m-d') && $view != 'timeline');
+$is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $period;
 ?>
 
 <style>
@@ -233,19 +205,19 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
             <div class="filter-grid">
                 <!-- Search -->
                 <div class="filter-group">
-                    <label class="filter-label">Tìm kiếm</label>
+                    <label class="filter-label"><?php echo __('appointment.filter_labels.search'); ?></label>
                     <div style="position: relative;">
-                        <input type="text" name="search" class="form-input filter-input" placeholder="Tên, SĐT..." value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
+                        <input type="text" name="search" class="form-input filter-input" placeholder="<?php echo __('appointment.search.placeholder'); ?>" value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
                         <i class="fas fa-search" style="position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.75rem;"></i>
                     </div>
                 </div>
 
                 <!-- Doctor -->
                 <div class="filter-group">
-                    <label class="filter-label">Bác sĩ</label>
+                    <label class="filter-label"><?php echo __('appointment.doctor'); ?></label>
                     <select name="doctor_id" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value="">Tất cả bác sĩ</option>
-                        <option value="0" <?php echo $doctor_filter === '0' ? 'selected' : ''; ?>>-- Chưa chỉ định --</option>
+                        <option value=""><?php echo __('appointment.filter.all_doctors'); ?></option>
+                        <option value="0" <?php echo $doctor_filter === '0' ? 'selected' : ''; ?>><?php echo __('appointment.filter.unassigned'); ?></option>
                         <?php foreach ($doctors as $doc): ?>
                             <option value="<?php echo $doc['id']; ?>" <?php echo (int)$doctor_filter === (int)$doc['id'] ? 'selected' : ''; ?>><?php echo e($doc['full_name']); ?></option>
                         <?php endforeach; ?>
@@ -254,9 +226,9 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
 
                 <!-- Status -->
                 <div class="filter-group">
-                    <label class="filter-label">Trạng thái</label>
+                    <label class="filter-label"><?php echo __('appointment.filter_labels.status'); ?></label>
                     <select name="status" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value="">Tất cả trạng thái</option>
+                        <option value=""><?php echo __('appointment.filter.all_statuses'); ?></option>
                         <?php foreach ($status_map as $key => $info): ?>
                             <option value="<?php echo $key; ?>" <?php echo $status_filter === $key ? 'selected' : ''; ?>><?php echo $info['label']; ?></option>
                         <?php endforeach; ?>
@@ -265,9 +237,9 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
 
                 <!-- Type -->
                 <div class="filter-group">
-                    <label class="filter-label">Loại</label>
+                    <label class="filter-label"><?php echo __('appointment.filter_labels.type'); ?></label>
                     <select name="type" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value="">Tất cả loại</option>
+                        <option value=""><?php echo __('appointment.filter.all_types'); ?></option>
                         <?php foreach ($type_map as $key => $info): ?>
                             <option value="<?php echo $key; ?>" <?php echo $type_filter === $key ? 'selected' : ''; ?>><?php echo $info['label']; ?></option>
                         <?php endforeach; ?>
@@ -275,53 +247,121 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <div class="filter-btn-group">
-                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;">Thời gian:</span>
-                    <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
-                    <input type="hidden" name="date" id="dateInput" value="<?php echo e($date_filter); ?>">
-                    
-                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod('')">Tất cả</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod('today')">Hôm nay</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod('week')">Tuần</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod('month')">Tháng</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod('quarter')">Quý</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod('year')">Năm</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod('custom')">Tùy chọn</a>
-                </div>
-
-                <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
-                    <div class="custom-range-box">
-                        <input type="date" name="start_date" class="custom-range-input" value="<?php echo e($start_date_param); ?>">
-                        <span style="color: #94a3b8; font-size: 0.8rem;">→</span>
-                        <input type="date" name="end_date" class="custom-range-input" value="<?php echo e($end_date_param); ?>">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <div class="filter-btn-group">
+                        <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;"><?php echo __('appointment.time_filter'); ?></span>
+                        <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
+                        <input type="hidden" name="date" id="dateInput" value="<?php echo e($date_filter); ?>">
+                        
+                        <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod(event, '')"><?php echo __('common.all'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod(event, 'today')"><?php echo __('common.today'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod(event, 'week')"><?php echo __('common.week'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod(event, 'month')"><?php echo __('common.month'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod(event, 'quarter')"><?php echo __('common.quarter'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod(event, 'year')"><?php echo __('common.year'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod(event, 'custom')"><?php echo __('common.custom'); ?></a>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;">Áp dụng</button>
+
+                    <?php if($period === 'today' || $period === 'week' || $period === 'month' || $period === 'quarter' || $period === 'year'): ?>
+                        <div style="display: flex; gap: 0.25rem; align-items: center; margin-left: -0.5rem;">
+                            <?php if($period === 'today'): ?>
+                                <input type="date" name="sel_date" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.3rem 0.5rem; color: var(--text-main); outline: none;" value="<?php echo isset($_GET['sel_date']) ? e($_GET['sel_date']) : date('Y-m-d'); ?>" onchange="this.form.submit()">
+                            <?php endif; ?>
+
+                            <?php if($period === 'week'): ?>
+                                <input type="week" name="sel_week" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.3rem 0.5rem; color: var(--text-main); outline: none;" value="<?php echo isset($_GET['sel_week']) ? e($_GET['sel_week']) : date('Y').'-W'.date('W'); ?>" onchange="this.form.submit()">
+                            <?php endif; ?>
+
+                            <?php if($period === 'month'): ?>
+                                <select name="sel_month" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
+                                    <?php for($m=1; $m<=12; $m++): ?>
+                                        <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                                    <?php endfor; ?>
+                                </select>
+                            <?php endif; ?>
+                            
+                            <?php if($period === 'quarter'): ?>
+                                <select name="sel_quarter" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
+                                    <?php for($q=1; $q<=4; $q++): ?>
+                                        <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                                    <?php endfor; ?>
+                                </select>
+                            <?php endif; ?>
+
+                            <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
+                                <select name="sel_year" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
+                                    <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
+                                        <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                                    <?php endfor; ?>
+                                </select>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
+                        <div class="custom-range-box">
+                            <input type="date" name="start_date" class="custom-range-input" value="<?php echo e($start_date_param); ?>">
+                            <span style="color: #94a3b8; font-size: 0.8rem;">→</span>
+                            <input type="date" name="end_date" class="custom-range-input" value="<?php echo e($end_date_param); ?>">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;"><?php echo __('common.apply'); ?></button>
+                    </div>
                 </div>
 
                 <?php if ($is_filtered): ?>
                     <div style="margin-left: auto;">
                         <a href="?view=<?php echo $view; ?>" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="fas fa-times-circle"></i> XÓA LỌC
+                            <i class="fas fa-times-circle"></i> <?php echo __('common.clear_filter'); ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div style="margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <?php 
+                    $active_filters = [];
+                    if ($search) $active_filters[] = __('appointment.filter_labels.search') . ": $search";
+                    if ($status_filter) $active_filters[] = __('appointment.filter_labels.status') . ": " . ($status_map[$status_filter]['label'] ?? $status_filter);
+                    if ($type_filter) $active_filters[] = __('appointment.filter_labels.type') . ": " . ($type_map[$type_filter]['label'] ?? $type_filter);
+                    
+                    if ($period) {
+                        $range = get_date_range($period, $start_date_param, $end_date_param);
+                        $active_filters[] = $range['label'];
+                    }
+                    ?>
+                    <?php foreach($active_filters as $f): ?>
+                        <span style="background: #eff6ff; color: #3b82f6; padding: 0.3rem 0.6rem; border-radius: 50px; font-size: 0.7rem; font-weight: 700; border: 1px solid #dbeafe;">
+                            <?php echo e($f); ?>
+                        </span>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if ($is_filtered): ?>
+                    <div style="margin-left: auto;">
+                        <a href="?view=list" style="color: #ef4444; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fas fa-times-circle"></i> <?php echo __('common.clear_filter'); ?>
                         </a>
                     </div>
                 <?php endif; ?>
             </div>
         </form>
         <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
-            <i class="fas fa-plus"></i> ĐẶT LỊCH
+            <i class="fas fa-plus"></i> <?php echo __('appointment.book_btn'); ?>
         </a>
     </div>
 </div>
 
 <script>
-function setPeriod(p) {
+function setPeriod(event, p) {
+    if (event) event.preventDefault();
     document.getElementById('periodInput').value = p;
     // Clear specific date when selecting a period
     if (p !== 'custom') {
         const di = document.getElementById('dateInput');
         if (di) di.value = '';
-        document.getElementById('filterForm').submit();
+        const form = document.getElementById('filterForm');
+        if (form) form.submit();
     } else {
         document.getElementById('customDates').style.display = 'flex';
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
@@ -333,51 +373,6 @@ function setPeriod(p) {
 </script>
 
 
-    <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; gap: 0.5rem;">
-            <?php 
-            $active_filters = [];
-            if ($search) $active_filters[] = "Tìm: $search";
-            if ($status_filter) $active_filters[] = "Trạng thái: " . ($status_map[$status_filter]['label'] ?? $status_filter);
-            if ($type_filter) $active_filters[] = "Loại: " . ($type_map[$type_filter]['label'] ?? $type_filter);
-            
-            if ($period) {
-                $range = get_date_range($period, $start_date_param, $end_date_param);
-                $active_filters[] = $range['label'];
-            } elseif ($date_filter) {
-                if ($view === 'timeline_month') {
-                    $active_filters[] = "Tháng: " . date('m/Y', strtotime($date_filter));
-                } else {
-                    $active_filters[] = "Ngày: " . date('d/m/Y', strtotime($date_filter));
-                }
-            }
-            ?>
-            <?php foreach($active_filters as $f): ?>
-                <span style="background: #eff6ff; color: #3b82f6; padding: 0.35rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 700; border: 1px solid #dbeafe;">
-                    <?php echo e($f); ?>
-                </span>
-            <?php endforeach; ?>
-        </div>
-
-        <div style="display: flex; background: #f1f5f9; padding: 0.3rem; border-radius: 14px;">
-            <?php 
-            $view_btn_params = "search=$search&status=$status_filter&date=$date_filter&doctor_id=$doctor_filter&type=$type_filter";
-            ?>
-            <a href="?view=list&<?php echo $view_btn_params; ?>" class="btn btn-sm <?php echo $view === 'list' ? 'btn-white shadow-sm' : ''; ?>" style="border-radius: 10px; padding: 0.5rem 1rem; border: none; font-weight: 700; color: <?php echo $view === 'list' ? 'var(--primary)' : 'var(--text-muted)'; ?>; background: <?php echo $view === 'list' ? 'white' : 'transparent'; ?>;">
-                <i class="fas fa-list"></i> Danh sách
-            </a>
-            <a href="?view=timeline&<?php echo $view_btn_params; ?>" class="btn btn-sm <?php echo $view === 'timeline' ? 'btn-white shadow-sm' : ''; ?>" style="border-radius: 10px; padding: 0.5rem 1rem; border: none; font-weight: 700; color: <?php echo $view === 'timeline' ? 'var(--primary)' : 'var(--text-muted)'; ?>; background: <?php echo $view === 'timeline' ? 'white' : 'transparent'; ?>;">
-                <i class="fas fa-clock"></i> Ngày
-            </a>
-            <a href="?view=timeline_week&<?php echo $view_btn_params; ?>" class="btn btn-sm <?php echo $view === 'timeline_week' ? 'btn-white shadow-sm' : ''; ?>" style="border-radius: 10px; padding: 0.5rem 1rem; border: none; font-weight: 700; color: <?php echo $view === 'timeline_week' ? 'var(--primary)' : 'var(--text-muted)'; ?>; background: <?php echo $view === 'timeline_week' ? 'white' : 'transparent'; ?>;">
-                <i class="fas fa-calendar-week"></i> Tuần
-            </a>
-            <a href="?view=timeline_month&<?php echo $view_btn_params; ?>" class="btn btn-sm <?php echo $view === 'timeline_month' ? 'btn-white shadow-sm' : ''; ?>" style="border-radius: 10px; padding: 0.5rem 1rem; border: none; font-weight: 700; color: <?php echo $view === 'timeline_month' ? 'var(--primary)' : 'var(--text-muted)'; ?>; background: <?php echo $view === 'timeline_month' ? 'white' : 'transparent'; ?>;">
-                <i class="fas fa-calendar-alt"></i> Tháng
-            </a>
-        </div>
-    </div>
-</div>
 
 <?php if ($view === 'list'): ?>
     <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-color);">
@@ -385,18 +380,25 @@ function setPeriod(p) {
             <table class="table" style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f8fafc; text-align: left;">
-                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);">Thời gian</th>
-                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);">Bệnh nhân</th>
-                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);">Bác sĩ khám</th>
-                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);">Trạng thái</th>
-                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color); text-align: center;">Thao tác</th>
+                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('appointment.table.time'); ?></th>
+                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('appointment.table.patient'); ?></th>
+                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('appointment.table.doctor'); ?></th>
+                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('appointment.table.status'); ?></th>
+                        <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color); text-align: center;"><?php echo __('common.actions'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($appointments as $a): ?>
                         <tr class="appointment-row" style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
                             <td style="padding: 1.25rem 1.5rem;">
-                                <div style="font-weight: 700; color: var(--text-main); font-size: 1rem;"><?php echo date('H:i', strtotime($a['appointment_date'])); ?></div>
+                                <div style="font-weight: 700; color: var(--text-main); font-size: 1rem;">
+                                    <?php 
+                                        echo date('H:i', strtotime($a['appointment_date']));
+                                        if (!empty($a['appointment_end_time'])) {
+                                            echo ' – ' . substr($a['appointment_end_time'], 0, 5);
+                                        }
+                                    ?>
+                                </div>
                                 <div style="font-size: 0.8rem; color: var(--text-muted);"><?php echo date('d/m/Y', strtotime($a['appointment_date'])); ?></div>
                             </td>
                             <td style="padding: 1.25rem 1.5rem;">
@@ -438,7 +440,7 @@ function setPeriod(p) {
                                 <form action="update_appointment.php" method="POST" class="quick-status-form">
                                     <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
                                     <select name="doctor_id" class="form-input" style="padding: 0.4rem; font-size: 0.9rem; border: 1px solid transparent; background: transparent; font-weight: 600; cursor: pointer;" onchange="updateAppointment(this)">
-                                        <option value="">-- Chưa chỉ định --</option>
+                                        <option value="">-- <?php echo __('appointment.unassigned_doctor'); ?> --</option>
                                         <?php foreach ($doctors as $doc): ?>
                                             <option value="<?php echo $doc['id']; ?>" <?php echo (int)$a['doctor_id'] === (int)$doc['id'] ? 'selected' : ''; ?>><?php echo e($doc['full_name']); ?> (<?php echo e($doc['role_name']); ?>)</option>
                                         <?php endforeach; ?>
@@ -462,7 +464,7 @@ function setPeriod(p) {
                                 <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
                                     <?php if ($a['contact_type'] === 'Lead' && $a['status'] !== 'cancelled' && $a['status'] !== 'arrived'): ?>
                                         <a href="checkin.php?id=<?php echo $a['id']; ?>" class="btn btn-sm" style="background: #10b981; color: white; padding: 0.5rem 1rem; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
-                                            <i class="fas fa-sign-in-alt"></i> CHECK-IN
+                                            <i class="fas fa-sign-in-alt"></i> <?php echo __('appointment.btn.checkin'); ?>
                                         </a>
                                     <?php endif; ?>
                                     
@@ -471,13 +473,13 @@ function setPeriod(p) {
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <div id="action-menu-<?php echo $a['id']; ?>" class="action-menu" style="display: none; position: absolute; right: 0; top: 100%; width: 180px; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; padding: 0.5rem; border: 1px solid var(--border-color); margin-top: 0.5rem;">
-                                            <a href="view.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-eye"></i> Xem chi tiết</a>
-                                            <a href="edit.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-edit"></i> Chỉnh sửa</a>
+                                            <a href="view.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-eye"></i> <?php echo __('common.view_details'); ?></a>
+                                            <a href="edit.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-edit"></i> <?php echo __('common.edit'); ?></a>
                                             <?php if ($a['patient_id']): ?>
-                                                <a href="../patients/view.php?id=<?php echo $a['patient_id']; ?>" class="action-item"><i class="fas fa-user"></i> Hồ sơ bệnh nhân</a>
+                                                <a href="../patients/view.php?id=<?php echo $a['patient_id']; ?>" class="action-item"><i class="fas fa-user"></i> <?php echo __('appointment.action.patient_profile'); ?></a>
                                             <?php endif; ?>
                                             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
-                                            <a href="delete.php?id=<?php echo $a['id']; ?>" class="action-item" style="color: #ef4444;" onclick="return confirm('Bạn có chắc chắn muốn xóa lịch hẹn này?')"><i class="fas fa-trash-alt"></i> Xóa lịch hẹn</a>
+                                            <a href="delete.php?id=<?php echo $a['id']; ?>" class="action-item" style="color: #ef4444;" onclick="return confirm('<?php echo __('appointment.confirm.delete'); ?>')"><i class="fas fa-trash-alt"></i> <?php echo __('appointment.action.delete'); ?></a>
                                         </div>
                                     </div>
                                 </div>
@@ -489,215 +491,6 @@ function setPeriod(p) {
         </div>
     </div>
     <?php echo render_pagination($total_count, $limit, $page); ?>
-<?php elseif ($view === 'timeline'): ?>
-    <!-- Day Timeline View -->
-    <div class="card" style="padding: 1.5rem; overflow-x: auto;">
-        <?php
-        $target_date = $date_filter ?: date('Y-m-d');
-        $doctors_with_unassigned = array_merge([['id' => 0, 'full_name' => 'Chưa chỉ định', 'role_name' => 'N/A']], $doctors);
-        
-        // Group appointments by staff for this specific day
-        $day_grouped = [];
-        foreach ($appointments as $a) {
-            $did = $a['doctor_id'] ?: 0;
-            $day_grouped[$did][] = $a;
-        }
-        ?>
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <h2 style="margin: 0; font-weight: 800; color: var(--text-main);">Lịch trình ngày <?php echo date('d/m/Y', strtotime($target_date)); ?></h2>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
-            <?php foreach ($doctors_with_unassigned as $doc): ?>
-                <?php 
-                $staff_appts = $day_grouped[$doc['id']] ?? [];
-                if (empty($staff_appts) && $doc['id'] !== 0) continue; // Skip empty staff unless unassigned
-                ?>
-                <div class="staff-day-column" style="background: #f8fafc; border-radius: 16px; padding: 1.25rem; border: 1px solid var(--border-color);">
-                    <div style="margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 800; color: var(--text-main); font-size: 0.95rem;">
-                            <i class="fas fa-user-md" style="color: var(--primary); margin-right: 0.5rem;"></i>
-                            <?php echo e($doc['full_name']); ?>
-                        </span>
-                        <span style="font-size: 0.7rem; font-weight: 700; background: #e2e8f0; color: var(--text-muted); padding: 0.2rem 0.5rem; border-radius: 6px;">
-                            <?php echo count($staff_appts); ?> Ca
-                        </span>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                        <?php if (empty($staff_appts)): ?>
-                            <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
-                                Không có lịch hẹn
-                            </div>
-                        <?php else: ?>
-                            <?php foreach ($staff_appts as $a): 
-                                $status = $status_map[$a['status']] ?? ['color' => '#64748b', 'label' => 'Unknown'];
-                            ?>
-                                <div class="day-event-card" style="background: white; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-sm); border-left: 4px solid <?php echo $status['color']; ?>; cursor: pointer; transition: transform 0.2s;" onclick="location.href='view.php?id=<?php echo $a['id']; ?>'">
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                        <span style="font-weight: 800; font-size: 1rem; color: var(--text-main);"><?php echo date('H:i', strtotime($a['appointment_date'])); ?></span>
-                                        <span style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: <?php echo $status['color']; ?>;"><?php echo $status['label']; ?></span>
-                                    </div>
-                                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;"><?php echo e($a['contact_name']); ?></div>
-                                    <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fas fa-phone-alt" style="font-size: 0.6rem;"></i> <?php echo e($a['contact_phone']); ?>
-                                    </div>
-                                    <?php if (!empty($a['notes'])): ?>
-                                        <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed #e2e8f0; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
-                                            <i class="fas fa-sticky-note" style="font-size: 0.65rem; color: #f59e0b;"></i> <?php echo e(mb_strimwidth($a['notes'], 0, 80, "...")); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-<?php elseif ($view === 'timeline_week'): ?>
-    <!-- Week Timeline View -->
-    <div class="card" style="padding: 1.5rem; overflow-x: auto;">
-        <?php
-        $start_date = $date_filter ?: date('Y-m-d');
-        $ts = strtotime($start_date);
-        $start_of_week = date('Y-m-d', strtotime('monday this week', $ts));
-        $week_days = [];
-        for ($i = 0; $i < 7; $i++) {
-            $week_days[] = date('Y-m-d', strtotime("+$i days", strtotime($start_of_week)));
-        }
-        
-        $doctors_with_unassigned = array_merge([['id' => 0, 'full_name' => 'Chưa chỉ định']], $doctors);
-        
-        // Group appointments by doctor and day
-        $grouped_week = [];
-        foreach ($appointments as $a) {
-            $did = $a['doctor_id'] ?: 0;
-            $day = date('Y-m-d', strtotime($a['appointment_date']));
-            $grouped_week[$did][$day][] = $a;
-        }
-        ?>
-        <div class="timeline-grid" style="display: grid; grid-template-columns: 150px repeat(7, 1fr); min-width: 1000px;">
-            <!-- Header Row -->
-            <div style="padding: 1rem; border-bottom: 2px solid #e2e8f0; font-weight: 800; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Bác sĩ</div>
-            <?php foreach ($week_days as $day): ?>
-                <div style="padding: 1rem; border-bottom: 2px solid #e2e8f0; text-align: center; border-left: 1px solid #f1f5f9; font-weight: 700; background: <?php echo $day === date('Y-m-d') ? '#fffbeb' : 'transparent'; ?>;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;"><?php echo date('D', strtotime($day)); ?></div>
-                    <div style="font-size: 1rem; color: var(--text-main);"><?php echo date('d/m', strtotime($day)); ?></div>
-                </div>
-            <?php endforeach; ?>
-
-            <!-- Doctor Rows -->
-            <?php foreach ($doctors_with_unassigned as $doc): ?>
-                <div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; font-weight: 700; background: #f8fafc; border-right: 1px solid #e2e8f0; display: flex; align-items: center; font-size: 0.9rem;">
-                    <?php echo e($doc['full_name']); ?>
-                </div>
-                <?php foreach ($week_days as $day): ?>
-                    <div style="border-bottom: 1px solid #e2e8f0; border-left: 1px solid #f1f5f9; padding: 0.5rem; min-height: 100px; background: white;">
-                        <?php 
-                        $day_appts = $grouped_week[$doc['id']][$day] ?? [];
-                        foreach ($day_appts as $a): 
-                            $status = $status_map[$a['status']] ?? ['color' => '#64748b'];
-                        ?>
-                            <div class="week-event" style="background: <?php echo $status['color']; ?>; color: white; padding: 0.35rem 0.6rem; border-radius: 6px; font-size: 0.7rem; margin-bottom: 0.25rem; cursor: pointer; position: relative;" onclick="toggleAction(<?php echo $a['id']; ?>, event)">
-                                <strong style="display: block;"><?php echo date('H:i', strtotime($a['appointment_date'])); ?></strong>
-                                <span style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo e($a['contact_name']); ?></span>
-                                
-                                <div id="action-menu-<?php echo $a['id']; ?>" class="action-menu" style="display: none; position: absolute; left: 0; top: 100%; width: 180px; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; padding: 0.5rem; border: 1px solid var(--border-color); color: var(--text-main);">
-                                    <a href="view.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-eye"></i> Xem chi tiết</a>
-                                    <a href="edit.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-edit"></i> Chỉnh sửa</a>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endforeach; ?>
-            <?php endforeach; ?>
-        </div>
-    </div>
-<?php elseif ($_GET['view'] === 'timeline_month'): ?>
-    <!-- Month Timeline View (Calendar) -->
-    <div class="card" style="padding: 1.5rem; border-radius: 20px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-        <?php
-        $target_date = $date_filter ?: date('Y-m-d');
-        $ts = strtotime($target_date);
-        $month = date('m', $ts);
-        $year = date('Y', $ts);
-        
-        $first_day_ts = strtotime("$year-$month-01");
-        $first_day_of_week = date('N', $first_day_ts) - 1; // 0 (Mon) to 6 (Sun)
-        $days_in_month = date('t', $first_day_ts);
-        
-        // Month Navigation
-        $prev_month_date = date('Y-m-d', strtotime("-1 month", $first_day_ts));
-        $next_month_date = date('Y-m-d', strtotime("+1 month", $first_day_ts));
-        
-        $nav_params = "view=timeline_month&search=$search&status=$status_filter&doctor_id=$doctor_filter&type=$type_filter";
-        
-        // Group appointments by day
-        $grouped_month = [];
-        foreach ($appointments as $a) {
-            $day = (int)date('d', strtotime($a['appointment_date']));
-            $grouped_month[$day][] = $a;
-        }
-        ?>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; padding: 0 1rem;">
-            <a href="?<?php echo $nav_params; ?>&date=<?php echo $prev_month_date; ?>" class="btn shadow-sm" style="background: white; border: 1px solid #e2e8f0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--text-main); transition: all 0.2s;">
-                <i class="fas fa-chevron-left"></i>
-            </a>
-            <h2 style="margin: 0; font-weight: 800; color: var(--text-main); font-size: 1.5rem; letter-spacing: -0.02em;">Tháng <?php echo $month; ?> / <?php echo $year; ?></h2>
-            <a href="?<?php echo $nav_params; ?>&date=<?php echo $next_month_date; ?>" class="btn shadow-sm" style="background: white; border: 1px solid #e2e8f0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--text-main); transition: all 0.2s;">
-                <i class="fas fa-chevron-right"></i>
-            </a>
-        </div>
-
-        <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px;">
-            <!-- Day labels -->
-            <?php foreach (['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ Nhật'] as $lbl): ?>
-                <div style="text-align: center; font-size: 0.7rem; font-weight: 800; color: #94a3b8; padding: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"><?php echo $lbl; ?></div>
-            <?php endforeach; ?>
-
-            <!-- Empty cells before first day -->
-            <?php for ($i = 0; $i < $first_day_of_week; $i++): ?>
-                <div style="min-height: 130px; background: #f8fafc; border-radius: 16px; border: 1px dashed #e2e8f0;"></div>
-            <?php endfor; ?>
-
-            <!-- Actual days -->
-            <?php for ($d = 1; $d <= $days_in_month; $d++): 
-                $current_date_str = "$year-$month-" . str_pad($d, 2, '0', STR_PAD_LEFT);
-                $is_today = ($current_date_str == date('Y-m-d'));
-                $day_appts = $grouped_month[$d] ?? [];
-            ?>
-                <div style="min-height: 130px; background: white; border-radius: 16px; border: 1px solid <?php echo $is_today ? 'var(--primary)' : '#eef2f6'; ?>; padding: 0.85rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; <?php echo $is_today ? 'box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);' : ''; ?>" 
-                     class="calendar-day-cell <?php echo $is_today ? 'today' : ''; ?>"
-                     onclick="location.href='?view=timeline&date=<?php echo $current_date_str; ?>&<?php echo $view_btn_params; ?>'">
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
-                        <span style="font-weight: 800; font-size: 1.15rem; color: <?php echo $is_today ? 'var(--primary)' : 'var(--text-main)'; ?>;">
-                            <?php echo $d; ?>
-                        </span>
-                        <?php if (count($day_appts) > 0): ?>
-                            <span style="background: <?php echo $is_today ? 'var(--primary)' : '#f1f5f9'; ?>; color: <?php echo $is_today ? 'white' : '#475569'; ?>; font-size: 0.65rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 6px;">
-                                <?php echo count($day_appts); ?> Ca
-                            </span>
-                        <?php endif; ?>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 5px;">
-                        <?php foreach (array_slice($day_appts, 0, 3) as $a): 
-                            $status = $status_map[$a['status']] ?? ['color' => '#64748b'];
-                        ?>
-                            <div style="font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; background: <?php echo $status['color']; ?>; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                <?php echo date('H:i', strtotime($a['appointment_date'])); ?> <?php echo e($a['contact_name']); ?>
-                            </div>
-                        <?php endforeach; ?>
-                        <?php if (count($day_appts) > 3): ?>
-                            <div style="font-size: 0.6rem; color: var(--text-muted); text-align: center; font-weight: 700; margin-top: 4px; background: #f8fafc; padding: 2px; border-radius: 4px;">+ <?php echo count($day_appts) - 3; ?> lịch hẹn</div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endfor; ?>
-        </div>
-    </div>
 <?php endif; ?>
 
 <style>
@@ -731,18 +524,6 @@ function setPeriod(p) {
     background: white;
     color: var(--primary);
 }
-.calendar-day-cell {
-    cursor: pointer;
-}
-.calendar-day-cell:hover {
-    border-color: var(--primary) !important;
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
-    z-index: 10;
-}
-.calendar-day-cell.today {
-    background: #fdf2f205;
-}
 .action-item {
     display: flex;
     align-items: center;
@@ -767,18 +548,6 @@ function setPeriod(p) {
 }
 .action-item:hover i {
     color: var(--primary);
-}
-.timeline-event:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
-}
-.week-event:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-.day-event-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
 }
 
 /* Tooltip styles */
@@ -834,7 +603,7 @@ function setPeriod(p) {
 </style>
 
 <div id="quick-toast" style="position: fixed; bottom: 2rem; right: 2rem; background: #0f172a; color: white; padding: 0.8rem 1.5rem; border-radius: 12px; box-shadow: var(--shadow-lg); display: none; z-index: 9999; font-weight: 600; font-size: 0.9rem;">
-    <i class="fas fa-check-circle" style="color: #10b981; margin-right: 0.5rem;"></i> <span id="toast-msg">Đã cập nhật!</span>
+    <i class="fas fa-check-circle" style="color: #10b981; margin-right: 0.5rem;"></i> <span id="toast-msg"></span>
 </div>
 
 <script>
@@ -879,13 +648,13 @@ function updateAppointment(select) {
     .then(data => {
         select.style.opacity = '1';
         if (data.success) {
-            showToast('Đã lưu ' + (selectName === 'doctor_id' ? 'bác sĩ' : 'trạng thái') + '!');
+            showToast(selectName === 'doctor_id' ? '<?php echo __('appointment.toast.saved_doctor'); ?>' : '<?php echo __('appointment.toast.saved_status'); ?>');
             if (selectName === 'status') {
                 // Refresh to update colors if not doing it via CSS/JS dynamically
                 setTimeout(() => location.reload(), 500);
             }
         } else {
-            alert('Lỗi khi lưu!');
+            alert('<?php echo __('appointment.toast.save_error'); ?>');
             location.reload();
         }
     })

@@ -32,6 +32,7 @@ CREATE TABLE `appointments` (
   `reexam_rule_id` int(11) DEFAULT NULL,
   `branch_id` int(11) NOT NULL,
   `appointment_date` datetime NOT NULL,
+  `appointment_end_time` time DEFAULT NULL,
   `status` enum('scheduled','confirmed','arrived','no_show','cancelled','completed') DEFAULT 'scheduled',
   `notes` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),

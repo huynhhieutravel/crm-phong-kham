@@ -29,21 +29,21 @@ if ($start_date && $end_date) {
         <div class="stat-icon" style="color: var(--primary); background: rgba(99, 102, 241, 0.1); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
             <i class="fas fa-users fa-lg"></i>
         </div>
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Bệnh nhân mới</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.new_patients_count'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem;"><?php echo number_format($stats['patients']); ?></div>
     </div>
     <div class="card stat-card">
         <div class="stat-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
             <i class="fas fa-calendar-check fa-lg"></i>
         </div>
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Lịch hẹn</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.appointments'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem;"><?php echo number_format($stats['appointments']); ?></div>
     </div>
     <div class="card stat-card">
         <div class="stat-icon" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
             <i class="fas fa-coins fa-lg"></i>
         </div>
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Doanh thu</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.revenue'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem;"><?php echo format_money($stats['revenue']); ?></div>
     </div>
 </div>
@@ -51,8 +51,8 @@ if ($start_date && $end_date) {
 <div class="grid-content" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h3 style="font-weight: 700;">Lịch hẹn gần đây</h3>
-            <a href="/modules/appointments/index.php" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; text-decoration: none;">Xem tất cả <i class="fas fa-arrow-right"></i></a>
+            <h3 style="font-weight: 700;"><?php echo __('dashboard.recent_appointments'); ?></h3>
+            <a href="/modules/appointments/index.php" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; text-decoration: none;"><?php echo __('common.view_all'); ?> <i class="fas fa-arrow-right"></i></a>
         </div>
         <?php
         $recent_stmt = $db->query("
@@ -69,10 +69,10 @@ if ($start_date && $end_date) {
             <table class="table" style="width: 100%;">
                 <thead>
                     <tr style="text-align: left;">
-                        <th style="padding: 1rem 0;">Bệnh nhân</th>
-                        <th style="padding: 1rem 0;">Bác sĩ</th>
-                        <th style="padding: 1rem 0;">Thời gian</th>
-                        <th style="padding: 1rem 0;">Trạng thái</th>
+                        <th style="padding: 1rem 0;"><?php echo __('common.patient'); ?></th>
+                        <th style="padding: 1rem 0;"><?php echo __('common.doctor'); ?></th>
+                        <th style="padding: 1rem 0;"><?php echo __('common.time'); ?></th>
+                        <th style="padding: 1rem 0;"><?php echo __('common.status'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -89,7 +89,7 @@ if ($start_date && $end_date) {
                     </tr>
                     <?php endforeach; ?>
                     <?php if(empty($recent_appointments)): ?>
-                        <tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Không có dữ liệu trong khoảng thời gian này</td></tr>
+                        <tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);"><?php echo __('common.no_data_period'); ?></td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -98,7 +98,7 @@ if ($start_date && $end_date) {
     
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
         <div class="card">
-            <h3 style="margin-bottom: 1.5rem; font-weight: 700; color: #d97706;"><i class="fas fa-bell"></i> Nhắc Tái Khám</h3>
+            <h3 style="margin-bottom: 1.5rem; font-weight: 700; color: #d97706;"><i class="fas fa-bell"></i> <?php echo __('dashboard.reexam_reminders'); ?></h3>
             <?php
             // Re-exam reminders don't strictly follow the dashboard period, usually looking ahead
             $pending_reexams = $db->query("
@@ -124,28 +124,28 @@ if ($start_date && $end_date) {
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
                             <a href="tel:<?php echo $rx['phone']; ?>" class="btn btn-sm" style="flex: 1; justify-content: center; background: white; border: 1px solid #fef3c7; color: #d97706; padding: 0.25rem;">
-                                <i class="fas fa-phone-alt"></i> Gọi
+                                <i class="fas fa-phone-alt"></i> <?php echo __('common.call'); ?>
                             </a>
                             <a href="/modules/appointments/add.php?contact_id=patient:<?php echo $rx['patient_id']; ?>&type=re_exam&reexam_rule_id=<?php echo $rx['id']; ?>" class="btn btn-sm" style="flex: 2; justify-content: center; background: #d97706; color: white; padding: 0.25rem;">
-                                <i class="fas fa-calendar-plus"></i> Đặt lịch
+                                <i class="fas fa-calendar-plus"></i> <?php echo __('button.book'); ?>
                             </a>
                         </div>
                     </div>
                 <?php endforeach; ?>
                 <?php if (empty($pending_reexams)): ?>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem;">Không có lịch tái khám cần nhắc.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem;"><?php echo __('dashboard.no_reexam_reminders'); ?></p>
                 <?php endif; ?>
             </div>
         </div>
 
         <div class="card">
-            <h3 style="margin-bottom: 1.5rem; font-weight: 700;"><?php echo t('quick_actions'); ?></h3>
+            <h3 style="margin-bottom: 1.5rem; font-weight: 700;"><?php echo __('dashboard.quick_actions'); ?></h3>
             <div class="actions-list" style="display: flex; flex-direction: column; gap: 1rem;">
                 <a href="/modules/patients/add.php" class="btn btn-primary" style="justify-content: center;">
-                    <i class="fas fa-user-plus"></i> <?php echo t('add_patient'); ?>
+                    <i class="fas fa-user-plus"></i> <?php echo __('patient.add'); ?>
                 </a>
                 <a href="/modules/appointments/add.php" class="btn" style="background: white; border: 1px solid var(--primary); color: var(--primary); justify-content: center;">
-                    <i class="fas fa-calendar-plus"></i> <?php echo t('book_appointment'); ?>
+                    <i class="fas fa-calendar-plus"></i> <?php echo __('appointment.add'); ?>
                 </a>
             </div>
         </div>

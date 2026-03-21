@@ -19,11 +19,11 @@ $stmt->execute([$id]);
 $a = $stmt->fetch();
 
 if (!$a) {
-    set_flash('Lịch hẹn không tồn tại!', 'danger');
+    set_flash(__('appointment.msg.not_found'), 'danger');
     redirect('index.php');
 }
 
-$page_title = 'Chi tiết lịch hẹn';
+$page_title = __('appointment.view.title');
 $current_page = 'appointments';
 require_once '../../templates/header.php';
 ?>
@@ -32,44 +32,50 @@ require_once '../../templates/header.php';
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
         <div>
             <h2 style="margin: 0; font-weight: 800;"><?php echo e($a['patient_name'] ?: $a['lead_name']); ?></h2>
-            <p style="color: var(--text-muted);"><?php echo $a['patient_id'] ? 'Bệnh nhân' : 'Lead Marketing'; ?></p>
+            <p style="color: var(--text-muted);"><?php echo $a['patient_id'] ? __('common.patient') : __('common.lead_marketing'); ?></p>
         </div>
         <span class="badge" style="background: #e0f2fe; color: #0369a1; text-transform: uppercase; font-weight: 800;">
-            <?php echo str_replace('_', ' ', $a['type']); ?>
+            <?php echo __('appointment.type.' . $a['type']); ?>
         </span>
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
         <div>
-            <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Thời gian</label>
+            <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;"><?php echo __('appointment.table.time'); ?></label>
             <div style="font-weight: 600; margin-top: 0.25rem;">
-                <?php echo date('H:i d/m/Y', strtotime($a['appointment_date'])); ?>
+                <?php 
+                    $time_display = date('H:i', strtotime($a['appointment_date']));
+                    if (!empty($a['appointment_end_time'])) {
+                        $time_display .= ' – ' . substr($a['appointment_end_time'], 0, 5);
+                    }
+                    echo $time_display . ', ' . date('d/m/Y', strtotime($a['appointment_date']));
+                ?>
             </div>
         </div>
         <div>
-            <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Bác sĩ</label>
+            <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;"><?php echo __('appointment.doctor'); ?></label>
             <div style="font-weight: 600; margin-top: 0.25rem;">
-                <?php echo e($a['doctor_name'] ?: 'Chưa chỉ định'); ?>
+                <?php echo e($a['doctor_name'] ?: __('appointment.unassigned_doctor')); ?>
             </div>
         </div>
         <div>
-            <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Trạng thái</label>
+            <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;"><?php echo __('appointment.status'); ?></label>
             <div style="font-weight: 800; margin-top: 0.25rem; color: var(--primary);">
-                <?php echo strtoupper($a['status']); ?>
+                <?php echo strtoupper(__('appointment.status.' . $a['status'])); ?>
             </div>
         </div>
     </div>
 
     <div style="margin-bottom: 2rem;">
-        <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Ghi chú</label>
+        <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;"><?php echo __('common.notes'); ?></label>
         <div style="background: #f8fafc; padding: 1rem; border-radius: 12px; margin-top: 0.5rem; font-size: 0.9rem; line-height: 1.5;">
             <?php echo nl2br(e($a['notes'])); ?>
         </div>
     </div>
 
     <div style="display: flex; gap: 1rem;">
-        <a href="edit.php?id=<?php echo $id; ?>" class="btn btn-primary" style="flex: 1; justify-content: center;">Chỉnh sửa</a>
-        <a href="index.php" class="btn" style="flex: 1; justify-content: center; background: #f1f5f9; color: var(--text-main);">Quay lại</a>
+        <a href="edit.php?id=<?php echo $id; ?>" class="btn btn-primary" style="flex: 1; justify-content: center;"><?php echo __('common.edit'); ?></a>
+        <a href="index.php" class="btn" style="flex: 1; justify-content: center; background: #f1f5f9; color: var(--text-main);"><?php echo __('common.back'); ?></a>
     </div>
 </div>
 

@@ -46,15 +46,15 @@ if ($start_date && $end_date) {
 
 <div class="grid-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
     <div class="card stat-card">
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Bệnh nhân mới</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.new_patients_count'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);"><?php echo number_format($new_patients); ?></div>
     </div>
     <div class="card stat-card">
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Tổng số Buổi khám</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.total_sessions'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; color: #8b5cf6;"><?php echo number_format($total_sessions); ?></div>
     </div>
     <div class="card stat-card">
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Lịch hẹn hoàn tất</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.completed_appointments'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; color: #10b981;"><?php echo number_format($completed_appointments); ?></div>
     </div>
 </div>
@@ -62,7 +62,7 @@ if ($start_date && $end_date) {
 <div class="grid-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
     <!-- Patient Labels Chart -->
     <div class="card">
-        <h3 style="margin-bottom: 1.5rem; font-weight: 700;">Phân loại Bệnh nhân</h3>
+        <h3 style="margin-bottom: 1.5rem; font-weight: 700;"><?php echo __('dashboard.patient_labels'); ?></h3>
         <div style="height: 300px;">
             <canvas id="labelChart"></canvas>
         </div>
@@ -70,7 +70,7 @@ if ($start_date && $end_date) {
 
     <!-- Appointment Status Chart -->
     <div class="card">
-        <h3 style="margin-bottom: 1.5rem; font-weight: 700;">Trạng thái Lịch hẹn</h3>
+        <h3 style="margin-bottom: 1.5rem; font-weight: 700;"><?php echo __('dashboard.apt_statuses'); ?></h3>
         <div style="height: 300px;">
             <canvas id="aptStatusChart"></canvas>
         </div>
@@ -78,7 +78,7 @@ if ($start_date && $end_date) {
 </div>
 
 <div class="card">
-    <h3 style="margin-bottom: 1.5rem; font-weight: 700;">Tải trọng Bác sĩ (Load)</h3>
+    <h3 style="margin-bottom: 1.5rem; font-weight: 700;"><?php echo __('dashboard.doctor_load'); ?></h3>
     <div style="height: 400px; width: 100%;">
         <canvas id="doctorLoadChart"></canvas>
     </div>
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('aptStatusChart'), {
         type: 'doughnut',
         data: {
-            labels: <?php echo json_encode(array_column($apt_statuses, 'status')); ?>,
+            labels: <?php echo json_encode(array_map(fn($s) => __('status.' . $s), array_column($apt_statuses, 'status'))); ?>,
             datasets: [{
                 data: <?php echo json_encode(array_column($apt_statuses, 'count')); ?>,
                 backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981', '#ef4444']
@@ -120,14 +120,14 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: <?php echo json_encode(array_column($doctors, 'full_name')); ?>,
             datasets: [
                 {
-                    label: 'Buổi khám đã thực hiện',
+                    label: '<?php echo __('dashboard.sessions_conducted'); ?>',
                     data: <?php echo json_encode(array_column($doctors, 'sessions')); ?>,
                     backgroundColor: 'rgba(139, 92, 246, 0.6)',
                     borderColor: '#8b5cf6',
                     borderWidth: 1
                 },
                 {
-                    label: 'Lịch hẹn phụ trách',
+                    label: '<?php echo __('dashboard.appointments_assigned'); ?>',
                     data: <?php echo json_encode(array_column($doctors, 'appointments')); ?>,
                     backgroundColor: 'rgba(16, 185, 129, 0.6)',
                     borderColor: '#10b981',

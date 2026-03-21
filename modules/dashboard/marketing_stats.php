@@ -39,15 +39,15 @@ $statuses = $status_stmt->fetchAll();
 
 <div class="grid-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
     <div class="card stat-card">
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Tổng số Leads</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.total_leads'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);"><?php echo number_format($total_leads); ?></div>
     </div>
     <div class="card stat-card">
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Leads đã chuyển đổi</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.converted_leads'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; color: #10b981;"><?php echo number_format($converted_leads); ?></div>
     </div>
     <div class="card stat-card">
-        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Tỷ lệ chốt Sale</div>
+        <div class="stat-label" style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;"><?php echo __('dashboard.conversion_rate'); ?></div>
         <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;"><?php echo number_format($conversion_rate, 1); ?>%</div>
     </div>
 </div>
@@ -55,7 +55,7 @@ $statuses = $status_stmt->fetchAll();
 <div class="grid-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
     <!-- Lead Sources Chart -->
     <div class="card">
-        <h3 style="margin-bottom: 1.5rem; font-weight: 700;">Nguồn Marketing</h3>
+        <h3 style="margin-bottom: 1.5rem; font-weight: 700;"><?php echo __('dashboard.marketing_sources'); ?></h3>
         <div style="height: 300px;">
             <canvas id="sourceChart"></canvas>
         </div>
@@ -63,7 +63,7 @@ $statuses = $status_stmt->fetchAll();
 
     <!-- Status Breakdown Chart -->
     <div class="card">
-        <h3 style="margin-bottom: 1.5rem; font-weight: 700;">Trạng thái Leads</h3>
+        <h3 style="margin-bottom: 1.5rem; font-weight: 700;"><?php echo __('dashboard.lead_statuses'); ?></h3>
         <div style="height: 300px;">
             <canvas id="statusChart"></canvas>
         </div>
@@ -71,7 +71,7 @@ $statuses = $status_stmt->fetchAll();
 </div>
 
 <div class="card">
-    <h3 style="margin-bottom: 1.5rem; font-weight: 700;">Hiệu suất Tư vấn & Chốt Sale</h3>
+    <h3 style="margin-bottom: 1.5rem; font-weight: 700;"><?php echo __('dashboard.consultant_performance'); ?></h3>
     <div style="height: 400px; width: 100%;">
         <canvas id="consultantChart"></canvas>
     </div>
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('statusChart'), {
         type: 'pie',
         data: {
-            labels: <?php echo json_encode(array_column($statuses, 'status')); ?>,
+            labels: <?php echo json_encode(array_map(fn($s) => __('lead.status.' . $s), array_column($statuses, 'status'))); ?>,
             datasets: [{
                 data: <?php echo json_encode(array_column($statuses, 'count')); ?>,
                 backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981', '#ef4444']
@@ -112,14 +112,14 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: <?php echo json_encode(array_column($consultants, 'full_name')); ?>,
             datasets: [
                 {
-                    label: 'Tổng Leads',
+                    label: '<?php echo __('dashboard.total_leads'); ?>',
                     data: <?php echo json_encode(array_column($consultants, 'total')); ?>,
                     backgroundColor: 'rgba(99, 102, 241, 0.5)',
                     borderColor: '#6366f1',
                     borderWidth: 1
                 },
                 {
-                    label: 'Chuyển đổi (Sale)',
+                    label: '<?php echo __('dashboard.converted_sale'); ?>',
                     data: <?php echo json_encode(array_column($consultants, 'converted')); ?>,
                     backgroundColor: 'rgba(16, 185, 129, 0.5)',
                     borderColor: '#10b981',

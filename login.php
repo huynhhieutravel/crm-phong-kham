@@ -3,6 +3,7 @@
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 require_once 'includes/functions.php';
+require_once 'includes/i18n.php'; // Add i18n support for login page
 
 if (is_logged_in()) {
     redirect('/index.php');
@@ -16,17 +17,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (login($username, $password)) {
         redirect('/index.php');
     } else {
-        $error = 'Tên đăng nhập hoặc mật khẩu không đúng.';
+        $error = __('auth.login_failed') ?? 'Tên đăng nhập hoặc mật khẩu không đúng.';
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="<?php echo get_current_lang(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập | Clinic CRM</title>
+    <title><?php echo __('auth.login_title'); ?> | Clinic CRM</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -35,6 +37,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             height: 100vh;
             background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            position: relative;
+        }
+        .lang-switcher-login {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            display: flex;
+            gap: 1rem;
+        }
+        .lang-switcher-login a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .lang-switcher-login a.active, .lang-switcher-login a:hover {
+            opacity: 1;
         }
         .login-card {
             width: 100%;
@@ -91,11 +115,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+    <div class="lang-switcher-login">
+        <?php foreach(get_available_langs() as $code => $info): ?>
+            <a href="?lang=<?php echo $code; ?>" class="<?php echo get_current_lang() === $code ? 'active' : ''; ?>" title="<?php echo $info['name']; ?>">
+                <?php echo $info['flag']; ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
+
     <div class="login-card">
         <div class="login-header">
             <i class="fas fa-hand-holding-medical"></i>
             <h2>Clinic CRM</h2>
-            <p style="color: var(--text-muted); margin-top: 0.5rem;">Đăng nhập để tiếp tục</p>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;"><?php echo __('auth.login_title'); ?></p>
         </div>
         
         <?php if ($error): ?>
@@ -104,15 +136,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <form method="POST">
             <div class="form-group">
-                <label class="form-label">Tên đăng nhập</label>
+                <label class="form-label"><?php echo __('auth.username'); ?></label>
                 <input type="text" name="username" class="form-input" required placeholder="admin">
             </div>
             <div class="form-group">
-                <label class="form-label">Mật khẩu</label>
+                <label class="form-label"><?php echo __('auth.password'); ?></label>
                 <input type="password" name="password" class="form-input" required placeholder="••••••••">
             </div>
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
-                Đăng nhập
+                <?php echo __('auth.login_btn'); ?>
             </button>
         </form>
     </div>

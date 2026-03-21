@@ -20,11 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_add'])) {
         $_POST['consultant_id'] ?: null,
         $_POST['status'] ?? 'new'
     ]);
-    set_flash('Đã thêm Lead nhanh thành công!');
+    set_flash(__('lead.msg_quick_add_success'));
     redirect('index.php');
 }
 
-$page_title = 'Quản lý Lead Marketing';
+$page_title = __('lead.title');
 $current_page = 'leads';
 require_once '../../templates/header.php';
 
@@ -42,7 +42,10 @@ $period = $_GET['period'] ?? '';
 $start_date_filter = $_GET['start_date'] ?? '';
 $end_date_filter = $_GET['end_date'] ?? '';
 
-$sql = "SELECT * FROM leads";
+$sql = "SELECT l.*, 
+        (SELECT COUNT(*) FROM lead_logs ll WHERE ll.lead_id = l.id) as log_count,
+        (SELECT note FROM lead_logs ll WHERE ll.lead_id = l.id ORDER BY created_at DESC LIMIT 1) as latest_note
+        FROM leads l";
 $params = [];
 $conditions = [];
 
@@ -182,6 +185,75 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
     width: 110px;
     outline: none;
 }
+/* Tooltip styles */
+.note-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 6px;
+    color: #94a3b8;
+    transition: color 0.15s;
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+}
+.note-tooltip:hover { color: var(--primary); }
+.note-tooltip .tooltip-text {
+    visibility: hidden;
+    width: 280px;
+    background-color: #0f172a;
+    color: #f8fafc;
+    text-align: left;
+    border-radius: 10px;
+    padding: 12px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 150%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: normal;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.note-tooltip .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #0f172a transparent transparent transparent;
+}
+.note-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+    bottom: 130%;
+}
+.note-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.6rem;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    border: 1px solid white;
+}
 </style>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
@@ -190,7 +262,7 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
             <i class="fas fa-user-plus"></i>
         </div>
         <div>
-            <div style="font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Hồ sơ mới</div>
+            <div style="font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;"><?php echo __('leads.index.stats_new'); ?></div>
             <div style="font-size: 1.25rem; font-weight: 800;"><?php echo $stats['new'] ?? 0; ?></div>
         </div>
     </div>
@@ -199,7 +271,7 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
             <i class="fas fa-comment-dots"></i>
         </div>
         <div>
-            <div style="font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Đã liên hệ</div>
+            <div style="font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;"><?php echo __('leads.index.stats_contacted'); ?></div>
             <div style="font-size: 1.25rem; font-weight: 800;"><?php echo $stats['contacted'] ?? 0; ?></div>
         </div>
     </div>
@@ -208,7 +280,7 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
             <i class="fas fa-calendar-check"></i>
         </div>
         <div>
-            <div style="font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Đã đặt lịch</div>
+            <div style="font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;"><?php echo __('leads.index.stats_scheduled'); ?></div>
             <div style="font-size: 1.25rem; font-weight: 800;"><?php echo $stats['scheduled'] ?? 0; ?></div>
         </div>
     </div>
@@ -220,31 +292,31 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
             <div class="filter-grid">
                 <!-- Search -->
                 <div class="filter-group">
-                    <label class="filter-label">Tìm kiếm</label>
+                    <label class="filter-label"><?php echo __('leads.index.filter_search'); ?></label>
                     <div style="position: relative;">
                         <i class="fas fa-search" style="position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.75rem;"></i>
-                        <input type="text" name="search" class="form-input filter-input" placeholder="Tên, SĐT..." value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
+                        <input type="text" name="search" class="form-input filter-input" placeholder="<?php echo __('leads.index.filter_search_placeholder'); ?>" value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
                     </div>
                 </div>
 
                 <!-- Status Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Trạng thái</label>
+                    <label class="filter-label"><?php echo __('leads.index.filter_status'); ?></label>
                     <select name="status" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value="">-- Trạng thái --</option>
-                        <option value="new" <?php echo $status_filter === 'new' ? 'selected' : ''; ?>>Mới</option>
-                        <option value="contacted" <?php echo $status_filter === 'contacted' ? 'selected' : ''; ?>>Đã liên hệ</option>
-                        <option value="scheduled" <?php echo $status_filter === 'scheduled' ? 'selected' : ''; ?>>Đã đặt lịch</option>
-                        <option value="converted" <?php echo $status_filter === 'converted' ? 'selected' : ''; ?>>Đã chuyển đổi</option>
-                        <option value="cancelled" <?php echo $status_filter === 'cancelled' ? 'selected' : ''; ?>>Đã hủy</option>
+                        <option value=""><?php echo __('leads.index.filter_status_placeholder', '-- Trạng thái --'); ?></option>
+                        <option value="new" <?php echo $status_filter === 'new' ? 'selected' : ''; ?>><?php echo __('leads.status.new'); ?></option>
+                        <option value="contacted" <?php echo $status_filter === 'contacted' ? 'selected' : ''; ?>><?php echo __('leads.status.contacted'); ?></option>
+                        <option value="scheduled" <?php echo $status_filter === 'scheduled' ? 'selected' : ''; ?>><?php echo __('leads.status.scheduled'); ?></option>
+                        <option value="converted" <?php echo $status_filter === 'converted' ? 'selected' : ''; ?>><?php echo __('leads.status.converted'); ?></option>
+                        <option value="cancelled" <?php echo $status_filter === 'cancelled' ? 'selected' : ''; ?>><?php echo __('leads.status.cancelled'); ?></option>
                     </select>
                 </div>
 
                 <!-- Group Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Nhóm bệnh</label>
+                    <label class="filter-label"><?php echo __('leads.index.filter_group'); ?></label>
                     <select name="medical_group" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value="">-- Nhóm bệnh --</option>
+                        <option value=""><?php echo __('leads.index.filter_group_placeholder'); ?></option>
                         <?php foreach ($medical_groups as $mg): ?>
                             <option value="<?php echo $mg; ?>" <?php echo $group_filter === $mg ? 'selected' : ''; ?>><?php echo $mg; ?></option>
                         <?php endforeach; ?>
@@ -253,9 +325,9 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
 
                 <!-- Consultant Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Tư vấn viên</label>
+                    <label class="filter-label"><?php echo __('leads.index.filter_consultant'); ?></label>
                     <select name="consultant_id" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value="">-- Tư vấn viên --</option>
+                        <option value=""><?php echo __('leads.index.filter_consultant_placeholder'); ?></option>
                         <?php foreach ($consultants as $con): ?>
                             <option value="<?php echo $con['id']; ?>" <?php echo (int)$consultant_filter === (int)$con['id'] ? 'selected' : ''; ?>><?php echo e($con['full_name']); ?></option>
                         <?php endforeach; ?>
@@ -265,16 +337,42 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
 
             <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <div class="filter-btn-group">
-                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;">Thời gian:</span>
+                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;"><?php echo __('leads.index.filter_time'); ?></span>
                     <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
-                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod('')">Tất cả</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod('today')">Hôm nay</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod('week')">Tuần</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod('month')">Tháng</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod('quarter')">Quý</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod('year')">Năm</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod('custom')">Tùy chọn</a>
+                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod(event, '')"><?php echo __('common.all'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod(event, 'today')"><?php echo __('filter.today'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod(event, 'week')"><?php echo __('filter.week'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod(event, 'month')"><?php echo __('filter.month'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod(event, 'quarter')"><?php echo __('filter.quarter'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod(event, 'year')"><?php echo __('filter.year'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod(event, 'custom')"><?php echo __('filter.custom'); ?></a>
                 </div>
+
+                <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; background: #f8fafc; padding: 0.3rem 0.5rem; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <?php if($period === 'month'): ?>
+                            <select name="sel_month" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
+                                <?php for($m=1; $m<=12; $m++): ?>
+                                    <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        <?php endif; ?>
+                        
+                        <?php if($period === 'quarter'): ?>
+                            <select name="sel_quarter" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
+                                <?php for($q=1; $q<=4; $q++): ?>
+                                    <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        <?php endif; ?>
+
+                        <select name="sel_year" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
+                            <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
+                                <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                <?php endif; ?>
 
                 <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
                     <div class="custom-range-box">
@@ -282,13 +380,13 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
                         <span style="color: #94a3b8; font-size: 0.8rem;">→</span>
                         <input type="date" name="end_date" class="custom-range-input" value="<?php echo e($end_date_filter); ?>">
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;">Áp dụng</button>
+                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px; padding: 0 0.75rem; border-radius: 8px;"><?php echo __('common.apply'); ?></button>
                 </div>
 
                 <?php if ($is_filtered): ?>
                     <div style="margin-left: auto;">
                         <a href="index.php" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="fas fa-times-circle"></i> XÓA LỌC
+                            <i class="fas fa-times-circle"></i> <?php echo __('common.clear_filter'); ?>
                         </a>
                     </div>
                 <?php endif; ?>
@@ -296,10 +394,10 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
         </form>
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
             <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.5rem 1rem; font-weight: 700; font-size: 0.85rem; border-radius: 10px; white-space: nowrap;">
-                <i class="fas fa-plus"></i> THÊM LEAD
+                <i class="fas fa-plus"></i> <?php echo __('leads.index.btn_add'); ?>
             </a>
             <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; background: #f1f5f9; padding: 0.25rem 0.5rem; border-radius: 6px; text-align: center;">
-                <?php echo count($leads); ?> Lead
+                <?php echo sprintf(__('leads.index.leads_count'), count($leads)); ?>
             </p>
         </div>
     </div>
@@ -330,25 +428,25 @@ function setPeriod(p) {
             <thead>
                 <!-- Column Titles (Sticky Top 0) -->
                 <tr style="text-align: left; background: #f8fafc;">
-                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 120px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;">Ngày tạo</th>
-                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 220px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;">Thông tin Lead</th>
-                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 180px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;">Nguồn & Nhóm</th>
-                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 160px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;">Tư vấn viên</th>
-                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 180px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;">Trạng thái tư vấn</th>
-                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 200px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;">Thời gian liên hệ</th>
-                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 150px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;">Thao tác</th>
+                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 120px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;"><?php echo __('leads.table.created_at'); ?></th>
+                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 220px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;"><?php echo __('leads.table.lead_info'); ?></th>
+                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 180px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;"><?php echo __('leads.table.source_group'); ?></th>
+                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 160px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;"><?php echo __('leads.table.consultant'); ?></th>
+                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 180px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;"><?php echo __('leads.table.status'); ?></th>
+                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 200px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;"><?php echo __('leads.table.contact_time'); ?></th>
+                    <th style="position: sticky; top: 0; z-index: 10; padding: 1rem; width: 150px; background: #f8fafc; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05rem;"><?php echo __('leads.table.actions'); ?></th>
                 </tr>
                 <!-- Quick Add Row (Sticky Top 48px) -->
                 <tr style="background: #f1f5f9; border-bottom: 1px solid var(--border-color);">
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 1rem; background: #f1f5f9;">
-                        <span class="badge" style="background: #6366f1; color: white; font-weight: 800; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;"><i class="fas fa-bolt"></i> Nhanh</span>
+                        <span class="badge" style="background: #6366f1; color: white; font-weight: 800; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;"><i class="fas fa-bolt"></i> <?php echo __('leads.index.quick_badge'); ?></span>
                     </td>
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 0.5rem; background: #f1f5f9;">
-                        <input type="text" name="full_name" class="form-input" placeholder="Tên..." style="padding: 0.35rem 0.6rem; font-size: 0.8rem; border-radius: 8px;" required form="quick-add-form">
+                        <input type="text" name="full_name" class="form-input" placeholder="<?php echo __('leads.index.placeholder_name'); ?>" style="padding: 0.35rem 0.6rem; font-size: 0.8rem; border-radius: 8px;" required form="quick-add-form">
                     </td>
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 0.5rem; background: #f1f5f9;">
                         <div style="display: flex; gap: 0.3rem;">
-                            <input type="text" name="phone" class="form-input" placeholder="SĐT..." style="padding: 0.35rem 0.6rem; font-size: 0.8rem; border-radius: 8px;" required form="quick-add-form">
+                            <input type="text" name="phone" class="form-input" placeholder="<?php echo __('leads.index.placeholder_phone'); ?>" style="padding: 0.35rem 0.6rem; font-size: 0.8rem; border-radius: 8px;" required form="quick-add-form">
                             <select name="source" class="form-input" style="padding: 0.35rem; font-size: 0.8rem; border-radius: 8px;" form="quick-add-form">
                                 <?php foreach ($lead_sources as $key => $label): ?>
                                     <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
@@ -358,7 +456,7 @@ function setPeriod(p) {
                     </td>
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 0.5rem; background: #f1f5f9;">
                         <select name="medical_group" class="form-input" style="padding: 0.35rem; font-size: 0.8rem; border-radius: 8px;" form="quick-add-form">
-                            <option value="">-- Nhóm bệnh --</option>
+                            <option value=""><?php echo __('leads.index.placeholder_mg'); ?></option>
                             <?php foreach ($medical_groups as $mg): ?>
                                 <option value="<?php echo $mg; ?>"><?php echo $mg; ?></option>
                             <?php endforeach; ?>
@@ -366,7 +464,7 @@ function setPeriod(p) {
                     </td>
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 0.5rem; background: #f1f5f9;">
                         <select name="consultant_id" class="form-input" style="padding: 0.35rem; font-size: 0.8rem; border-radius: 8px;" form="quick-add-form">
-                            <option value="">-- Chọn TVV --</option>
+                            <option value=""><?php echo __('leads.index.placeholder_con'); ?></option>
                             <?php foreach ($consultants as $con): ?>
                                 <option value="<?php echo $con['id']; ?>"><?php echo e($con['full_name']); ?></option>
                             <?php endforeach; ?>
@@ -374,16 +472,16 @@ function setPeriod(p) {
                     </td>
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 0.5rem; background: #f1f5f9;">
                          <select name="status" class="form-input" style="padding: 0.35rem; font-size: 0.8rem; border-radius: 8px; font-weight: 600;" form="quick-add-form">
-                            <option value="new" selected>Mới (New)</option>
-                            <option value="contacted">Đã liên hệ</option>
-                            <option value="scheduled">Đã đặt lịch</option>
+                            <option value="new" selected><?php echo __('leads.status.new'); ?></option>
+                            <option value="contacted"><?php echo __('leads.status.contacted'); ?></option>
+                            <option value="scheduled"><?php echo __('leads.status.scheduled'); ?></option>
                         </select>
                     </td>
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 1rem; background: #f1f5f9;">
                         <form id="quick-add-form" method="POST">
                             <input type="hidden" name="quick_add" value="1">
                             <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; border-radius: 8px; width: 100%; white-space: nowrap;">
-                                <i class="fas fa-plus"></i> LƯU
+                                <i class="fas fa-plus"></i> <?php echo __('leads.index.btn_save_quick'); ?>
                             </button>
                         </form>
                     </td>
@@ -396,8 +494,28 @@ function setPeriod(p) {
                             <?php echo date('d/m/Y', strtotime($l['created_at'])); ?>
                         </td>
                         <td style="padding: 1rem;">
-                            <div style="font-weight: 700; color: var(--text-main);"><?php echo e($l['full_name']); ?></div>
-                            <div style="font-size: 0.85rem; color: var(--primary); font-weight: 600;"><?php echo e($l['phone']); ?></div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <div style="font-weight: 700; color: var(--text-main);"><?php echo e($l['full_name']); ?></div>
+                                    <div style="font-size: 0.85rem; color: var(--primary); font-weight: 600;"><?php echo e($l['phone']); ?></div>
+                                </div>
+                                <?php if($l['log_count'] > 0): ?>
+                                    <div class="note-tooltip">
+                                        <i class="fas fa-sticky-note" style="font-size: 1.1rem;"></i>
+                                        <div class="note-badge"><?php echo $l['log_count']; ?></div>
+                                        <div class="tooltip-text">
+                                            <div style="border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 8px; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                                <span style="font-weight: 800; color: #3b82f6;">Ghi chú mới nhất</span>
+                                                <span style="font-size: 0.7rem; opacity: 0.8;">Tổng: <?php echo $l['log_count']; ?></span>
+                                            </div>
+                                            <?php echo nl2br(e($l['latest_note'])); ?>
+                                            <div style="margin-top: 8px; font-size: 0.7rem; text-align: right; opacity: 0.6; font-style: italic;">
+                                                Xem tất cả trong mục Chỉnh sửa
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td style="padding: 0.75rem 1rem;">
                             <div style="display: flex; flex-direction: column; gap: 0.3rem;">
@@ -433,7 +551,7 @@ function setPeriod(p) {
                             <form action="update_quick.php" method="POST" class="quick-status-form">
                                 <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                 <select name="consultant_id" class="form-input" style="padding: 0.3rem; font-size: 0.8rem; border: none; background: transparent;" onchange="updateLead(this)">
-                                    <option value="">-- Chưa giao --</option>
+                                    <option value=""><?php echo __('leads.table.unassigned'); ?></option>
                                     <?php foreach ($consultants as $con): ?>
                                         <option value="<?php echo $con['id']; ?>" <?php echo (int)$l['consultant_id'] === (int)$con['id'] ? 'selected' : ''; ?>><?php echo e($con['full_name']); ?></option>
                                     <?php endforeach; ?>
@@ -444,31 +562,38 @@ function setPeriod(p) {
                             <form action="update_quick.php" method="POST" class="quick-status-form">
                                 <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                 <select name="consultation_status" class="form-input" style="padding: 0.4rem; font-size: 0.8rem; border-radius: 8px; font-weight: 600; border: 1px solid #e2e8f0;" onchange="updateLead(this)">
-                                    <option value="">-- Chọn trạng thái --</option>
+                                    <option value=""><?php echo __('leads.index.filter_status_placeholder', '-- Trạng thái --'); ?></option>
                                     <?php 
-                                    $statuses = ['Mới', 'Đã liên hệ', 'Hẹn gọi lại', 'Đã đặt lịch', 'Đã đến khám', 'Hủy/Không nhu cầu'];
-                                    foreach ($statuses as $s): ?>
-                                        <option value="<?php echo $s; ?>" <?php echo $l['consultation_status'] === $s ? 'selected' : ''; ?>><?php echo $s; ?></option>
+                                    $statuses = [
+                                        'Mới' => __('leads.status.new'), 
+                                        'Đã liên hệ' => __('leads.status.contacted'), 
+                                        'Hẹn gọi lại' => __('leads.status.recall', 'Hẹn gọi lại'), 
+                                        'Đã đặt lịch' => __('leads.status.scheduled'), 
+                                        'Đã đến khám' => __('leads.status.visited', 'Đã đến khám'), 
+                                        'Hủy/Không nhu cầu' => __('leads.status.cancelled')
+                                    ];
+                                    foreach ($statuses as $val => $lbl): ?>
+                                        <option value="<?php echo $val; ?>" <?php echo $l['consultation_status'] === $val ? 'selected' : ''; ?>><?php echo $lbl; ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </form>
                         </td>
                         <td style="padding: 1rem; font-size: 0.75rem;">
                             <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                                <div><i class="fas fa-phone-alt" style="width: 14px; color: #94a3b8;"></i> LH: <?php echo $l['contact_time'] ? date('H:i d/m', strtotime($l['contact_time'])) : '--'; ?></div>
-                                <div><i class="fas fa-history" style="width: 14px; color: #94a3b8;"></i> Lại: <?php echo $l['recontact_time'] ? date('H:i d/m', strtotime($l['recontact_time'])) : '--'; ?></div>
-                                <div><i class="fas fa-calendar-check" style="width: 14px; color: #3b82f6;"></i> BOOK: <?php echo $l['appointment_booking_time'] ? date('H:i d/m', strtotime($l['appointment_booking_time'])) : '--'; ?></div>
+                                <div><i class="fas fa-phone-alt" style="width: 14px; color: #94a3b8;"></i> <?php echo __('leads.table.label_contact'); ?> <?php echo $l['contact_time'] ? date('H:i d/m', strtotime($l['contact_time'])) : '--'; ?></div>
+                                <div><i class="fas fa-history" style="width: 14px; color: #94a3b8;"></i> <?php echo __('leads.table.label_recontact'); ?> <?php echo $l['recontact_time'] ? date('H:i d/m', strtotime($l['recontact_time'])) : '--'; ?></div>
+                                <div><i class="fas fa-calendar-check" style="width: 14px; color: #3b82f6;"></i> <?php echo __('leads.table.label_book'); ?> <?php echo $l['appointment_booking_time'] ? date('H:i d/m', strtotime($l['appointment_booking_time'])) : '--'; ?></div>
                             </div>
                         </td>
                         <td style="padding: 1.2rem 1rem; white-space: nowrap;">
                             <div style="display: flex; gap: 0.4rem; align-items: center;">
-                                <a href="../appointments/add.php?lead_id=<?php echo $l['id']; ?>" class="btn btn-sm" style="background: #4f46e5; color: white; padding: 0.4rem 0.6rem; font-size: 0.75rem; border-radius: 8px;" title="Đặt lịch khám">
-                                    <i class="fas fa-calendar-plus"></i> Đặt lịch
+                                <a href="../appointments/add.php?lead_id=<?php echo $l['id']; ?>" class="btn btn-sm" style="background: #4f46e5; color: white; padding: 0.4rem 0.6rem; font-size: 0.75rem; border-radius: 8px;" title="<?php echo __('leads.table.btn_book'); ?>">
+                                    <i class="fas fa-calendar-plus"></i> <?php echo __('leads.table.btn_book'); ?>
                                 </a>
                                 <a href="edit.php?id=<?php echo $l['id']; ?>" class="btn btn-sm" style="background: #f1f5f9; color: var(--text-main); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px;">
                                     <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
                                 </a>
-                                <a href="delete.php?id=<?php echo $l['id']; ?>" class="btn btn-sm" style="background: #fff1f2; color: #e11d48; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px;" onclick="return confirm('Xóa Lead này?')">
+                                <a href="delete.php?id=<?php echo $l['id']; ?>" class="btn btn-sm" style="background: #fff1f2; color: #e11d48; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px;" onclick="return confirm('<?php echo __('lead.confirm_delete'); ?>')">
                                     <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
                                 </a>
                             </div>
@@ -477,9 +602,9 @@ function setPeriod(p) {
                 <?php endforeach; ?>
                 <?php if (empty($leads)): ?>
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                        <td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-muted);">
                             <i class="fas fa-inbox" style="font-size: 2rem; display: block; margin-bottom: 1rem; opacity: 0.3;"></i>
-                            Chưa có dữ liệu Lead nào.
+                            <?php echo __('leads.index.no_data'); ?>
                         </td>
                     </tr>
                 <?php endif; ?>
@@ -504,7 +629,7 @@ function setPeriod(p) {
 </style>
 
 <div id="quick-toast" style="position: fixed; bottom: 2rem; right: 2rem; background: #0f172a; color: white; padding: 0.8rem 1.5rem; border-radius: 12px; box-shadow: var(--shadow-lg); display: none; z-index: 9999; font-weight: 600; font-size: 0.9rem;">
-    <i class="fas fa-check-circle" style="color: #10b981; margin-right: 0.5rem;"></i> <span id="toast-msg">Đã lưu!</span>
+    <i class="fas fa-check-circle" style="color: #10b981; margin-right: 0.5rem;"></i> <span id="toast-msg"><?php echo __('leads.index.toast_saved'); ?></span>
 </div>
 
 <script>
@@ -535,14 +660,14 @@ function updateLead(select) {
     .then(data => {
         select.style.opacity = '1';
         if (data.success) {
-            let label = 'thông tin';
-            if (selectName === 'consultation_status') label = 'trạng thái';
-            else if (selectName === 'consultant_id') label = 'TVV';
-            else if (selectName === 'source') label = 'nguồn';
-            else if (selectName === 'medical_group') label = 'nhóm bệnh';
-            showToast('Đã lưu ' + label + '!');
+            let label = '<?php echo __('leads.index.toast_label_info', 'thông tin'); ?>';
+            if (selectName === 'consultation_status') label = '<?php echo __('leads.index.toast_label_status', 'trạng thái'); ?>';
+            else if (selectName === 'consultant_id') label = '<?php echo __('leads.index.toast_label_tvv', 'TVV'); ?>';
+            else if (selectName === 'source') label = '<?php echo __('leads.index.toast_label_source', 'nguồn'); ?>';
+            else if (selectName === 'medical_group') label = '<?php echo __('leads.index.toast_label_group', 'nhóm bệnh'); ?>';
+            showToast('<?php echo __('leads.index.toast_saved_info_prefix', 'Đã lưu '); ?>' + label + '!');
         } else {
-            alert('Lỗi khi lưu!');
+            alert('<?php echo __('lead.msg_err_save'); ?>');
             location.reload();
         }
     })

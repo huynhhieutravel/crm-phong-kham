@@ -3,6 +3,7 @@
 session_start();
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/i18n.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_POST['id'] ?? 0;
@@ -11,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['consultant_id'])) {
         $stmt = $db->prepare("UPDATE leads SET consultant_id = ? WHERE id = ?");
         $stmt->execute([$_POST['consultant_id'] ?: null, $id]);
-        set_flash('Đã cập nhật tư vấn viên!');
+        set_flash(__('leads.index.toast_saved_info_prefix') . __('leads.index.toast_label_tvv') . '!');
     }
 
     if (isset($_POST['consultation_status'])) {
@@ -27,20 +28,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($status === 'Hủy/Không nhu cầu') {
             $db->prepare("UPDATE leads SET status = 'cancelled' WHERE id = ?")->execute([$id]);
         }
-
-        set_flash('Đã cập nhật trạng thái tư vấn!');
+        set_flash(__('leads.index.toast_saved_info_prefix') . __('leads.index.toast_label_status') . '!');
     }
 
     if (isset($_POST['source'])) {
         $stmt = $db->prepare("UPDATE leads SET source = ? WHERE id = ?");
         $stmt->execute([$_POST['source'], $id]);
-        set_flash('Đã cập nhật nguồn!');
+        set_flash(__('leads.index.toast_saved_info_prefix') . __('leads.index.toast_label_source') . '!');
     }
 
     if (isset($_POST['medical_group'])) {
         $stmt = $db->prepare("UPDATE leads SET medical_group = ? WHERE id = ?");
         $stmt->execute([$_POST['medical_group'], $id]);
-        set_flash('Đã cập nhật nhóm bệnh!');
+        set_flash(__('leads.index.toast_saved_info_prefix') . __('leads.index.toast_label_group') . '!');
     }
 
     // Handle AJAX Request for quick updates

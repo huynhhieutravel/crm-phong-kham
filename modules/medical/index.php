@@ -4,7 +4,7 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-$page_title = 'Hồ sơ bệnh án';
+$page_title = __('medical.index.title');
 $current_page = 'medical';
 require_once '../../templates/header.php';
 
@@ -51,16 +51,16 @@ if ($period) {
             (SELECT id FROM medical_sessions WHERE patient_id = p.id AND DATE(session_date) = CURDATE() AND status = 'active' LIMIT 1) as active_session_id
             FROM patients p
             INNER JOIN (
-                SELECT patient_id, COUNT(*) as history_count, MAX(created_at) as last_record
-                FROM medical_history
-                WHERE created_at BETWEEN ? AND ?
+                SELECT patient_id, COUNT(*) as history_count, MAX(session_date) as last_record
+                FROM medical_sessions
+                WHERE session_date BETWEEN ? AND ?
                 GROUP BY patient_id
             ) h ON p.id = h.patient_id";
     $params = [$range['start'], $range['end']];
-    $count_sql = "SELECT COUNT(DISTINCT p.id) FROM patients p INNER JOIN medical_history mh ON p.id = mh.patient_id WHERE mh.created_at BETWEEN ? AND ?";
+    $count_sql = "SELECT COUNT(DISTINCT p.id) FROM patients p INNER JOIN medical_sessions ms ON p.id = ms.patient_id WHERE ms.session_date BETWEEN ? AND ?";
 } else {
     $sql = "SELECT p.*, 
-            (SELECT COUNT(*) FROM medical_history WHERE patient_id = p.id) as history_count,
+            (SELECT COUNT(*) FROM medical_sessions WHERE patient_id = p.id) as history_count,
             (SELECT id FROM medical_sessions WHERE patient_id = p.id AND DATE(session_date) = CURDATE() AND status = 'active' LIMIT 1) as active_session_id
             FROM patients p";
     $params = [];
@@ -167,23 +167,23 @@ $is_filtered = $search || $period;
         <form method="GET" id="filterForm" style="flex: 1;">
             <div class="filter-grid">
                 <div class="filter-group">
-                    <label class="filter-label">Tìm kiếm hồ sơ</label>
+                    <label class="filter-label"><?php echo __('medical.index.search_label'); ?></label>
                     <div style="position: relative;">
                         <i class="fas fa-search" style="position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.75rem;"></i>
-                        <input type="text" name="search" class="form-input filter-input" placeholder="Tên hoặc SĐT..." value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
+                        <input type="text" name="search" class="form-input filter-input" placeholder="<?php echo __('medical.index.search_placeholder'); ?>" value="<?php echo e($search); ?>" style="padding-left: 2.2rem !important;">
                     </div>
                 </div>
             </div>
 
             <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <div class="filter-btn-group">
-                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;">Lọc theo:</span>
+                    <span class="filter-label" style="margin-bottom: 0; margin-right: 0.25rem;"><?php echo __('common.filter_by'); ?></span>
                     <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
-                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod('')">Tất cả</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod('today')">Hôm nay</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod('week')">Tuần</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod('month')">Tháng</a>
-                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod('custom')">Tùy chọn</a>
+                    <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod('')"><?php echo __('common.all'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod('today')"><?php echo __('common.today'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod('week')"><?php echo __('common.week'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod('month')"><?php echo __('common.month'); ?></a>
+                    <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod('custom')"><?php echo __('common.custom'); ?></a>
                 </div>
 
                 <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
@@ -191,18 +191,18 @@ $is_filtered = $search || $period;
                         <input type="date" name="start_date" class="custom-range-input" value="<?php echo e($start_date_param); ?>">
                         <input type="date" name="end_date" class="custom-range-input" value="<?php echo e($end_date_param); ?>">
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px;">Lọc</button>
+                    <button type="submit" class="btn btn-primary btn-sm" style="height: 32px;"><?php echo __('common.filter_btn'); ?></button>
                 </div>
 
                 <?php if ($is_filtered): ?>
                     <a href="index.php" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none;">
-                        <i class="fas fa-times-circle"></i> XÓA LỌC
+                        <i class="fas fa-times-circle"></i> <?php echo __('common.clear_filter'); ?>
                     </a>
                 <?php endif; ?>
             </div>
         </form>
         <div style="color: var(--text-muted); font-weight: 700; background: #f1f5f9; padding: 0.4rem 0.8rem; border-radius: 10px; font-size: 0.85rem;">
-            <i class="fas fa-user-circle"></i> <?php echo $total_count; ?> bệnh nhân
+            <i class="fas fa-user-circle"></i> <?php echo $total_count; ?> <?php echo __('medical.index.patient_unit'); ?>
         </div>
     </div>
 </div>
@@ -212,13 +212,13 @@ $is_filtered = $search || $period;
     <!-- Section 1: Active Patients (Checked-in) -->
     <div class="card" style="padding: 1.5rem; border-radius: 20px; border-left: 5px solid #10b981;">
         <h4 style="font-size: 1rem; font-weight: 800; margin-bottom: 1.25rem; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fas fa-door-open" style="color: #10b981;"></i> ĐANG TẠI PHÒNG KHÁM
+            <i class="fas fa-door-open" style="color: #10b981;"></i> <?php echo __('medical.index.active_patients_title'); ?>
             <span class="badge" style="background: #10b981; color: white;"><?php echo count($active_patients); ?></span>
         </h4>
         
         <?php if (empty($active_patients)): ?>
             <div style="text-align: center; padding: 1.5rem; background: #f8fafc; border-radius: 12px; color: #94a3b8; font-size: 0.85rem; font-weight: 600;">
-                Hiện không có bệnh nhân nào đang chờ.
+                <?php echo __('medical.index.no_active_patients'); ?>
             </div>
         <?php else: ?>
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
@@ -226,11 +226,11 @@ $is_filtered = $search || $period;
                     <div style="display: flex; justify-content: space-between; align-items: center; background: #f0fdf4; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid #dcfce7;">
                         <div>
                             <div style="font-weight: 800; color: #166534;"><?php echo e($ap['full_name']); ?></div>
-                            <div style="font-size: 0.75rem; color: #15803d; font-weight: 600;">Check-in: <?php echo date('H:i', strtotime($ap['appointment_date'])); ?></div>
+                            <div style="font-size: 0.75rem; color: #15803d; font-weight: 600;"><?php echo __('medical.index.checkin_time'); ?> <?php echo date('H:i', strtotime($ap['appointment_date'])); ?></div>
                         </div>
                         <div style="display: flex; gap: 0.4rem;">
                             <a href="session_start.php?patient_id=<?php echo $ap['id']; ?>" class="btn btn-sm" style="background: #10b981; color: white; font-weight: 700;">
-                                <?php echo $ap['active_session_id'] ? 'TIẾP TỤC KHÁM' : 'BẮT ĐẦU KHÁM'; ?>
+                                <?php echo $ap['active_session_id'] ? __('medical.index.continue_exam') : __('medical.index.start_exam'); ?>
                             </a>
                         </div>
                     </div>
@@ -242,7 +242,7 @@ $is_filtered = $search || $period;
     <!-- Section 2: Recent Activity -->
     <div class="card" style="padding: 1.5rem; border-radius: 20px; border-left: 5px solid #6366f1;">
         <h4 style="font-size: 1rem; font-weight: 800; margin-bottom: 1.25rem; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fas fa-clock-rotate-left" style="color: #6366f1;"></i> HOẠT ĐỘNG GẦN ĐÂY
+            <i class="fas fa-clock-rotate-left" style="color: #6366f1;"></i> <?php echo __('medical.index.recent_activity_title'); ?>
         </h4>
         
         <div style="max-height: 200px; overflow-y: auto; padding-right: 5px;">
@@ -256,17 +256,17 @@ $is_filtered = $search || $period;
                         <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">
                             <?php 
                                 $type_map = [
-                                    'chiro_history' => 'Tiền sử Chiro',
-                                    'chiro_exam' => 'Khám Chiro',
-                                    'chiropractic' => 'SOAP',
-                                    'dong_y' => 'Đông Y'
+                                    'chiro_history' => __('medical.type.chiro_history'),
+                                    'chiro_exam' => __('medical.type.chiro_exam'),
+                                    'chiropractic' => __('medical.type.chiropractic'),
+                                    'dong_y' => __('medical.type.dong_y')
                                 ];
-                                echo $type_map[$ra['type']] ?? 'Hồ sơ y tế';
+                                echo $type_map[$ra['type']] ?? __('medical.type.default');
                             ?> 
                             • <?php echo time_elapsed_string($ra['created_at']); ?>
                         </div>
                     </div>
-                    <a href="session_view.php?id=<?php echo $ra['session_id']; ?>" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-decoration: none;">XEM SỔ</a>
+                    <a href="session_view.php?id=<?php echo $ra['session_id']; ?>" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-decoration: none;"><?php echo __('medical.index.view_record'); ?></a>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -275,16 +275,16 @@ $is_filtered = $search || $period;
 
 <div class="card" style="padding: 0; border-radius: 20px; overflow: hidden;">
     <div style="padding: 1.25rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0;">DANH SÁCH BỆNH NHÂN</h4>
+        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0;"><?php echo __('medical.index.patient_list_title'); ?></h4>
     </div>
     <div class="table-responsive">
     <table class="table" style="width: 100%; border-collapse: collapse;">
         <thead>
             <tr style="text-align: left; background: white;">
-                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;">Bệnh nhân</th>
-                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;">Liên hệ</th>
-                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;">Trạng thái hồ sơ</th>
-                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; text-align: right;">Thao tác</th>
+                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;"><?php echo __('common.patient'); ?></th>
+                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;"><?php echo __('common.contact'); ?></th>
+                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;"><?php echo __('medical.index.record_status'); ?></th>
+                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; text-align: right;"><?php echo __('common.actions'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -301,15 +301,15 @@ $is_filtered = $search || $period;
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <?php if ($p['history_count'] > 0): ?>
                                 <span class="badge" style="background: #e0e7ff; color: #4338ca; border-radius: 6px; font-weight: 700;">
-                                    <?php echo $p['history_count']; ?> đầu mục
+                                    <?php echo $p['history_count']; ?> bộ hồ sơ
                                 </span>
                             <?php else: ?>
-                                <span class="badge" style="background: #f1f5f9; color: #94a3b8; border-radius: 6px; font-weight: 700;">CHƯA CÓ HỒ SƠ</span>
+                                <span class="badge" style="background: #f1f5f9; color: #94a3b8; border-radius: 6px; font-weight: 700;"><?php echo __('medical.index.no_record'); ?></span>
                             <?php endif; ?>
 
                             <?php if ($p['active_session_id']): ?>
                                 <span class="badge" style="background: #fef9c3; color: #854d0e; border-radius: 6px; font-weight: 700;">
-                                    <i class="fas fa-spinner fa-spin"></i> ĐANG KHÁM
+                                    <i class="fas fa-spinner fa-spin"></i> <?php echo __('medical.index.examining'); ?>
                                 </span>
                             <?php endif; ?>
                         </div>
@@ -317,9 +317,9 @@ $is_filtered = $search || $period;
                     <td style="padding: 1rem 1.5rem; text-align: right;">
                         <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                             <a href="session_start.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-primary" style="font-weight: 800; padding: 0.5rem 1.25rem;">
-                                <?php echo $p['active_session_id'] ? 'TIẾP TỤC KHÁM' : 'CHỌN KHÁM'; ?>
+                                <?php echo $p['active_session_id'] ? __('medical.index.continue_exam') : __('medical.index.choose_exam'); ?>
                             </a>
-                            <a href="../patients/view.php?id=<?php echo $p['id']; ?>" class="btn" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;" title="Xem hồ sơ chi tiết">
+                            <a href="../patients/view.php?id=<?php echo $p['id']; ?>" class="btn" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;" title="<?php echo __('medical.index.view_detail'); ?>">
                                 <i class="fas fa-eye"></i>
                             </a>
                         </div>

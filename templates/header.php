@@ -3,13 +3,21 @@
 require_once __DIR__ . '/../includes/auth_middleware.php';
 
 $current_page = $current_page ?? 'dashboard';
+
+// Dynamic base_url calculation if not set
+if (!isset($base_url)) {
+    $script_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_FILENAME']));
+    $project_root = str_replace('\\', '/', realpath(__DIR__ . '/../'));
+    $rel_path = trim(str_replace($project_root, '', $script_dir), '/');
+    $base_url = ($rel_path === '') ? './' : str_repeat('../', substr_count($rel_path, '/') + 1);
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo get_current_lang(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title ?? 'Clinic Management'; ?></title>
+    <title><?php echo $page_title ?? __('common.crm_title'); ?></title>
     <link rel="stylesheet" href="/assets/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -26,10 +34,10 @@ $current_page = $current_page ?? 'dashboard';
                     </button>
                     <div>
                         <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 0.2rem;">
-                            Clinic CRM / <?php echo e(ucfirst($current_page)); ?>
+                            <?php echo __('common.crm_title'); ?> / <?php echo e(ucfirst($current_page)); ?>
                         </div>
                         <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">
-                            <?php echo $page_title ?? t('dashboard'); ?>
+                            <?php echo $page_title ?? __('menu.dashboard'); ?>
                         </h1>
                     </div>
                 </div>
@@ -66,7 +74,7 @@ $current_page = $current_page ?? 'dashboard';
                     <div class="user-profile-dropdown" style="background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
                         <div class="user-info d-none d-lg-block" style="text-align: right; margin-right: 0.75rem;">
                             <span class="user-name" style="display: block; font-weight: 700; color: var(--text-main); font-size: 0.9rem;"><?php echo e($_SESSION['full_name']); ?></span>
-                            <span class="user-role" style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Quản trị viên</span>
+                            <span class="user-role" style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('role.admin'); ?></span>
                         </div>
                         <div class="avatar-wrapper" style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), #818cf8); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
                             <?php echo substr($_SESSION['full_name'] ?? 'U', 0, 1); ?>
