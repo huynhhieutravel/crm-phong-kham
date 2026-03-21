@@ -11,6 +11,8 @@
             <i class="fas fa-th-large"></i>
             <span><?php echo t('dashboard'); ?></span>
         </a>
+
+        <?php if (can('view_leads')): ?>
         <div class="nav-item-wrapper">
             <a href="/modules/leads/index.php" class="nav-item <?php echo $current_page === 'leads' ? 'active' : ''; ?>">
                 <i class="fas fa-filter"></i>
@@ -28,6 +30,9 @@
                 </a>
             </div>
         </div>
+        <?php endif; ?>
+
+        <?php if (can('view_appointments')): ?>
         <div class="nav-item-wrapper">
             <a href="/modules/appointments/index.php" class="nav-item <?php echo $current_page === 'appointments' ? 'active' : ''; ?>">
                 <i class="fas fa-calendar-check"></i>
@@ -45,10 +50,16 @@
                 </a>
             </div>
         </div>
+        <?php endif; ?>
+
+        <?php if (can('view_patients')): ?>
         <a href="/modules/patients/index.php" class="nav-item <?php echo $current_page === 'patients' ? 'active' : ''; ?>">
             <i class="fas fa-users"></i>
             <span><?php echo t('patients'); ?></span>
         </a>
+        <?php endif; ?>
+
+        <?php if (can('view_medical')): ?>
         <div class="nav-item-wrapper">
             <a href="/modules/medical/index.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
                 <i class="fas fa-file-medical"></i>
@@ -69,24 +80,43 @@
                 </a>
             </div>
         </div>
+        <?php endif; ?>
+
         <div class="nav-section-label" style="padding: 1.5rem 1.5rem 0.5rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;"><?php echo t('management'); ?></div>
+        
+        <?php if (can('view_hr')): ?>
         <a href="/modules/hr/index.php" class="nav-item <?php echo $current_page === 'hr' ? 'active' : ''; ?>">
             <i class="fas fa-user-clock"></i>
             <span><?php echo t('hr'); ?></span>
         </a>
+        <?php endif; ?>
+
+        <?php if (can('view_sales')): ?>
         <a href="/modules/sales/index.php" class="nav-item <?php echo $current_page === 'sales' ? 'active' : ''; ?>">
             <i class="fas fa-shopping-cart"></i>
             <span><?php echo t('sales'); ?></span>
         </a>
+        <?php endif; ?>
+
+        <?php if (can('view_inventory')): ?>
         <a href="/modules/inventory/index.php" class="nav-item <?php echo $current_page === 'inventory' ? 'active' : ''; ?>">
             <i class="fas fa-boxes"></i>
             <span><?php echo t('inventory'); ?></span>
         </a>
-        <?php if (has_role('admin')): ?>
-            <a href="/modules/admin/audit_logs.php" class="nav-item <?php echo $current_page === 'admin_audit' ? 'active' : ''; ?>">
-                <i class="fas fa-shield-alt"></i>
-                <span><?php echo t('audit_log'); ?></span>
-            </a>
+        <?php endif; ?>
+
+        <?php if (can('view_reports')): ?>
+        <a href="/modules/reports/index.php" class="nav-item <?php echo $current_page === 'reports' ? 'active' : ''; ?>">
+            <i class="fas fa-chart-bar"></i>
+            <span><?php echo t('reports'); ?></span>
+        </a>
+        <?php endif; ?>
+
+        <?php if (can('view_audit_logs')): ?>
+        <a href="/modules/admin/audit_logs.php" class="nav-item <?php echo $current_page === 'admin_audit' ? 'active' : ''; ?>">
+            <i class="fas fa-shield-alt"></i>
+            <span><?php echo t('audit_log'); ?></span>
+        </a>
         <?php endif; ?>
     </nav>
     <div class="sidebar-footer" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">

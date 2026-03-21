@@ -56,6 +56,25 @@ function run_migrations($db = null) {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             ) ENGINE=InnoDB
+        ",
+        'permissions' => "
+            CREATE TABLE IF NOT EXISTS permissions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                permission_key VARCHAR(50) NOT NULL UNIQUE,
+                description VARCHAR(200),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB
+        ",
+        'role_permissions' => "
+            CREATE TABLE IF NOT EXISTS role_permissions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                role_id INT NOT NULL,
+                permission_id INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_role_perm (role_id, permission_id),
+                FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+                FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB
         "
     ];
 
