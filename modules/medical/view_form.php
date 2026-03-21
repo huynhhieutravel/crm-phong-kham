@@ -23,6 +23,7 @@ if (!$record) {
 $data = json_decode($record['history_data'], true);
 $type_label = [
     'chiropractic'  => 'Theo dõi SOAP',
+    'soap_note'     => 'Theo dõi SOAP',
     'dong_y'        => 'Phiếu khám Đông Y',
     'initial_exam'  => 'Khám Chiro (Hệ thống cũ)',
     'chiro_history' => 'Khám tiền sử bệnh Chiropractic',

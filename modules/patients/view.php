@@ -308,6 +308,7 @@ $treatments = $stmt->fetchAll();
                                 'chiro_exam' => 'Khám bệnh lần đầu (Chiro)',
                                 'chiro_history' => 'Khám tiền sử bệnh Chiropractic',
                                 'chiropractic' => 'Theo dõi SOAP',
+                                'soap_note' => 'Theo dõi SOAP',
                                 'dong_y' => 'Đông Y'
                             ][$i['type']] ?? 'Y tế';
                             $color = $is_tr ? '#10b981' : '#6366f1';

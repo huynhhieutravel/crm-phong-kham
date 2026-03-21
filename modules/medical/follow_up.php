@@ -5,20 +5,41 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 
 $patient_id = $_GET['patient_id'] ?? 0;
+$session_id = $_GET['session_id'] ?? null;
+$record_id = $_GET['id'] ?? null;
 $db = getDB();
+
+// Load existing data if editing
+$existing_data = [];
+if ($record_id) {
+    $stmt = $db->prepare("SELECT history_data FROM medical_history WHERE id = ?");
+    $stmt->execute([$record_id]);
+    $json = $stmt->fetchColumn();
+    $existing_data = json_decode($json, true) ?: [];
+}
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $soap_data = json_encode($_POST['soap'] ?? []);
+    $soap_data = json_encode($_POST['soap'] ?? [], JSON_UNESCAPED_UNICODE);
     
-    $stmt = $db->prepare("
-        INSERT INTO medical_history (patient_id, type, history_data, created_by)
-        VALUES (?, 'chiropractic', ?, ?)
-    ");
-    $stmt->execute([$patient_id, $soap_data, $_SESSION['user_id']]);
+    if ($record_id) {
+        $stmt = $db->prepare("UPDATE medical_history SET history_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([$soap_data, $record_id]);
+    } else {
+        $stmt = $db->prepare("
+            INSERT INTO medical_history (patient_id, session_id, type, history_data, created_by)
+            VALUES (?, ?, 'soap_note', ?, ?)
+        ");
+        $stmt->execute([$patient_id, $session_id, $soap_data, $_SESSION['user_id']]);
+    }
     
     set_flash('Lưu phiếu theo dõi điều trị (SOAP) thành công!');
-    redirect("../patients/view.php?id=$patient_id");
+    
+    if ($session_id) {
+        redirect("session_view.php?id=$session_id");
+    } else {
+        redirect("../patients/view.php?id=$patient_id");
+    }
 }
 
 $stmt = $db->prepare("SELECT full_name FROM patients WHERE id = ?");
