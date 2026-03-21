@@ -305,9 +305,9 @@ $treatments = $stmt->fetchAll();
                             $i = $item['data'];
                             $is_tr = ($item['type'] === 'treatment');
                             $type_label = $is_tr ? 'Điều trị KTV' : [
-                                'chiro_history' => 'Tiền sử Chiropractic',
-                                'chiro_exam' => 'Khám (Exam)',
-                                'chiropractic' => 'SOAP',
+                                'chiro_exam' => 'Khám bệnh lần đầu (Chiro)',
+                                'chiro_history' => 'Khám tiền sử bệnh Chiropractic',
+                                'chiropractic' => 'Theo dõi SOAP',
                                 'dong_y' => 'Đông Y'
                             ][$i['type']] ?? 'Y tế';
                             $color = $is_tr ? '#10b981' : '#6366f1';
@@ -317,8 +317,8 @@ $treatments = $stmt->fetchAll();
                                     <i class="fas fa-file-medical" style="color: <?php echo $color; ?>; font-size: 0.7rem;"></i>
                                 </div>
                                 <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;"><?php echo date('d/m/Y', strtotime($item['date'])); ?></div>
-                                <div style="font-weight: 700; color: #1e293b;"><?php echo $type_label; ?> (Cũ)</div>
-                                <div style="font-size: 0.85rem; color: var(--text-muted);"><?php echo $is_tr ? 'Ghi nhận điều trị' : 'Kết quả ghi nhận cũ'; ?></div>
+                                <div style="font-weight: 700; color: #1e293b;"><?php echo $type_label; ?></div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);"><?php echo $is_tr ? 'Ghi nhận điều trị' : 'Kết quả ghi nhận y tế'; ?></div>
                                 <a href="<?php echo $is_tr ? '#' : '../medical/view_form.php?id='.$i['id']; ?>" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 700;">Xem lại</a>
                             </div>
                         <?php endif; ?>

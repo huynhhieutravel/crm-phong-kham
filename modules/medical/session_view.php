@@ -167,13 +167,13 @@ require_once '../../templates/header.php';
             </style>
 
             <?php
-            $components = [
-                'chiro_history' => ['label' => 'Tiền sử Chiropractic', 'url' => 'chiro_history.php', 'icon' => 'fa-history'],
-                'chiro_exam'    => ['label' => 'Khám Thực Thể (Chiro)', 'url' => 'chiro_exam.php', 'icon' => 'fa-stethoscope'],
-                'chiropractic'  => ['label' => 'Theo dõi SOAP', 'url' => 'form.php?type=chiropractic', 'icon' => 'fa-notes-medical'],
-                'dong_y'        => ['label' => 'Khám Đông Y', 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
-                'treatment'     => ['label' => 'Điều trị KTV', 'url' => 'add_treatment.php', 'icon' => 'fa-hand-holding-medical']
-            ];
+                $components = [
+                    'chiro_exam'    => ['label' => 'Khám bệnh lần đầu Chiropractic', 'url' => 'chiro_exam.php', 'icon' => 'fa-stethoscope'],
+                    'chiro_history' => ['label' => 'Khám tiền sử bệnh Chiropractic', 'url' => 'chiro_history.php', 'icon' => 'fa-hospital-user'],
+                    'chiropractic'  => ['label' => 'Theo dõi SOAP', 'url' => 'follow_up.php', 'icon' => 'fa-notes-medical'],
+                    'dong_y'        => ['label' => 'Phiếu khám Đông Y', 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
+                    'treatment'     => ['label' => 'Phác đồ điều trị', 'url' => 'add_treatment.php', 'icon' => 'fa-file-signature']
+                ];
 
             foreach ($components as $type => $info):
                 $is_done = ($type === 'treatment') ? !empty($treatment_records) : isset($history_records[$type]);

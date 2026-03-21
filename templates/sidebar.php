@@ -11,10 +11,23 @@
             <i class="fas fa-th-large"></i>
             <span><?php echo t('dashboard'); ?></span>
         </a>
-        <a href="/modules/patients/index.php" class="nav-item <?php echo $current_page === 'patients' ? 'active' : ''; ?>">
-            <i class="fas fa-users"></i>
-            <span><?php echo t('patients'); ?></span>
-        </a>
+        <div class="nav-item-wrapper">
+            <a href="/modules/leads/index.php" class="nav-item <?php echo $current_page === 'leads' ? 'active' : ''; ?>">
+                <i class="fas fa-filter"></i>
+                <span>Lead Marketing</span>
+            </a>
+            <div class="submenu">
+                <a href="/modules/leads/index.php" class="submenu-item">
+                    <i class="fas fa-list"></i> Danh sách
+                </a>
+                <a href="/modules/leads/dashboard.php" class="submenu-item">
+                    <i class="fas fa-chart-line"></i> Thống kê Lead
+                </a>
+                <a href="/modules/leads/consultant_stats.php" class="submenu-item">
+                    <i class="fas fa-user-tie"></i> Thống kê Tư vấn viên
+                </a>
+            </div>
+        </div>
         <div class="nav-item-wrapper">
             <a href="/modules/appointments/index.php" class="nav-item <?php echo $current_page === 'appointments' ? 'active' : ''; ?>">
                 <i class="fas fa-calendar-check"></i>
@@ -32,21 +45,27 @@
                 </a>
             </div>
         </div>
-        <a href="/modules/medical/index.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
-            <i class="fas fa-file-medical"></i>
-            <span><?php echo t('medical_records'); ?></span>
+        <a href="/modules/patients/index.php" class="nav-item <?php echo $current_page === 'patients' ? 'active' : ''; ?>">
+            <i class="fas fa-users"></i>
+            <span><?php echo t('patients'); ?></span>
         </a>
         <div class="nav-item-wrapper">
-            <a href="/modules/leads/index.php" class="nav-item <?php echo $current_page === 'leads' ? 'active' : ''; ?>">
-                <i class="fas fa-filter"></i>
-                <span>Lead Marketing</span>
+            <a href="/modules/medical/index.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
+                <i class="fas fa-file-medical"></i>
+                <span><?php echo t('medical_records'); ?></span>
             </a>
             <div class="submenu">
-                <a href="/modules/leads/index.php" class="submenu-item">
-                    <i class="fas fa-list"></i> Danh sách
+                <a href="/modules/medical/index.php" class="submenu-item">
+                    <i class="fas fa-list"></i> Buổi khám bệnh
                 </a>
-                <a href="/modules/leads/dashboard.php" class="submenu-item">
-                    <i class="fas fa-chart-pie"></i> Thống kê Lead
+                <a href="/modules/medical/chiro_exam.php" class="submenu-item">
+                    <i class="fas fa-stethoscope"></i> Khám lần đầu (Chiro)
+                </a>
+                <a href="/modules/medical/chiro_history.php" class="submenu-item">
+                    <i class="fas fa-hospital-user"></i> Khám tiền sử Chiropractic
+                </a>
+                <a href="/modules/medical/form.php?type=dong_y" class="submenu-item">
+                    <i class="fas fa-leaf"></i> Phiếu Đông Y
                 </a>
             </div>
         </div>

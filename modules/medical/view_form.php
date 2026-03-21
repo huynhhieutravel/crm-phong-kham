@@ -22,11 +22,11 @@ if (!$record) {
 
 $data = json_decode($record['history_data'], true);
 $type_label = [
-    'chiropractic' => 'Theo dõi Chiro (SOAP)',
-    'dong_y' => 'Phiếu Đông Y',
-    'initial_exam' => 'Khám Chiro (Hệ thống cũ)',
-    'chiro_history' => 'Tiền sử bệnh Chiropractic',
-    'chiro_exam' => 'Khám thực thể Chiropractic'
+    'chiropractic'  => 'Theo dõi SOAP',
+    'dong_y'        => 'Phiếu khám Đông Y',
+    'initial_exam'  => 'Khám Chiro (Hệ thống cũ)',
+    'chiro_history' => 'Khám tiền sử bệnh Chiropractic',
+    'chiro_exam'    => 'Khám bệnh lần đầu Chiropractic'
 ][$record['type']] ?? 'Hồ sơ y tế';
 
 $page_title = 'Xem ' . $type_label;

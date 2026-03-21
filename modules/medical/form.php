@@ -8,7 +8,8 @@ $type = $_GET['type'] ?? 'chiropractic';
 $patient_id = $_GET['patient_id'] ?? 0;
 $session_id = $_GET['session_id'] ?? null;
 
-$page_title = ($type === 'chiropractic' ? 'Phiếu Chiropractic' : 'Phiếu Đông Y');
+$page_title = ($type === 'dong_y' ? 'Phiếu Đông Y' : 'Phiếu Chiropractic');
+if ($type === 'initial_exam') $page_title = 'Khám bệnh lần đầu Chiropractic';
 $current_page = 'medical';
 $db = getDB();
 $history_id = $_GET['id'] ?? 0;
@@ -194,6 +195,46 @@ if ($history_id) {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 0.75rem;
     }
+
+    .checkbox-card {
+        background: white;
+        border: 2px solid #eef2f6;
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+    }
+    .checkbox-card i {
+        font-size: 2rem;
+        color: #94a3b8;
+        transition: all 0.3s ease;
+    }
+    .checkbox-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-3px);
+    }
+    .checkbox-card:has(input:checked) {
+        border-color: var(--primary);
+        background: rgba(99, 102, 241, 0.05);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2);
+    }
+    .checkbox-card:has(input:checked) i {
+        color: var(--primary);
+    }
+    .checkbox-card input {
+        display: none;
+    }
+    .label-text {
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: #1e293b;
+    }
 </style>
 
 <?php
@@ -207,7 +248,7 @@ $patient_birth_year = $patient_birthday ? date('Y', strtotime($patient_birthday)
 
 // Define questions for the forms with icons
 $questions = [];
-if ($type === 'chiropractic') {
+if ($type === 'chiropractic' || $type === 'initial_exam') {
     $questions = [
         'Lối sống & Thói quen' => [
             ['label' => 'Ngồi nhiều', 'icon' => 'fa-chair'],

@@ -79,7 +79,7 @@ require_once '../../templates/header.php';
 <div class="card" style="background: var(--glass-bg); backdrop-filter: blur(20px); max-width: 1000px; margin: 0 auto;">
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: start;">
         <div>
-            <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><i class="fas fa-history"></i> Khám Tiền Sử Bệnh</h2>
+            <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><i class="fas fa-history"></i> Khám Tiền Sử Bệnh Chiropractic</h2>
             <p style="color: var(--text-muted); margin-top: 0.25rem;">Bệnh nhân: <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
         </div>
         <div style="background: #f5f3ff; color: #7c3aed; padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700;">HISTORY</div>
@@ -367,7 +367,7 @@ require_once '../../templates/header.php';
                          <?php endforeach; ?>
                     </div>
 
-                    <!-- Treatments -->
+                     <!-- Treatments -->
                     <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
                          <span style="font-size: 0.9rem; font-weight: 800;">Đã từng điều trị tại: *</span>
                          <?php foreach (['Chiropractic khác', 'Vật lý trị liệu', 'Osteopath'] as $t): ?>
@@ -376,10 +376,18 @@ require_once '../../templates/header.php';
                             </label>
                          <?php endforeach; ?>
                     </div>
+
+                    <!-- Accident (Moved here from redundant section) -->
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
+                            <input type="checkbox" name="exam[medical_history][accident_flag]" value="1" <?php echo checked_v('medical_history.accident_flag', '1'); ?>> Từng bị tai nạn xe cộ/ngã mạnh
+                        </label>
+                        <span style="font-size: 0.9rem;">(Vùng chấn thương: <input type="text" name="exam[medical_history][accident_area]" class="form-input" style="display: inline-block; width: 250px;" value="<?php echo get_v('medical_history.accident_area'); ?>">)</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Disease Groups -->
+            <!-- Disease Groups (Restored) -->
             <div class="form-group" style="margin-bottom: 2.5rem;">
                 <label class="form-label">Nhóm bệnh Cơ - Xương - Khớp (Cực kỳ quan trọng)</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
@@ -403,7 +411,7 @@ require_once '../../templates/header.php';
                 <label class="form-label">Nhóm bệnh Nội khoa & Hệ thống</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                     <?php foreach ([
-                        'Ung thư (Krebs): Bất kỳ loại nào, đặc biệt là ung thư xương hoặc di căn.',
+                        'Ung thư (Krebs): Bất kỳ loại nào, đặc biệt là ung thư xương hoặc di cá.',
                         'Huyết áp cao (Bluthochdruck): Liên quan đến nguy cơ lưu thông máu lên não.',
                         'Tiểu đường (Diabetes): Ảnh hưởng đến tốc độ phục hồi thần kinh và mạch máu.',
                         'Rối loạn đông máu: Hoặc đang sử dụng thuốc làm loãng máu (nguy cơ xuất huyết nội).',
@@ -414,33 +422,6 @@ require_once '../../templates/header.php';
                             <span><?php echo $disease; ?></span>
                         </label>
                     <?php endforeach; ?>
-                </div>
-            </div>
-
-            <!-- Surgical History Section -->
-            <div class="form-group" style="margin-bottom: 2.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;">
-                <label class="form-label" style="text-decoration: underline;">Tiền sử chấn thương & Can thiệp (Surgical History)</label>
-                <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.25rem;">
-                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
-                            <input type="checkbox" name="exam[surgical_history][fracture]" value="1" <?php echo checked_v('surgical_history.fracture', '1'); ?>> Gãy xương (Frakturen) - Đặc biệt là vùng cột sống, xương chậu.
-                        </label>
-                        <span style="font-size: 0.9rem;">Chỗ nào? <input type="text" name="exam[surgical_history][fracture_area]" class="form-input" style="display: inline-block; width: 250px;" value="<?php echo get_v('surgical_history.fracture_area'); ?>"></span>
-                    </div>
-
-                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
-                            <input type="checkbox" name="exam[surgical_history][spine_surgery]" value="1" <?php echo checked_v('surgical_history.spine_surgery', '1'); ?>> Phẫu thuật cột sống: Đã từng bắt vít, nẹp hoặc thay đĩa đệm nhân tạo.
-                        </label>
-                        <span style="font-size: 0.9rem;">Chỗ nào? <input type="text" name="exam[surgical_history][spine_surgery_area]" class="form-input" style="display: inline-block; width: 250px;" value="<?php echo get_v('surgical_history.spine_surgery_area'); ?>"></span>
-                    </div>
-
-                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
-                            <input type="checkbox" name="exam[surgical_history][accident]" value="1" <?php echo checked_v('surgical_history.accident', '1'); ?>> Tai nạn xe cộ/ngã mạnh:
-                        </label>
-                        <span style="font-size: 0.9rem;">Gây chấn thương vùng <input type="text" name="exam[surgical_history][accident_area]" class="form-input" style="display: inline-block; width: 300px;" value="<?php echo get_v('surgical_history.accident_area'); ?>"></span>
-                    </div>
                 </div>
             </div>
 
