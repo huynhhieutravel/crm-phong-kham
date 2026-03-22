@@ -1,7 +1,7 @@
 <?php
 // modules/reports/index.php — Dashboard Báo cáo Doanh thu
-require_once '../../includes/db.php';
-$page_title = t('reports') . ' — ' . t('dashboard');
+require_once '../../includes/functions.php';
+$page_title = __('reports') . ' — ' . __('dashboard');
 $current_page = 'reports';
 require_once '../../templates/header.php';
 
@@ -78,7 +78,7 @@ $transactions = $stmt->fetchAll();
 <form class="filter-bar" method="GET">
     <select name="month">
         <?php for ($m = 1; $m <= 12; $m++): ?>
-        <option value="<?php echo $m; ?>" <?php echo $m == $filter_month ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+        <option value="<?php echo $m; ?>" <?php echo $m == $filter_month ? 'selected' : ''; ?>><?php echo __('reports.month_prefix') . $m; ?></option>
         <?php endfor; ?>
     </select>
     <select name="year">
@@ -87,25 +87,25 @@ $transactions = $stmt->fetchAll();
         <?php endfor; ?>
     </select>
     <select name="type">
-        <option value="">Tất cả</option>
-        <option value="income" <?php echo $filter_type === 'income' ? 'selected' : ''; ?>>Thu (+)</option>
-        <option value="expense" <?php echo $filter_type === 'expense' ? 'selected' : ''; ?>>Chi (-)</option>
+        <option value=""><?php echo __('reports.all'); ?></option>
+        <option value="income" <?php echo $filter_type === 'income' ? 'selected' : ''; ?>><?php echo __('reports.income_label'); ?></option>
+        <option value="expense" <?php echo $filter_type === 'expense' ? 'selected' : ''; ?>><?php echo __('reports.expense_label'); ?></option>
     </select>
-    <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 50px;"><i class="fas fa-filter"></i> <?php echo t('filter'); ?></button>
+    <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 50px;"><i class="fas fa-filter"></i> <?php echo __('filter'); ?></button>
 </form>
 
 <!-- Stats Cards -->
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
     <div class="stat-card income">
-        <div class="stat-label"><i class="fas fa-arrow-up" style="color: #10b981;"></i> Tổng Thu</div>
+        <div class="stat-label"><i class="fas fa-arrow-up" style="color: #10b981;"></i> <?php echo __('reports.income'); ?></div>
         <div class="stat-value" style="color: #10b981;"><?php echo format_money($income); ?></div>
     </div>
     <div class="stat-card expense">
-        <div class="stat-label"><i class="fas fa-arrow-down" style="color: #ef4444;"></i> Tổng Chi</div>
+        <div class="stat-label"><i class="fas fa-arrow-down" style="color: #ef4444;"></i> <?php echo __('reports.expense'); ?></div>
         <div class="stat-value" style="color: #ef4444;"><?php echo format_money($expense); ?></div>
     </div>
     <div class="stat-card profit">
-        <div class="stat-label"><i class="fas fa-chart-line" style="color: #6366f1;"></i> Lợi Nhuận</div>
+        <div class="stat-label"><i class="fas fa-chart-line" style="color: #6366f1;"></i> <?php echo __('reports.profit'); ?></div>
         <div class="stat-value" style="color: <?php echo $profit >= 0 ? '#10b981' : '#ef4444'; ?>;"><?php echo format_money($profit); ?></div>
     </div>
 </div>
@@ -113,15 +113,15 @@ $transactions = $stmt->fetchAll();
 <!-- Chart + Category Breakdown -->
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
     <div class="card">
-        <h4 style="margin: 0 0 1rem 0;"><i class="fas fa-chart-bar" style="color: var(--primary);"></i> Biểu đồ Thu/Chi theo tháng (<?php echo $filter_year; ?>)</h4>
+        <h4 style="margin: 0 0 1rem 0;"><i class="fas fa-chart-bar" style="color: var(--primary);"></i> <?php echo __('reports.chart_title'); ?> (<?php echo $filter_year; ?>)</h4>
         <canvas id="revenueChart" style="height: 300px;"></canvas>
     </div>
     <div class="card">
-        <h4 style="margin: 0 0 1rem 0;"><i class="fas fa-tags" style="color: #f59e0b;"></i> Phân loại T<?php echo $filter_month; ?></h4>
+        <h4 style="margin: 0 0 1rem 0;"><i class="fas fa-tags" style="color: #f59e0b;"></i> <?php echo __('reports.breakdown'); ?> T<?php echo $filter_month; ?></h4>
         <?php if (empty($categories)): ?>
         <div style="text-align: center; padding: 2rem; color: #94a3b8;">
             <i class="fas fa-inbox" style="font-size: 2rem;"></i>
-            <p>Chưa có dữ liệu</p>
+            <p><?php echo __('reports.no_data'); ?></p>
         </div>
         <?php else: ?>
         <?php foreach ($categories as $cat): ?>
@@ -137,23 +137,23 @@ $transactions = $stmt->fetchAll();
 <!-- Transactions Table -->
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0;"><i class="fas fa-list-alt"></i> Lịch sử giao dịch (<?php echo count($transactions); ?> bản ghi)</h3>
+        <h3 style="margin: 0;"><i class="fas fa-list-alt"></i> <?php echo __('reports.history'); ?> (<?php echo count($transactions); ?> <?php echo __('reports.records'); ?>)</h3>
     </div>
     <?php if (empty($transactions)): ?>
     <div style="text-align: center; padding: 3rem; color: #94a3b8;">
         <i class="fas fa-receipt" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-        <p style="font-weight: 700;">Không có giao dịch nào trong kỳ này</p>
+        <p style="font-weight: 700;"><?php echo __('reports.no_data'); ?></p>
     </div>
     <?php else: ?>
     <table class="table" style="width: 100%;">
         <thead>
             <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
-                <th style="padding: 0.75rem;">Thời gian</th>
-                <th style="padding: 0.75rem;">Loại</th>
-                <th style="padding: 0.75rem;">Hạng mục</th>
-                <th style="padding: 0.75rem;">Số tiền</th>
-                <th style="padding: 0.75rem;">Người tạo</th>
-                <th style="padding: 0.75rem;">Mô tả</th>
+                <th style="padding: 0.75rem;"><?php echo __('reports.time'); ?></th>
+                <th style="padding: 0.75rem;"><?php echo __('reports.type'); ?></th>
+                <th style="padding: 0.75rem;"><?php echo __('reports.category'); ?></th>
+                <th style="padding: 0.75rem;"><?php echo __('reports.amount'); ?></th>
+                <th style="padding: 0.75rem;"><?php echo __('reports.creator'); ?></th>
+                <th style="padding: 0.75rem;"><?php echo __('reports.description'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -163,7 +163,7 @@ $transactions = $stmt->fetchAll();
                 <td style="padding: 0.75rem;">
                     <span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: 800; background: <?php echo $tx['type'] === 'income' ? '#ecfdf5' : '#fef2f2'; ?>; color: <?php echo $tx['type'] === 'income' ? '#059669' : '#dc2626'; ?>;">
                         <i class="fas <?php echo $tx['type'] === 'income' ? 'fa-arrow-up' : 'fa-arrow-down'; ?>"></i>
-                        <?php echo $tx['type'] === 'income' ? 'THU' : 'CHI'; ?>
+                        <?php echo $tx['type'] === 'income' ? __('reports.income_label') : __('reports.expense_label'); ?>
                     </span>
                 </td>
                 <td style="padding: 0.75rem; font-weight: 600;"><?php echo e(ucfirst($tx['category'])); ?></td>

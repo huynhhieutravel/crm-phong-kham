@@ -12,7 +12,7 @@ if (!has_role('admin')) {
 }
 
 $db = getDB();
-$page_title = 'Nhật ký Hệ thống (Audit Logs)';
+$page_title = __('audit.title') . ' — ' . __('audit_logs');
 $current_page = 'admin_audit';
 
 // Filters
@@ -57,34 +57,34 @@ require_once '../../templates/header.php';
 <div class="card" style="background: var(--glass-bg); backdrop-filter: blur(20px);">
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><i class="fas fa-history"></i> Nhật ký Truy vết (Audit trail)</h2>
-            <p style="color: var(--text-muted); margin-top: 0.25rem;">Theo dõi tất cả thay đổi trong hồ sơ bệnh án và hệ thống.</p>
+            <h2 style="margin: 0; font-weight: 800; color: var(--primary);"><i class="fas fa-history"></i> <?php echo __('audit.title'); ?></h2>
+            <p style="color: var(--text-muted); margin-top: 0.25rem;"><?php echo __('audit.subtitle'); ?></p>
         </div>
     </div>
 
     <!-- Filter Bar -->
     <form method="GET" style="display: flex; gap: 1rem; margin-bottom: 2rem; background: #f8fafc; padding: 1.5rem; border-radius: 16px; border: 1px solid #eef2f6;">
         <div style="flex: 1;">
-            <label style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Hành động</label>
+            <label style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;"><?php echo __('audit.action'); ?></label>
             <select name="action" class="form-input" style="height: 42px;">
-                <option value="">Tất cả hành động</option>
+                <option value=""><?php echo __('audit.all_actions'); ?></option>
                 <?php foreach ($actions as $act): ?>
                     <option value="<?php echo $act; ?>" <?php echo $action_filter == $act ? 'selected' : ''; ?>><?php echo $act; ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
         <div style="flex: 1;">
-            <label style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Người thực hiện</label>
+            <label style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;"><?php echo __('audit.actor'); ?></label>
             <select name="user_id" class="form-input" style="height: 42px;">
-                <option value="">Tất cả nhân viên</option>
+                <option value=""><?php echo __('audit.all_staff'); ?></option>
                 <?php foreach ($users as $u): ?>
                     <option value="<?php echo $u['id']; ?>" <?php echo $user_filter == $u['id'] ? 'selected' : ''; ?>><?php echo e($u['full_name']); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
         <div style="display: flex; align-items: flex-end;">
-            <button type="submit" class="btn btn-primary" style="height: 42px; padding: 0 1.5rem;">Lọc</button>
-            <a href="audit_logs.php" class="btn" style="height: 42px; margin-left: 0.5rem; background: #e2e8f0; color: #475569;">Xóa lọc</a>
+            <button type="submit" class="btn btn-primary" style="height: 42px; padding: 0 1.5rem;"><?php echo __('audit.filter'); ?></button>
+            <a href="audit_logs.php" class="btn" style="height: 42px; margin-left: 0.5rem; background: #e2e8f0; color: #475569;"><?php echo __('audit.clear'); ?></a>
         </div>
     </form>
 
@@ -92,18 +92,18 @@ require_once '../../templates/header.php';
         <table class="table">
             <thead>
                 <tr>
-                    <th>Thời gian</th>
-                    <th>Nhân viên</th>
-                    <th>Hành động</th>
-                    <th>Đối tượng</th>
-                    <th>ID</th>
-                    <th>Dữ liệu thay đổi</th>
-                    <th>IP</th>
+                    <th><?php echo __('audit.time'); ?></th>
+                    <th><?php echo __('audit.staff'); ?></th>
+                    <th><?php echo __('audit.action'); ?></th>
+                    <th><?php echo __('audit.target'); ?></th>
+                    <th><?php echo __('audit.id'); ?></th>
+                    <th><?php echo __('audit.diff'); ?></th>
+                    <th><?php echo __('audit.ip'); ?></th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($logs)): ?>
-                    <tr><td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">Chưa có nhật ký nào.</td></tr>
+                    <tr><td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;"><?php echo __('audit.no_logs'); ?></td></tr>
                 <?php endif; ?>
                 <?php foreach ($logs as $log): ?>
                     <tr>
@@ -132,17 +132,17 @@ require_once '../../templates/header.php';
                         <td style="font-size: 0.8rem; font-weight: 600; color: #475569;"><?php echo $log['target_table']; ?></td>
                         <td style="font-size: 0.8rem; font-weight: 800; color: var(--primary);">#<?php echo $log['target_id']; ?></td>
                         <td>
-                            <button class="btn-detail" onclick="showDiff(<?php echo $log['id']; ?>)">Xem Chi tiết</button>
+                            <button class="btn-detail" onclick="showDiff(<?php echo $log['id']; ?>)"><?php echo __('audit.view_detail'); ?></button>
                             <div id="diff-<?php echo $log['id']; ?>" style="display: none;">
                                 <div class="diff-container">
-                                    <div class="diff-header">Biến động dữ liệu</div>
+                                    <div class="diff-header"><?php echo __('audit.diff_header'); ?></div>
                                     <div style="display: flex; gap: 1rem;">
                                         <div style="flex: 1;">
-                                            <div class="diff-sub">Cũ:</div>
+                                            <div class="diff-sub"><?php echo __('audit.old'); ?></div>
                                             <pre class="diff-pre"><?php echo e(json_encode(json_decode($log['old_data']), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
                                         </div>
                                         <div style="flex: 1;">
-                                            <div class="diff-sub" style="color: #10b981;">Mới:</div>
+                                            <div class="diff-sub" style="color: #10b981;"><?php echo __('audit.new'); ?></div>
                                             <pre class="diff-pre" style="border-color: #10b981;"><?php echo e(json_encode(json_decode($log['new_data']), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
                                         </div>
                                     </div>
