@@ -6,7 +6,7 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-$patient_id = $_GET['patient_id'] ?? 0;
+$patient_id = isset($_GET['patient_id']) ? $_GET['patient_id'] : 0;
 $now = date('Y-m-d');
 
 if (!$patient_id) {

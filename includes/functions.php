@@ -49,17 +49,17 @@ function get_date_range($period = 'month', $start = null, $end = null) {
     $end_date = $now->format('Y-m-d 23:59:59');
     $label = '';
 
-    $sel_date = isset($_GET['sel_date']) && !empty($_GET['sel_date']) ? $_GET['sel_date'] : $now->format('Y-m-d');
-    $sel_week = isset($_GET['sel_week']) && !empty($_GET['sel_week']) ? $_GET['sel_week'] : $now->format('Y') . '-W' . $now->format('W');
-    $sel_month = isset($_GET['sel_month']) && is_numeric($_GET['sel_month']) ? (int)$_GET['sel_month'] : (int)$now->format('n');
-    $sel_quarter = isset($_GET['sel_quarter']) && is_numeric($_GET['sel_quarter']) ? (int)$_GET['sel_quarter'] : ceil((int)$now->format('n') / 3);
-    $sel_year = isset($_GET['sel_year']) && is_numeric($_GET['sel_year']) ? (int)$_GET['sel_year'] : (int)$now->format('Y');
+    $sel_date = ($_GET['sel_date'] ?? '') ?: $now->format('Y-m-d');
+    $sel_week = ($_GET['sel_week'] ?? '') ?: $now->format('Y') . '-W' . $now->format('W');
+    $sel_month = (int)($_GET['sel_month'] ?? $now->format('n'));
+    $sel_quarter = (int)($_GET['sel_quarter'] ?? ceil((int)$now->format('n') / 3));
+    $sel_year = (int)($_GET['sel_year'] ?? $now->format('Y'));
 
     switch ($period) {
         case 'today':
             $start_date = $sel_date . ' 00:00:00';
             $end_date = $sel_date . ' 23:59:59';
-            $label = ($sel_date === $now->format('Y-m-d')) ? 'Hôm nay' : 'Ngày ' . date('d/m/Y', strtotime($sel_date));
+            $label = ($sel_date === $now->format('Y-m-d')) ? __('common.today') : __('common.day_prefix') . date('d/m/Y', strtotime($sel_date));
             break;
         case 'week':
             $week_date = new DateTime();
@@ -71,33 +71,33 @@ function get_date_range($period = 'month', $start = null, $end = null) {
             $end_date = $week_date->format('Y-m-d 23:59:59');
             
             $current_week = (int)$now->format('Y') . '-W' . $now->format('W');
-            $label = ($sel_week === $now->format('Y') . '-W' . $now->format('W')) ? 'Tuần này' : "Tuần $week_num/$week_year";
+            $label = ($sel_week === $now->format('Y') . '-W' . $now->format('W')) ? __('common.this_week') : __('filter.week') . " $week_num/$week_year";
             break;
         case 'month':
             $start_date = sprintf("%04d-%02d-01 00:00:00", $sel_year, $sel_month);
             $end_date = date('Y-m-t 23:59:59', strtotime($start_date));
-            $label = "Tháng $sel_month/$sel_year";
+            $label = __('common.month_prefix') . $sel_month . __('common.month_suffix') . "/$sel_year";
             break;
         case 'quarter':
             $start_month = ($sel_quarter - 1) * 3 + 1;
             $start_date = sprintf("%04d-%02d-01 00:00:00", $sel_year, $start_month);
             $end_date_tmp = sprintf("%04d-%02d-01", $sel_year, $start_month + 2);
             $end_date = date('Y-m-t 23:59:59', strtotime($end_date_tmp));
-            $label = "Quý $sel_quarter ($sel_year)";
+            $label = __('common.quarter_prefix') . $sel_quarter . __('common.quarter_suffix') . " ($sel_year)";
             break;
         case 'year':
             $start_date = sprintf("%04d-01-01 00:00:00", $sel_year);
             $end_date = sprintf("%04d-12-31 23:59:59", $sel_year);
-            $label = "Năm $sel_year";
+            $label = __('common.year_prefix') . $sel_year . __('common.year_suffix');
             break;
         case 'custom':
             $start_date = $start ? $start . ' 00:00:00' : $now->format('Y-m-01 00:00:00');
             $end_date = $end ? $end . ' 23:59:59' : $now->format('Y-m-d 23:59:59');
-            $label = 'Từ ' . date('d/m/Y', strtotime($start_date)) . ' đến ' . date('d/m/Y', strtotime($end_date));
+            $label = __('common.from') . ' ' . date('d/m/Y', strtotime($start_date)) . ' ' . __('common.to') . ' ' . date('d/m/Y', strtotime($end_date));
             break;
         default:
             $start_date = $now->format('Y-m-01 00:00:00');
-            $label = 'Tháng này';
+            $label = __('common.this_month');
     }
 
     return [
@@ -128,7 +128,7 @@ function render_pagination($total_count, $limit, $current_page) {
     $start_item = ($current_page - 1) * $limit + 1;
     $end_item = min($current_page * $limit, $total_count);
     $html .= '<div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">';
-    $html .= 'Hiển thị <span style="color: var(--text-main);">' . $start_item . '-' . $end_item . '</span> trong <span style="color: var(--text-main);">' . $total_count . '</span> kết quả';
+    $html .= __('pagination.showing') . ' <span style="color: var(--text-main);">' . $start_item . '-' . $end_item . '</span> ' . __('pagination.of') . ' <span style="color: var(--text-main);">' . $total_count . '</span> ' . __('pagination.results');
     $html .= '</div>';
     
     // Controls
@@ -239,21 +239,27 @@ function time_elapsed_string($datetime, $full = false) {
 }
 
 function log_audit($user_id, $action, $table, $target_id, $old_data = null, $new_data = null) {
-    $db = getDB();
-    $stmt = $db->prepare("
-        INSERT INTO audit_logs (user_id, action, target_table, target_id, old_data, new_data, ip_address)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ");
-    $stmt->execute([
-        $user_id,
-        $action,
-        $table,
-        $target_id,
-        $old_data ? json_encode($old_data, JSON_UNESCAPED_UNICODE) : null,
-        $new_data ? json_encode($new_data, JSON_UNESCAPED_UNICODE) : null,
-        $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'
-    ]);
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("
+            INSERT INTO audit_logs (user_id, action, target_table, target_id, old_data, new_data, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $user_id,
+            $action,
+            $table,
+            $target_id,
+            $old_data ? json_encode($old_data, JSON_UNESCAPED_UNICODE) : null,
+            $new_data ? json_encode($new_data, JSON_UNESCAPED_UNICODE) : null,
+            $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'
+        ]);
+    } catch (Exception $e) {
+        // Silently fail logging if table missing to avoid crashing the main app
+        error_log("Audit log failed: " . $e->getMessage());
+    }
 }
+
 
 /**
  * Ensure all required columns exist in the patients table (self-healing)
@@ -284,11 +290,29 @@ function get_lead_sources() {
  */
 function get_medical_groups() {
     return [
-        'Thoát vị đĩa đệm',
-        'Thoái hóa cột sống',
-        'Đau thần kinh tọa',
-        'Cong vẹo cột sống',
-        'Phục hồi chức năng',
-        'Cơ xương khớp khác'
+        'Hội chứng Cổ Vai Gáy' => 'medical_group.neck_shoulder',
+        'Thoát vị đĩa đệm & Đau thần kinh tọa' => 'medical_group.disc_herniation',
+        'Cong vẹo cột sống ở trẻ em/thanh thiếu niên' => 'medical_group.scoliosis',
+        'Chấn thương thể thao' => 'medical_group.sports_injury',
+        'Tê bì tay chân & Hội chứng ống cổ tay' => 'medical_group.numbness_carpal',
+        'Rối loạn khớp thái dương hàm (TMJ)' => 'medical_group.tmj',
+        'Thoái hóa khớp gối' => 'medical_group.knee_osteoarthritis',
+        'Trẻ Chậm Nói, Chậm Vận Động do Sai lệch Cột sống' => 'medical_group.delayed_development',
+        'Đông y' => 'medical_group.dong_y'
     ];
+}
+
+/**
+ * Get translation key for patient labels
+ */
+function get_patient_label_translation($label) {
+    $map = [
+        'Khách mới'    => 'patient.label.new',
+        'Cần chăm sóc' => 'patient.label.needs_care',
+        'Đang điều trị' => 'patient.label.in_treatment',
+        'Vip'          => 'patient.label.vip',
+        'Khách cũ'     => 'patient.label.returning'
+    ];
+    
+    return isset($map[$label]) ? __($map[$label]) : $label;
 }

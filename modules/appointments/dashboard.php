@@ -11,9 +11,9 @@ require_once '../../templates/header.php';
 $db = getDB();
 
 // Period Filter
-$period = $_GET['period'] ?? 'month';
-$start_date = $_GET['start_date'] ?? '';
-$end_date = $_GET['end_date'] ?? '';
+$period = isset($_GET['period']) ? $_GET['period'] : 'month';
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 $range = get_date_range($period, $start_date, $end_date);
 
 $params = [$range['start'], $range['end']];
@@ -327,10 +327,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('aptStatusChart').getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: [<?php foreach($status_data as $s) echo "'" . ($status_map[$s['status']]['label'] ?? $s['status']) . "',"; ?>],
+            labels: [<?php foreach($status_data as $s) echo "'" . (isset($status_map[$s['status']]['label']) ? $status_map[$s['status']]['label'] : $s['status']) . "',"; ?>],
             datasets: [{
                 data: [<?php foreach($status_data as $s) echo $s['count'] . ","; ?>],
-                backgroundColor: [<?php foreach($status_data as $s) echo "'" . ($status_map[$s['status']]['color'] ?? '#cbd5e1') . "',"; ?>],
+                backgroundColor: [<?php foreach($status_data as $s) echo "'" . (isset($status_map[$s['status']]['color']) ? $status_map[$s['status']]['color'] : '#cbd5e1') . "',"; ?>],
                 borderWidth: 6,
                 borderColor: '#ffffff',
                 hoverOffset: 15
@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('aptTypeChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: [<?php foreach($type_data as $t) echo "'" . ($type_map[$t['type']] ?? $t['type']) . "',"; ?>],
+            labels: [<?php foreach($type_data as $t) echo "'" . (isset($type_map[$t['type']]) ? $type_map[$t['type']] : $t['type']) . "',"; ?>],
             datasets: [{
                 data: [<?php foreach($type_data as $t) echo $t['count'] . ","; ?>],
                 backgroundColor: '#8b5cf6', borderRadius: 10, barThickness: 25

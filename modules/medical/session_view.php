@@ -6,7 +6,7 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-$session_id = $_GET['id'] ?? 0;
+$session_id = isset($_GET['id']) ? $_GET['id'] : 0;
 
 if (!$session_id) {
     set_flash(__('medical.session.err_missing_id'), 'error');
@@ -57,8 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("session_view.php?id=$session_id");
     }
 
-    $assessment = $_POST['assessment'] ?? '';
-    $plan = $_POST['treatment_plan'] ?? '';
+    $assessment = isset($_POST['assessment']) ? $_POST['assessment'] : '';
+    $plan = isset($_POST['treatment_plan']) ? $_POST['treatment_plan'] : '';
     $status = isset($_POST['complete']) ? 'completed' : $session['status'];
 
     // Audit Logging for Data changes
@@ -248,7 +248,7 @@ require_once '../../templates/header.php';
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
                 <?php foreach ($all_attachments as $att): ?>
                 <div style="position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; cursor: pointer; aspect-ratio: 1;" onclick="openLightbox('<?php echo $att['path']; ?>')">
-                    <?php if (strpos($att['type'] ?? '', 'image') !== false): ?>
+                    <?php if (strpos(isset($att['type']) ? $att['type'] : '', 'image') !== false): ?>
                     <img src="<?php echo $att['path']; ?>" style="width: 100%; height: 100%; object-fit: cover;" alt="<?php echo e($att['name']); ?>">
                     <?php else: ?>
                     <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f1f5f9;">

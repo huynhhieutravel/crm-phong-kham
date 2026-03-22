@@ -5,7 +5,7 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-$id = $_GET['id'] ?? 0;
+$id = isset($_GET['id']) ? $_GET['id'] : 0;
 
 $stmt = $db->prepare("
     SELECT a.*, p.full_name as patient_name, l.full_name as lead_name, u.full_name as doctor_name
@@ -32,7 +32,7 @@ require_once '../../templates/header.php';
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
         <div>
             <h2 style="margin: 0; font-weight: 800;"><?php echo e($a['patient_name'] ?: $a['lead_name']); ?></h2>
-            <p style="color: var(--text-muted);"><?php echo $a['patient_id'] ? __('common.patient') : __('common.lead_marketing'); ?></p>
+            <p style="color: var(--text-muted);"><?php echo $a['patient_id'] ? __('appointment.contact_type.patient') : __('appointment.contact_type.lead'); ?></p>
         </div>
         <span class="badge" style="background: #e0f2fe; color: #0369a1; text-transform: uppercase; font-weight: 800;">
             <?php echo __('appointment.type.' . $a['type']); ?>

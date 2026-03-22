@@ -209,7 +209,7 @@ $staff_utilization = $staff_stmt->fetchAll();
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0.5rem; border-bottom: 1px solid #f1f5f9;">
                         <div style="display: flex; flex-direction: column; gap: 2px;">
                             <span style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;"><?php echo e($staff['full_name']); ?></span>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);"><?php echo e($staff['role_name'] ?: 'Nhân viên y tế'); ?></span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);"><?php echo e($staff['role_name'] ?? 'Nhân viên y tế'); ?></span>
                         </div>
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; color: var(--primary); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
                             <?php echo $staff['appt_count']; ?>

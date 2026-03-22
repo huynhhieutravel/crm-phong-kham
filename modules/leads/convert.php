@@ -25,30 +25,43 @@ try {
     // 2. Insert into patients table
     // Carrying over medical_group into notes for the doctor to see
     $notes = "Chuyển đổi từ Lead Marketing.";
-    if ($lead['medical_group']) {
+    if (isset($lead['medical_group']) && $lead['medical_group']) {
         $notes .= "\nNhóm bệnh tư vấn: " . $lead['medical_group'];
     }
-    if ($lead['notes']) {
+    if (isset($lead['notes']) && $lead['notes']) {
         $notes .= "\nGhi chú gốc: " . $lead['notes'];
     }
 
-    $stmt = $db->prepare("
-        INSERT INTO patients (full_name, gender, birthday, phone, email, address, zalo_number, source, consultant_id, label, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    $stmt->execute([
-        $lead['full_name'],
-        $lead['gender'],
-        $lead['birthday'],
-        $lead['phone'],
-        $lead['email'],
-        $lead['address'],
-        $lead['zalo_number'],
-        $lead['source'],
-        $lead['consultant_id'],
-        'Khách mới',
-        $notes
-    ]);
+    $patient_data = [
+        'full_name' => $lead['full_name'],
+        'phone' => $lead['phone'],
+        'label' => 'Khách mới',
+        'notes' => $notes
+    ];
+
+    $optionals = [
+        'gender' => $lead['gender'] ?? 'Other',
+        'birthday' => $lead['birthday'] ?? null,
+        'email' => $lead['email'] ?? '',
+        'address' => $lead['address'] ?? '',
+        'zalo_number' => $lead['zalo_number'] ?? '',
+        'source' => $lead['source'] ?? '',
+        'consultant_id' => $lead['consultant_id'] ?? null
+    ];
+
+    // Detect available columns in patients table
+    $available_cols = $db->query("SHOW COLUMNS FROM patients")->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($optionals as $col => $val) {
+        if (in_array($col, $available_cols)) {
+            $patient_data[$col] = $val;
+        }
+    }
+
+    $cols = implode(", ", array_keys($patient_data));
+    $placeholders = implode(", ", array_fill(0, count($patient_data), "?"));
+    
+    $stmt = $db->prepare("INSERT INTO patients ($cols) VALUES ($placeholders)");
+    $stmt->execute(array_values($patient_data));
     $patient_id = $db->lastInsertId();
 
     // 3. Update Lead status

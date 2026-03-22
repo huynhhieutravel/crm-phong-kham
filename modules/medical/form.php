@@ -72,7 +72,8 @@ if ($history_id) {
     $stmt->execute([$history_id]);
     $record = $stmt->fetch();
     if ($record) {
-        $data = json_decode($record['history_data'], true) ?? [];
+        $data = json_decode($record['history_data'], true);
+        if (!$data) $data = [];
     }
 }
 ?>
@@ -250,66 +251,66 @@ $patient_birth_year = $patient_birthday ? date('Y', strtotime($patient_birthday)
 $questions = [];
 if ($type === 'chiropractic' || $type === 'initial_exam') {
     $questions = [
-        'Lối sống & Thói quen' => [
-            ['label' => 'Ngồi nhiều', 'icon' => 'fa-chair'],
-            ['label' => 'Đứng nhiều', 'icon' => 'fa-user-tie'],
-            ['label' => 'Lao động nặng', 'icon' => 'fa-weight-hanging'],
-            ['label' => 'Ngủ nghiêng', 'icon' => 'fa-bed'],
-            ['label' => 'Tư thế sai', 'icon' => 'fa-user-slash'],
-            ['label' => 'Căng thẳng', 'icon' => 'fa-brain'],
-            ['label' => 'Ít vận động', 'icon' => 'fa-walking']
+        'medical.form.sec_lifestyle' => [
+            ['label' => 'Ngồi nhiều', 'key' => 'medical.form.opt_sitting', 'icon' => 'fa-chair'],
+            ['label' => 'Đứng nhiều', 'key' => 'medical.form.opt_standing', 'icon' => 'fa-user-tie'],
+            ['label' => 'Lao động nặng', 'key' => 'medical.form.opt_heavy_labor', 'icon' => 'fa-weight-hanging'],
+            ['label' => 'Ngủ nghiêng', 'key' => 'medical.form.opt_side_sleeping', 'icon' => 'fa-bed'],
+            ['label' => 'Tư thế sai', 'key' => 'medical.form.opt_poor_posture', 'icon' => 'fa-user-slash'],
+            ['label' => 'Căng thẳng', 'key' => 'medical.form.opt_stress', 'icon' => 'fa-brain'],
+            ['label' => 'Ít vận động', 'key' => 'medical.form.opt_sedentary', 'icon' => 'fa-walking']
         ],
-        'Tình trạng hiện tại' => [
-            ['label' => 'Đau nhói', 'icon' => 'fa-bolt'],
-            ['label' => 'Đau âm ỉ', 'icon' => 'fa-wave-square'],
-            ['label' => 'Tê bì', 'icon' => 'fa-hands'],
-            ['label' => 'Yếu cơ', 'icon' => 'fa-fist-raised'],
-            ['label' => 'Hạn chế vận động', 'icon' => 'fa-lock']
+        'medical.form.sec_current_status' => [
+            ['label' => 'Đau nhói', 'key' => 'medical.form.opt_sharp_pain', 'icon' => 'fa-bolt'],
+            ['label' => 'Đau âm ỉ', 'key' => 'medical.form.opt_dull_pain', 'icon' => 'fa-wave-square'],
+            ['label' => 'Tê bì', 'key' => 'medical.form.opt_numbness', 'icon' => 'fa-hands'],
+            ['label' => 'Yếu cơ', 'key' => 'medical.form.opt_weakness', 'icon' => 'fa-fist-raised'],
+            ['label' => 'Hạn chế vận động', 'key' => 'medical.form.opt_limited_rom', 'icon' => 'fa-lock']
         ],
-        'Tiền sử bệnh lý (Cơ xương khớp)' => [
-            ['label' => 'Thoát vị đĩa đệm', 'icon' => 'fa-spine'],
-            ['label' => 'Thoái hóa cột sống', 'icon' => 'fa-bone'],
-            ['label' => 'Vẹo cột sống (Skoliose)', 'icon' => 'fa-bezier-curve'],
-            ['label' => 'Viêm khớp dạng thấp', 'icon' => 'fa-hand-dots'],
-            ['label' => 'Loãng xương', 'icon' => 'fa-skeleton'],
-            ['label' => 'Viêm cột sống dính khớp', 'icon' => 'fa-link']
+        'medical.form.sec_ortho_history' => [
+            ['label' => 'Thoát vị đĩa đệm', 'key' => 'medical.form.opt_herniated_disc', 'icon' => 'fa-spine'],
+            ['label' => 'Thoái hóa cột sống', 'key' => 'medical.form.opt_spinal_degen', 'icon' => 'fa-bone'],
+            ['label' => 'Vẹo cột sống (Skoliose)', 'key' => 'medical.form.opt_scoliosis', 'icon' => 'fa-bezier-curve'],
+            ['label' => 'Viêm khớp dạng thấp', 'key' => 'medical.form.opt_rheumatoid', 'icon' => 'fa-hand-dots'],
+            ['label' => 'Loãng xương', 'key' => 'medical.form.opt_osteoporosis', 'icon' => 'fa-skeleton'],
+            ['label' => 'Viêm cột sống dính khớp', 'key' => 'medical.form.opt_ankylosing', 'icon' => 'fa-link']
         ],
-        'Tiền sử y khoa bàn bản' => [
-            ['label' => 'Đã từng phẫu thuật', 'icon' => 'fa-procedures'],
-            ['label' => 'Từng bị gãy xương', 'icon' => 'fa-crutch'],
-            ['label' => 'Đã có phim chụp X-Ray', 'icon' => 'fa-x-ray'],
-            ['label' => 'Đã có phim MRI/CT', 'icon' => 'fa-microscope'],
-            ['label' => 'Rối loạn đông máu', 'icon' => 'fa-droplet-slash'],
-            ['label' => 'Huyết áp cao', 'icon' => 'fa-heart-pulse']
+        'medical.form.sec_medical_history' => [
+            ['label' => 'Đã từng phẫu thuật', 'key' => 'medical.form.opt_surgery', 'icon' => 'fa-procedures'],
+            ['label' => 'Từng bị gãy xương', 'key' => 'medical.form.opt_fracture', 'icon' => 'fa-crutch'],
+            ['label' => 'Đã có phim chụp X-Ray', 'key' => 'medical.form.opt_xray', 'icon' => 'fa-x-ray'],
+            ['label' => 'Đã có phim MRI/CT', 'key' => 'medical.form.opt_mri_ct', 'icon' => 'fa-microscope'],
+            ['label' => 'Rối loạn đông máu', 'key' => 'medical.form.opt_clotting_disorder', 'icon' => 'fa-droplet-slash'],
+            ['label' => 'Huyết áp cao', 'key' => 'medical.form.opt_high_bp', 'icon' => 'fa-heart-pulse']
         ],
-        'Rà soát hệ thống' => [
-            ['label' => 'Đau đầu / Chóng mặt', 'icon' => 'fa-head-side-virus'],
-            ['label' => 'Ù tai', 'icon' => 'fa-ear-listen'],
-            ['label' => 'Tê lan xuống tay', 'icon' => 'fa-hand-sparkles'],
-            ['label' => 'Tê lan xuống chân', 'icon' => 'fa-shoe-prints'],
-            ['label' => 'Mất kiểm soát ruột/bàng quang', 'icon' => 'fa-person-circle-exclamation']
+        'medical.form.sec_ros' => [
+            ['label' => 'Đau đầu / Chóng mặt', 'key' => 'medical.form.opt_headache_dizzy', 'icon' => 'fa-head-side-virus'],
+            ['label' => 'Ù tai', 'key' => 'medical.form.opt_tinnitus', 'icon' => 'fa-ear-listen'],
+            ['label' => 'Tê lan xuống tay', 'key' => 'medical.form.opt_numb_arms', 'icon' => 'fa-hand-sparkles'],
+            ['label' => 'Tê lan xuống chân', 'key' => 'medical.form.opt_numb_legs', 'icon' => 'fa-shoe-prints'],
+            ['label' => 'Mất kiểm soát ruột/bàng quang', 'key' => 'medical.form.opt_bowel_control', 'icon' => 'fa-person-circle-exclamation']
         ],
-        'Mục tiêu điều trị' => [
-            ['label' => 'Giảm đau nhanh', 'icon' => 'fa-fire-extinguisher'],
-            ['label' => 'Phục hồi vận động', 'icon' => 'fa-running'],
-            ['label' => 'Phòng ngừa lâu dài', 'icon' => 'fa-shield-heart']
+        'medical.form.sec_goals' => [
+            ['label' => 'Giảm đau nhanh', 'key' => 'medical.form.opt_fast_relief', 'icon' => 'fa-fire-extinguisher'],
+            ['label' => 'Phục hồi vận động', 'key' => 'medical.form.opt_restore_rom', 'icon' => 'fa-running'],
+            ['label' => 'Phòng ngừa lâu dài', 'key' => 'medical.form.opt_prevention', 'icon' => 'fa-shield-heart']
         ]
     ];
 } else {
     $questions = [
-        'Tổng quát' => [
-            ['label' => 'Ăn uống kém', 'icon' => 'fa-utensils'],
-            ['label' => 'Mệt mỏi', 'icon' => 'fa-tired'],
-            ['label' => 'Hay ra mồ hôi', 'icon' => 'fa-tint'],
-            ['label' => 'Sợ lạnh', 'icon' => 'fa-snowflake'],
-            ['label' => 'Sợ nóng', 'icon' => 'fa-fire'],
-            ['label' => 'Cơ thể suy nhược', 'icon' => 'fa-battery-empty']
+        'medical.form.sec_general' => [
+            ['label' => 'Ăn uống kém', 'key' => 'medical.form.opt_eating_poor', 'icon' => 'fa-utensils'],
+            ['label' => 'Mệt mỏi', 'key' => 'medical.form.opt_fatigue', 'icon' => 'fa-tired'],
+            ['label' => 'Hay ra mồ hôi', 'key' => 'medical.form.opt_sweating', 'icon' => 'fa-tint'],
+            ['label' => 'Sợ lạnh', 'key' => 'medical.form.opt_fear_cold', 'icon' => 'fa-snowflake'],
+            ['label' => 'Sợ nóng', 'key' => 'medical.form.opt_fear_heat', 'icon' => 'fa-fire'],
+            ['label' => 'Cơ thể suy nhược', 'key' => 'medical.form.opt_body_weak', 'icon' => 'fa-battery-empty']
         ],
-        'Tiêu hóa' => [
-            ['label' => 'Đầy hơi', 'icon' => 'fa-wind'],
-            ['label' => 'Táo bón', 'icon' => 'fa-poop'],
-            ['label' => 'Tiêu chảy', 'icon' => 'fa-water'],
-            ['label' => 'Đau dạ dày', 'icon' => 'fa-band-aid']
+        'medical.form.sec_digestion' => [
+            ['label' => 'Đầy hơi', 'key' => 'medical.form.opt_bloating', 'icon' => 'fa-wind'],
+            ['label' => 'Táo bón', 'key' => 'medical.form.opt_constipation', 'icon' => 'fa-poop'],
+            ['label' => 'Tiêu chảy', 'key' => 'medical.form.opt_diarrhea', 'icon' => 'fa-water'],
+            ['label' => 'Đau dạ dày', 'key' => 'medical.form.opt_stomach_ache', 'icon' => 'fa-band-aid']
         ]
     ];
 }
@@ -323,7 +324,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             <p style="color: var(--text-muted); margin-top: 0.25rem;"><?php echo __('medical.form.patient_label'); ?> <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
         </div>
         <div style="background: rgba(99, 102, 241, 0.1); padding: 0.5rem 1.25rem; border-radius: 50px; color: var(--primary); font-weight: 700; font-size: 0.85rem;">
-            <?php echo strtoupper($type); ?>
+            <?php echo __('medical.form.type_' . $type); ?>
         </div>
     </div>
 
@@ -406,19 +407,31 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="form-group">
                         <label class="form-label"><?php echo __('medical.form.spirit_label'); ?></label>
                         <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                            <?php foreach (['Còn thần (Tươi nhuận)', 'Thất thần (Mệt mỏi, lờ đờ)'] as $opt): ?>
+                            <?php 
+                            $spirit_opts = [
+                                'medical.dong_y.spirit_good' => 'Còn thần (Tươi nhuận)',
+                                'medical.dong_y.spirit_lost' => 'Thất thần (Mệt mỏi, lờ đờ)'
+                            ];
+                            foreach ($spirit_opts as $k => $v): ?>
                                 <label class="checkbox-tag">
-                                    <input type="radio" name="history[spirit]" value="<?php echo $opt; ?>" <?php echo ($data['spirit'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="radio" name="history[spirit]" value="<?php echo $v; ?>" <?php echo ($data['spirit'] ?? '') == $v ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
                         <span style="font-size: 0.85rem; opacity: 0.7; display: block; margin-bottom: 0.5rem;"><?php echo __('medical.form.face_color_label'); ?></span>
                         <div class="medical-form-grid" style="grid-template-columns: repeat(4, 1fr);">
-                            <?php foreach (['Trắng bệch', 'Vàng vọt', 'Đỏ gay', 'Sạm đen'] as $opt): ?>
+                            <?php 
+                            $face_opts = [
+                                'medical.dong_y.face_white' => 'Trắng bệch',
+                                'medical.dong_y.face_yellow' => 'Vàng vọt',
+                                'medical.dong_y.face_red' => 'Đỏ gay',
+                                'medical.dong_y.face_dark' => 'Sạm đen'
+                            ];
+                            foreach ($face_opts as $k => $v): ?>
                                 <label class="checkbox-tag">
-                                    <input type="radio" name="history[face_color]" value="<?php echo $opt; ?>" <?php echo ($data['face_color'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="radio" name="history[face_color]" value="<?php echo $v; ?>" <?php echo ($data['face_color'] ?? '') == $v ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -433,10 +446,17 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div style="margin-bottom: 1.25rem;">
                             <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;"><?php echo __('medical.form.tongue_body_label'); ?></div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
-                                <?php foreach (['Hồng đều', 'Đỏ sẫm', 'Tím tái', 'Có điểm ứ huyết'] as $opt): ?>
+                                <?php 
+                                $tongue_body_opts = [
+                                    'medical.dong_y.tongue_body_pink' => 'Hồng đều',
+                                    'medical.dong_y.tongue_body_dark_red' => 'Đỏ sẫm',
+                                    'medical.dong_y.tongue_body_pale_blue' => 'Tím tái',
+                                    'medical.dong_y.tongue_body_spots' => 'Có điểm ứ huyết'
+                                ];
+                                foreach ($tongue_body_opts as $k => $v): ?>
                                     <label class="checkbox-tag">
-                                        <input type="radio" name="history[tongue_body]" value="<?php echo $opt; ?>" <?php echo ($data['tongue_body'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="radio" name="history[tongue_body]" value="<?php echo $v; ?>" <?php echo ($data['tongue_body'] ?? '') == $v ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -446,10 +466,16 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div style="margin-bottom: 1.25rem;">
                             <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;"><?php echo __('medical.form.tongue_shape_label'); ?></div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
-                                <?php foreach (['Thon gọn', 'Bệu béo (có vết răng)', 'Nứt ngang/dọc'] as $opt): ?>
+                                <?php 
+                                $tongue_shape_opts = [
+                                    'medical.dong_y.tongue_shape_slim' => 'Thon gọn',
+                                    'medical.dong_y.tongue_shape_swollen' => 'Bệu béo (có vết răng)',
+                                    'medical.dong_y.tongue_shape_cracked' => 'Nứt ngang/dọc'
+                                ];
+                                foreach ($tongue_shape_opts as $k => $v): ?>
                                     <label class="checkbox-tag">
-                                        <input type="radio" name="history[tongue_shape]" value="<?php echo $opt; ?>" <?php echo ($data['tongue_shape'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="radio" name="history[tongue_shape]" value="<?php echo $v; ?>" <?php echo ($data['tongue_shape'] ?? '') == $v ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -459,10 +485,18 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div style="margin-bottom: 1.25rem;">
                             <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;"><?php echo __('medical.form.tongue_coating_label'); ?></div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
-                                <?php foreach (['Trắng mỏng', 'Trắng dày', 'Vàng mỏng', 'Vàng dày', 'Nhớt/Dính'] as $opt): ?>
+                                <?php 
+                                $tongue_coat_opts = [
+                                    'medical.dong_y.tongue_coating_white_thin' => 'Trắng mỏng',
+                                    'medical.dong_y.tongue_coating_white_thick' => 'Trắng dày',
+                                    'medical.dong_y.tongue_coating_yellow_thin' => 'Vàng mỏng',
+                                    'medical.dong_y.tongue_coating_yellow_thick' => 'Vàng dày',
+                                    'medical.dong_y.tongue_coating_sticky' => 'Nhớt/Dính'
+                                ];
+                                foreach ($tongue_coat_opts as $k => $v): ?>
                                     <label class="checkbox-tag">
-                                        <input type="checkbox" name="history[tongue_coating][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['tongue_coating'] ?? []) ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="checkbox" name="history[tongue_coating][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['tongue_coating'] ?? []) ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -472,10 +506,16 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div>
                             <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;"><?php echo __('medical.form.tongue_tip_label'); ?></div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem;">
-                                <?php foreach (['Hồng', 'Đỏ', 'Nhạt'] as $opt): ?>
+                                <?php 
+                                $tongue_tip_opts = [
+                                    'medical.dong_y.tongue_tip_pink' => 'Hồng',
+                                    'medical.dong_y.tongue_tip_red' => 'Đỏ',
+                                    'medical.dong_y.tongue_tip_pale' => 'Nhạt'
+                                ];
+                                foreach ($tongue_tip_opts as $k => $v): ?>
                                     <label class="checkbox-tag">
-                                        <input type="radio" name="history[tongue_tip]" value="<?php echo $opt; ?>" <?php echo ($data['tongue_tip'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="radio" name="history[tongue_tip]" value="<?php echo $v; ?>" <?php echo ($data['tongue_tip'] ?? '') == $v ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -487,20 +527,33 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-eye"></i> <?php echo __('medical.form.eyes_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
-                            <?php foreach (['Lòng trắng đỏ (Can hỏa)', 'Quầng thâm mắt (Thận hư)', 'Mắt sưng nề (Tỳ thấp)'] as $opt): ?>
+                            <?php 
+                            $eyes_opts = [
+                                'medical.dong_y.eyes_red' => 'Lòng trắng đỏ (Can hỏa)',
+                                'medical.dong_y.eyes_circles' => 'Quầng thâm mắt (Thận hư)',
+                                'medical.dong_y.eyes_swollen' => 'Mắt sưng nề (Tỳ thấp)'
+                            ];
+                            foreach ($eyes_opts as $k => $v): ?>
                                 <label class="checkbox-tag" style="width: 100%;">
-                                    <input type="checkbox" name="history[eyes][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['eyes'] ?? []) ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="checkbox" name="history[eyes][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['eyes'] ?? []) ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
                         <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #e2e8f0;">
                             <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; display: block;"><?php echo __('medical.form.eyelids_label'); ?></span>
                             <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.5rem;">
-                                <?php foreach (['Hồng đều', 'Trong nhạt ngoài hồng', 'Trong nhạt ngoài đỏ', 'Đỏ toàn bộ'] as $opt): ?>
+                                <?php 
+                                $eyelid_opts = [
+                                    'medical.dong_y.eyelids_pink' => 'Hồng đều',
+                                    'medical.dong_y.eyelids_pale_pink' => 'Trong nhạt ngoài hồng',
+                                    'medical.dong_y.eyelids_pale_red' => 'Trong nhạt ngoài đỏ',
+                                    'medical.dong_y.eyelids_all_red' => 'Đỏ toàn bộ'
+                                ];
+                                foreach ($eyelid_opts as $k => $v): ?>
                                     <label class="checkbox-tag" style="width: 100%;">
-                                        <input type="radio" name="history[eyelids]" value="<?php echo $opt; ?>" <?php echo ($data['eyelids'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="radio" name="history[eyelids]" value="<?php echo $v; ?>" <?php echo ($data['eyelids'] ?? '') == $v ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -509,10 +562,19 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-lips"></i> <?php echo __('medical.form.lips_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.5rem;">
-                            <?php foreach (['Hồng tươi', 'Ẩn vàng', 'Ẩn nâu', 'Có tia máu', 'Ẩn xanh tím tái', 'Nhạt'] as $opt): ?>
+                            <?php 
+                            $lip_opts = [
+                                'medical.dong_y.lips_pink' => 'Hồng tươi',
+                                'medical.dong_y.lips_yellowish' => 'Ẩn vàng',
+                                'medical.dong_y.lips_brownish' => 'Ẩn nâu',
+                                'medical.dong_y.lips_veins' => 'Có tia máu',
+                                'medical.dong_y.lips_cyanotic' => 'Ẩn xanh tím tái',
+                                'medical.dong_y.lips_pale' => 'Nhạt'
+                            ];
+                            foreach ($lip_opts as $k => $v): ?>
                                 <label class="checkbox-tag" style="width: 100%;">
-                                    <input type="radio" name="history[lips]" value="<?php echo $opt; ?>" <?php echo ($data['lips'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="radio" name="history[lips]" value="<?php echo $v; ?>" <?php echo ($data['lips'] ?? '') == $v ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -529,10 +591,19 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-comment-medical"></i> <?php echo __('medical.form.voice_breath_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr;">
-                            <?php foreach (['Tiếng nói to, vang (Thực)', 'Tiếng nói nhỏ, thào thào (Hư)', 'Hơi thở ngắn (Đoản hơi)', 'Nhanh', 'Chậm', 'Khò khè / Có đờm'] as $opt): ?>
+                            <?php 
+                            $voice_opts = [
+                                'medical.dong_y.voice_loud' => 'Tiếng nói to, vang (Thực)',
+                                'medical.dong_y.voice_weak' => 'Tiếng nói nhỏ, thào thào (Hư)',
+                                'medical.dong_y.voice_short_breath' => 'Hơi thở ngắn (Đoản hơi)',
+                                'medical.dong_y.voice_fast' => 'Nhanh',
+                                'medical.dong_y.voice_slow' => 'Chậm',
+                                'medical.dong_y.voice_wheezing' => 'Khò khè / Có đờm'
+                            ];
+                            foreach ($voice_opts as $k => $v): ?>
                                 <label class="checkbox-tag">
-                                    <input type="checkbox" name="history[voice_breath][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['voice_breath'] ?? []) ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="checkbox" name="history[voice_breath][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['voice_breath'] ?? []) ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -540,10 +611,15 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-wind"></i> <?php echo __('medical.form.body_odor_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr;">
-                            <?php foreach (['Hơi thở hôi (Vị nhiệt)', 'Cơ thể có mùi hăng/chua'] as $opt): ?>
+                            <?php 
+                            $odor_opts = [
+                                'medical.dong_y.odor_breath_bad' => 'Hơi thở hôi (Vị nhiệt)',
+                                'medical.dong_y.odor_body_sharp' => 'Cơ thể có mùi hăng/chua'
+                            ];
+                            foreach ($odor_opts as $k => $v): ?>
                                 <label class="checkbox-tag">
-                                    <input type="checkbox" name="history[body_odor][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['body_odor'] ?? []) ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="checkbox" name="history[body_odor][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['body_odor'] ?? []) ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -561,10 +637,16 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-history"></i> <?php echo __('medical.form.history_gyn_label'); ?></label>
                         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                            <?php foreach (['Sinh thường', 'Sinh mổ', 'Phẫu thuật khác'] as $opt): ?>
+                            <?php 
+                            $birth_opts = [
+                                'medical.dong_y.birth_natural' => 'Sinh thường',
+                                'medical.dong_y.birth_c_section' => 'Sinh mổ',
+                                'medical.dong_y.birth_surgery' => 'Phẫu thuật khác'
+                            ];
+                            foreach ($birth_opts as $k => $v): ?>
                                 <label class="checkbox-tag">
-                                    <input type="radio" name="history[lifestyle_history]" value="<?php echo $opt; ?>" <?php echo ($data['lifestyle_history'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="radio" name="history[lifestyle_history]" value="<?php echo $v; ?>" <?php echo ($data['lifestyle_history'] ?? '') == $v ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -572,10 +654,21 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-bed"></i> <?php echo __('medical.form.sleep_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr;">
-                            <?php foreach (['Dễ', 'Khó', 'Thẳng giấc', 'Trở giấc', 'Hay mơ (Mộng mị)', 'Đạo hãn (Mồ hôi trộm)', 'Đủ giờ', 'Thiếu giờ'] as $opt): ?>
+                            <?php 
+                            $sleep_opts = [
+                                'medical.dong_y.sleep_easy' => 'Dễ',
+                                'medical.dong_y.sleep_hard' => 'Khó',
+                                'medical.dong_y.sleep_continuous' => 'Thẳng giấc',
+                                'medical.dong_y.sleep_interrupted' => 'Trở giấc',
+                                'medical.dong_y.sleep_dreamy' => 'Hay mơ (Mộng mị)',
+                                'medical.dong_y.sleep_sweat' => 'Đạo hãn (Mồ hôi trộm)',
+                                'medical.dong_y.sleep_enough' => 'Đủ giờ',
+                                'medical.dong_y.sleep_lack' => 'Thiếu giờ'
+                            ];
+                            foreach ($sleep_opts as $k => $v): ?>
                                 <label class="checkbox-tag">
-                                    <input type="checkbox" name="history[sleep_quality][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['sleep_quality'] ?? []) ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="checkbox" name="history[sleep_quality][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['sleep_quality'] ?? []) ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -583,10 +676,15 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-sun"></i> <?php echo __('medical.form.wake_label'); ?></label>
                         <div style="display: flex; gap: 1rem;">
-                            <?php foreach(['Tỉnh táo', 'Lờ đờ'] as $opt): ?>
+                            <?php 
+                            $wake_opts = [
+                                'medical.dong_y.wake_alert' => 'Tỉnh táo',
+                                'medical.dong_y.wake_drowsy' => 'Lờ đờ'
+                            ];
+                            foreach($wake_opts as $k => $v): ?>
                                 <label class="checkbox-tag">
-                                    <input type="radio" value="<?php echo $opt; ?>" name="history[wake_up_state]" <?php echo ($data['wake_up_state'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="radio" value="<?php echo $v; ?>" name="history[wake_up_state]" <?php echo ($data['wake_up_state'] ?? '') == $v ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -594,16 +692,18 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-clock"></i> <?php echo __('medical.form.wake_time_label'); ?></label>
                         <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.5rem;">
-                            <?php foreach ([
-                                '21h-23h: Khó vào giấc (Tam Tiêu)', 
-                                '23h-01h: Hay giật mình, lo sợ (Đởm)', 
-                                '01h-03h: Tỉnh giấc bứt rứt, nóng nảy (Can)', 
-                                '03h-05h: Tỉnh giấc kèm ho, buồn rầu (Phế)', 
-                                '05h-07h: Tỉnh giấc đi ngoài ngay (Đại Trường)'
-                            ] as $opt): ?>
+                            <?php 
+                            $wake_time_opts = [
+                                'medical.dong_y.wake_21_23' => '21h-23h: Khó vào giấc (Tam Tiêu)',
+                                'medical.dong_y.wake_23_01' => '23h-01h: Hay giật mình, lo sợ (Đởm)',
+                                'medical.dong_y.wake_01_03' => '01h-03h: Tỉnh giấc bứt rứt, nóng nảy (Can)',
+                                'medical.dong_y.wake_03_05' => '03h-05h: Tỉnh giấc kèm ho, buồn rầu (Phế)',
+                                'medical.dong_y.wake_05_07' => '05h-07h: Tỉnh giấc đi ngoài ngay (Đại Trường)'
+                            ];
+                            foreach ($wake_time_opts as $k => $v): ?>
                                 <label class="checkbox-tag" style="width: 100%;">
-                                    <input type="checkbox" name="history[night_wake_times][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['night_wake_times'] ?? []) ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="checkbox" name="history[night_wake_times][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['night_wake_times'] ?? []) ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -618,10 +718,18 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div>
                             <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.lifestyle_label'); ?></span>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                                <?php foreach (['Ăn đêm sau 20h', 'Tắm sau 19h', 'Uống nước đá lạnh', 'Dùng điều hòa nhiệt độ dưới 25 độ', 'Stress'] as $opt): ?>
+                                <?php 
+                                $habit_opts = [
+                                    'medical.dong_y.habit_night_eat' => 'Ăn đêm sau 20h',
+                                    'medical.dong_y.habit_late_bath' => 'Tắm sau 19h',
+                                    'medical.dong_y.habit_cold_water' => 'Uống nước đá lạnh',
+                                    'medical.dong_y.habit_ac_below_25' => 'Dùng điều hòa nhiệt độ dưới 25 độ',
+                                    'medical.dong_y.habit_stress' => 'Stress'
+                                ];
+                                foreach ($habit_opts as $k => $v): ?>
                                     <label class="checkbox-tag">
-                                        <input type="checkbox" name="history[habits][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['habits'] ?? []) ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="checkbox" name="history[habits][]" value="<?php echo $v; ?>" <?php echo in_array($v, ($data['habits'] ?? [])) ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -631,10 +739,15 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div style="padding-top: 1.25rem; border-top: 1px dashed #e2e8f0;">
                             <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.before_sleep_label'); ?></span>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                                <?php foreach (['Sử dụng thiết bị điện tử sát giờ ngủ', 'Ngủ sau 23h'] as $opt): ?>
+                                <?php 
+                                $sleep_habit_opts = [
+                                    'medical.dong_y.habit_devices' => 'Sử dụng thiết bị điện tử sát giờ ngủ',
+                                    'medical.dong_y.habit_late_sleep' => 'Ngủ sau 23h'
+                                ];
+                                foreach ($sleep_habit_opts as $k => $v): ?>
                                     <label class="checkbox-tag">
-                                        <input type="checkbox" name="history[habits][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['habits'] ?? []) ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="checkbox" name="history[habits][]" value="<?php echo $v; ?>" <?php echo in_array($v, ($data['habits'] ?? [])) ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -645,10 +758,16 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div>
                                 <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.work_posture_label'); ?></span>
                                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                                    <?php foreach (['Đứng nhiều', 'Ngồi nhiều', 'Đi nhiều'] as $opt): ?>
+                                    <?php 
+                                    $work_opts = [
+                                        'medical.dong_y.work_stand' => 'Đứng nhiều',
+                                        'medical.dong_y.work_sit' => 'Ngồi nhiều',
+                                        'medical.dong_y.work_move' => 'Đi nhiều'
+                                    ];
+                                    foreach ($work_opts as $k => $v): ?>
                                         <label class="checkbox-tag">
-                                            <input type="radio" value="<?php echo $opt; ?>" name="history[work_posture]" <?php echo ($data['work_posture'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="radio" value="<?php echo $v; ?>" name="history[work_posture]" <?php echo ($data['work_posture'] ?? '') == $v ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -656,10 +775,15 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div>
                                 <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.living_env_label'); ?></span>
                                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                                    <?php foreach (['Bình thường', 'Ẩm ướt'] as $opt): ?>
+                                    <?php 
+                                    $living_opts = [
+                                        'medical.dong_y.living_normal' => 'Bình thường',
+                                        'medical.dong_y.living_humid' => 'Ẩm ướt'
+                                    ];
+                                    foreach ($living_opts as $k => $v): ?>
                                         <label class="checkbox-tag">
-                                            <input type="radio" value="<?php echo $opt; ?>" name="history[living_env]" <?php echo ($data['living_env'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="radio" value="<?php echo $v; ?>" name="history[living_env]" <?php echo ($data['living_env'] ?? '') == $v ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -677,10 +801,17 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div style="background: #f8fafc; padding: 1.25rem; border-radius: 16px; border: 1px solid #eef2f6;">
                                 <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 1rem; display: block;"><?php echo __('medical.form.digestion_eating_label'); ?></span>
                                 <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr;">
-                                    <?php foreach (['Ngon miệng', 'Thích đồ mát', 'Thích đồ nóng', 'Sợ ăn/Chán ăn'] as $opt): ?>
+                                    <?php 
+                                    $eat_opts = [
+                                        'medical.dong_y.eat_good' => 'Ngon miệng',
+                                        'medical.dong_y.eat_prefer_cold' => 'Thích đồ mát',
+                                        'medical.dong_y.eat_prefer_hot' => 'Thích đồ nóng',
+                                        'medical.dong_y.eat_loss_appetite' => 'Sợ ăn/Chán ăn'
+                                    ];
+                                    foreach ($eat_opts as $k => $v): ?>
                                         <label class="checkbox-tag">
-                                            <input type="checkbox" name="history[digestion_eating][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['digestion_eating'] ?? []) ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="checkbox" name="history[digestion_eating][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['digestion_eating'] ?? []) ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -690,10 +821,17 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div style="background: #f8fafc; padding: 1.25rem; border-radius: 16px; border: 1px solid #eef2f6;">
                                 <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 1rem; display: block;"><?php echo __('medical.form.digestion_excretion_label'); ?></span>
                                 <div class="medical-form-grid" style="grid-template-columns: 1fr 1fr;">
-                                    <?php foreach (['Táo bón', 'Sống phân/Nát', 'Tiêu chảy', 'Bình thường'] as $opt): ?>
+                                    <?php 
+                                    $excrete_opts = [
+                                        'medical.dong_y.excre_constipation' => 'Táo bón',
+                                        'medical.dong_y.excre_loose' => 'Sống phân/Nát',
+                                        'medical.dong_y.excre_diarrhea' => 'Tiêu chảy',
+                                        'medical.dong_y.excre_normal' => 'Bình thường'
+                                    ];
+                                    foreach ($excrete_opts as $k => $v): ?>
                                         <label class="checkbox-tag">
-                                            <input type="checkbox" name="history[digestion_excretion][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['digestion_excretion'] ?? []) ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="checkbox" name="history[digestion_excretion][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['digestion_excretion'] ?? []) ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -705,10 +843,17 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <span style="font-size: 0.85rem; font-weight: 700; color: #475569;"><?php echo __('medical.form.excretion_frequency_label'); ?></span>
                                 <div class="toggle-group-premium">
-                                    <?php foreach (['1', '2', '3', 'Nhiều hơn'] as $opt): ?>
+                                    <?php 
+                                    $freq_opts = [
+                                        'medical.dong_y.freq_1' => '1',
+                                        'medical.dong_y.freq_2' => '2',
+                                        'medical.dong_y.freq_3' => '3',
+                                        'medical.dong_y.freq_more' => 'Nhiều hơn'
+                                    ];
+                                    foreach ($freq_opts as $k => $v): ?>
                                         <label class="toggle-item-premium">
-                                            <input type="radio" value="<?php echo $opt; ?>" name="history[excretion_frequency]" <?php echo ($data['excretion_frequency'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="radio" value="<?php echo $v; ?>" name="history[excretion_frequency]" <?php echo ($data['excretion_frequency'] ?? '') == $v ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -716,10 +861,11 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <span style="font-size: 0.85rem; font-weight: 700; color: #475569;"><?php echo __('medical.form.night_urine_label'); ?></span>
                                 <div class="toggle-group-premium">
-                                    <?php foreach (['1', '2', '3', 'Nhiều hơn'] as $opt): ?>
+                                    <?php 
+                                    foreach ($freq_opts as $k => $v): ?>
                                         <label class="toggle-item-premium">
-                                            <input type="radio" value="<?php echo $opt; ?>" name="history[night_urine_count]" <?php echo ($data['night_urine_count'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="radio" value="<?php echo $v; ?>" name="history[night_urine_count]" <?php echo ($data['night_urine_count'] ?? '') == $v ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -730,10 +876,18 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div style="padding-top: 1.25rem; border-top: 1px dashed #e2e8f0;">
                             <span style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; display: block;"><?php echo __('medical.form.urine_color_label'); ?></span>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                                <?php foreach (['Hơi vàng', 'Trắng, trong', 'Vàng sẫm', 'Đục', 'Đau, xót'] as $opt): ?>
+                                <?php 
+                                $urine_opts = [
+                                    'medical.dong_y.urine_yellowish' => 'Hơi vàng',
+                                    'medical.dong_y.urine_clear' => 'Trắng, trong',
+                                    'medical.dong_y.urine_dark_yellow' => 'Vàng sẫm',
+                                    'medical.dong_y.urine_cloudy' => 'Đục',
+                                    'medical.dong_y.urine_painful' => 'Đau, xót'
+                                ];
+                                foreach ($urine_opts as $k => $v): ?>
                                     <label class="checkbox-tag">
-                                        <input type="checkbox" name="history[urine_color][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['urine_color'] ?? []) ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="checkbox" name="history[urine_color][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['urine_color'] ?? []) ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -746,10 +900,15 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                     <div class="premium-card">
                         <label class="section-label-premium"><i class="fas fa-venus text-pink-500"></i> <?php echo __('medical.form.menses_label'); ?></label>
                         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
-                            <?php foreach (['Đều', 'Không đều'] as $opt): ?>
+                            <?php 
+                            $mense_reg_opts = [
+                                'medical.dong_y.menses_regular' => 'Đều',
+                                'medical.dong_y.menses_irregular' => 'Không đều'
+                            ];
+                            foreach ($mense_reg_opts as $k => $v): ?>
                                 <label class="checkbox-tag">
-                                    <input type="radio" name="history[menses_regularity]" value="<?php echo $opt; ?>" <?php echo ($data['menses_regularity'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                    <span><?php echo $opt; ?></span>
+                                    <input type="radio" name="history[menses_regularity]" value="<?php echo $v; ?>" <?php echo ($data['menses_regularity'] ?? '') == $v ? 'checked' : ''; ?>>
+                                    <span><?php echo __($k); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -760,10 +919,15 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div>
                                 <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;"><?php echo __('medical.form.menses_pain_label'); ?></span>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <?php foreach (['Có', 'Không'] as $opt): ?>
+                                    <?php 
+                                    $yes_no_opts = [
+                                        'medical.dong_y.yes' => 'Có',
+                                        'medical.dong_y.no' => 'Không'
+                                    ];
+                                    foreach ($yes_no_opts as $k => $v): ?>
                                         <label class="checkbox-tag" style="padding: 0.4rem 0.75rem;">
-                                            <input type="radio" name="history[menses_pain]" value="<?php echo $opt; ?>" <?php echo ($data['menses_pain'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="radio" name="history[menses_pain]" value="<?php echo $v; ?>" <?php echo ($data['menses_pain'] ?? '') == $v ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -771,10 +935,11 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div>
                                 <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;"><?php echo __('medical.form.menses_leucorrhoea_label'); ?></span>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <?php foreach (['Có', 'Không'] as $opt): ?>
+                                    <?php 
+                                    foreach ($yes_no_opts as $k => $v): ?>
                                         <label class="checkbox-tag" style="padding: 0.4rem 0.75rem;">
-                                            <input type="radio" name="history[menses_leucorrhoea]" value="<?php echo $opt; ?>" <?php echo ($data['menses_leucorrhoea'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="radio" name="history[menses_leucorrhoea]" value="<?php echo $v; ?>" <?php echo ($data['menses_leucorrhoea'] ?? '') == $v ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -783,10 +948,15 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div>
                             <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.5rem;"><?php echo __('medical.form.menses_color_label'); ?></span>
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                <?php foreach (['Đỏ tươi', 'Có cục / Thẫm màu'] as $opt): ?>
+                                <?php 
+                                $mense_color_opts = [
+                                    'medical.dong_y.menses_color_bright' => 'Đỏ tươi',
+                                    'medical.dong_y.menses_color_clots' => 'Có cục / Thẫm màu'
+                                ];
+                                foreach ($mense_color_opts as $k => $v): ?>
                                     <label class="checkbox-tag" style="padding: 0.4rem 0.75rem;">
-                                        <input type="radio" name="history[menses_color]" value="<?php echo $opt; ?>" <?php echo ($data['menses_color'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="radio" name="history[menses_color]" value="<?php echo $v; ?>" <?php echo ($data['menses_color'] ?? '') == $v ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -799,10 +969,17 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                                 <i class="fas fa-fire"></i> <?php echo __('medical.form.heat_label'); ?>
                             </span>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                <?php foreach (['Đau', 'Ngứa', 'Mỏi', 'Nóng'] as $opt): ?>
+                                <?php 
+                                $heat_sens_opts = [
+                                    'medical.dong_y.sens_pain' => 'Đau',
+                                    'medical.dong_y.sens_itchy' => 'Ngứa',
+                                    'medical.dong_y.sens_tired' => 'Mỏi',
+                                    'medical.dong_y.sens_hot' => 'Nóng'
+                                ];
+                                foreach ($heat_sens_opts as $k => $v): ?>
                                     <label class="checkbox-tag" style="padding: 0.5rem; background: white; border-color: #fecaca;">
-                                        <input type="checkbox" name="history[sensation_heat][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['sensation_heat'] ?? []) ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="checkbox" name="history[sensation_heat][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['sensation_heat'] ?? []) ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -812,10 +989,17 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                                 <i class="fas fa-snowflake"></i> <?php echo __('medical.form.cold_label'); ?>
                             </span>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                <?php foreach (['Nhức', 'Tê', 'Nặng nề', 'Lạnh'] as $opt): ?>
+                                <?php 
+                                $cold_sens_opts = [
+                                    'medical.dong_y.sens_ache' => 'Nhức',
+                                    'medical.dong_y.sens_numb' => 'Tê',
+                                    'medical.dong_y.sens_heavy' => 'Nặng nề',
+                                    'medical.dong_y.sens_cold' => 'Lạnh'
+                                ];
+                                foreach ($cold_sens_opts as $k => $v): ?>
                                     <label class="checkbox-tag" style="padding: 0.5rem; background: white; border-color: #bfdbfe;">
-                                        <input type="checkbox" name="history[sensation_cold][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['sensation_cold'] ?? []) ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="checkbox" name="history[sensation_cold][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['sensation_cold'] ?? []) ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -835,23 +1019,23 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
                             <div class="pulse-pair">
                                 <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.pulse_depth_label'); ?></span>
-                                <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_depth]" value="Phù (Nổi)" <?php echo ($data['pulse_depth'] ?? '') == 'Phù (Nổi)' ? 'checked' : ''; ?>><span>Phù</span></label>
-                                <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_depth]" value="Trầm (Chìm)" <?php echo ($data['pulse_depth'] ?? '') == 'Trầm (Chìm)' ? 'checked' : ''; ?>><span>Trầm</span></label>
+                                <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_depth]" value="Phù (Nổi)" <?php echo ($data['pulse_depth'] ?? '') == 'Phù (Nổi)' ? 'checked' : ''; ?>><span><?php echo __('medical.dong_y.pulse_depth_floating'); ?></span></label>
+                                <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_depth]" value="Trầm (Chìm)" <?php echo ($data['pulse_depth'] ?? '') == 'Trầm (Chìm)' ? 'checked' : ''; ?>><span><?php echo __('medical.dong_y.pulse_depth_deep'); ?></span></label>
                             </div>
                             <div class="pulse-pair">
                                 <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.pulse_speed_label'); ?></span>
-                                <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_speed]" value="Trì (Chậm)" <?php echo ($data['pulse_speed'] ?? '') == 'Trì (Chậm)' ? 'checked' : ''; ?>><span>Trì</span></label>
-                                <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_speed]" value="Sác (Nhanh)" <?php echo ($data['pulse_speed'] ?? '') == 'Sác (Nhanh)' ? 'checked' : ''; ?>><span>Sác</span></label>
+                                <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_speed]" value="Trì (Chậm)" <?php echo ($data['pulse_speed'] ?? '') == 'Trì (Chậm)' ? 'checked' : ''; ?>><span><?php echo __('medical.dong_y.pulse_speed_slow'); ?></span></label>
+                                <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_speed]" value="Sác (Nhanh)" <?php echo ($data['pulse_speed'] ?? '') == 'Sác (Nhanh)' ? 'checked' : ''; ?>><span><?php echo __('medical.dong_y.pulse_speed_fast'); ?></span></label>
                             </div>
                             <div class="pulse-pair">
                                 <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.pulse_texture_label'); ?></span>
-                                <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_texture]" value="Hoạt (Trơn)" <?php echo ($data['pulse_texture'] ?? '') == 'Hoạt (Trơn)' ? 'checked' : ''; ?>><span>Hoạt</span></label>
-                                <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_texture]" value="Sáp (Rít)" <?php echo ($data['pulse_texture'] ?? '') == 'Sáp (Rít)' ? 'checked' : ''; ?>><span>Sáp</span></label>
+                                <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_texture]" value="Hoạt (Trơn)" <?php echo ($data['pulse_texture'] ?? '') == 'Hoạt (Trơn)' ? 'checked' : ''; ?>><span><?php echo __('medical.dong_y.pulse_text_slippery'); ?></span></label>
+                                <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_texture]" value="Sáp (Rít)" <?php echo ($data['pulse_texture'] ?? '') == 'Sáp (Rít)' ? 'checked' : ''; ?>><span><?php echo __('medical.dong_y.pulse_text_choppy'); ?></span></label>
                             </div>
                             <div class="pulse-pair">
                                 <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.pulse_strength_label'); ?></span>
-                                <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_strength]" value="Có lực (Thực)" <?php echo ($data['pulse_strength'] ?? '') == 'Có lực (Thực)' ? 'checked' : ''; ?>><span>Có lực</span></label>
-                                <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_strength]" value="Không lực (Hư)" <?php echo ($data['pulse_strength'] ?? '') == 'Không lực (Hư)' ? 'checked' : ''; ?>><span>Không lực</span></label>
+                                <label class="checkbox-tag" style="width: 100%; margin-bottom: 0.5rem;"><input type="radio" name="history[pulse_strength]" value="Có lực (Thực)" <?php echo ($data['pulse_strength'] ?? '') == 'Có lực (Thực)' ? 'checked' : ''; ?>><span><?php echo __('medical.dong_y.pulse_str_force'); ?></span></label>
+                                <label class="checkbox-tag" style="width: 100%;"><input type="radio" name="history[pulse_strength]" value="Không lực (Hư)" <?php echo ($data['pulse_strength'] ?? '') == 'Không lực (Hư)' ? 'checked' : ''; ?>><span><?php echo __('medical.dong_y.pulse_str_weak'); ?></span></label>
                             </div>
                         </div>
                     </div>
@@ -860,10 +1044,18 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         <div class="premium-card">
                             <label class="section-label-premium"><i class="fas fa-hand-paper"></i> <?php echo __('medical.form.palpation_label'); ?></label>
                             <div class="medical-form-grid" style="grid-template-columns: 1fr; gap: 0.5rem;">
-                                <?php foreach (['Chân tay lạnh (Dương hư)', 'Lòng bàn tay chân nóng (Âm hư)', 'Ấn bụng đau tăng (Cự án)', 'Ấn bụng thấy dễ chịu (Thiện án)', 'Đầu ấm chân lạnh'] as $opt): ?>
+                                <?php 
+                                $palp_opts = [
+                                    'medical.dong_y.palp_cold_limbs' => 'Chân tay lạnh (Dương hư)',
+                                    'medical.dong_y.palp_hot_palms' => 'Lòng bàn tay chân nóng (Âm hư)',
+                                    'medical.dong_y.palp_tender_abd' => 'Ấn bụng đau tăng (Cự án)',
+                                    'medical.dong_y.palp_relieved_abd' => 'Ấn bụng thấy dễ chịu (Thiện án)',
+                                    'medical.dong_y.palp_head_warm_feet_cold' => 'Đầu ấm chân lạnh'
+                                ];
+                                foreach ($palp_opts as $k => $v): ?>
                                     <label class="checkbox-tag">
-                                        <input type="checkbox" name="history[palpation][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['palpation'] ?? []) ? 'checked' : ''; ?>>
-                                        <span><?php echo $opt; ?></span>
+                                        <input type="checkbox" name="history[palpation][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['palpation'] ?? []) ? 'checked' : ''; ?>>
+                                        <span><?php echo __($k); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -873,10 +1065,16 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div style="margin-bottom: 1.5rem;">
                                 <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.muscle_state_label'); ?></span>
                                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <?php foreach (['Săn chắc', 'Co cứng', 'Lỏng lẽo'] as $opt): ?>
+                                    <?php 
+                                    $muscle_opts = [
+                                        'medical.dong_y.muscle_firm' => 'Săn chắc',
+                                        'medical.dong_y.muscle_stiff' => 'Co cứng',
+                                        'medical.dong_y.muscle_loose' => 'Lỏng lẽo'
+                                    ];
+                                    foreach ($muscle_opts as $k => $v): ?>
                                         <label class="checkbox-tag">
-                                            <input type="radio" name="history[palpation_muscle]" value="<?php echo $opt; ?>" <?php echo ($data['palpation_muscle'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="radio" name="history[palpation_muscle]" value="<?php echo $v; ?>" <?php echo ($data['palpation_muscle'] ?? '') == $v ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -884,10 +1082,16 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                             <div>
                                 <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.75rem;"><?php echo __('medical.form.body_temp_label'); ?></span>
                                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <?php foreach (['Bình thường', 'Nóng', 'Lạnh'] as $opt): ?>
+                                    <?php 
+                                    $temp_opts = [
+                                        'medical.dong_y.body_temp_normal' => 'Bình thường',
+                                        'medical.dong_y.body_temp_hot' => 'Nóng',
+                                        'medical.dong_y.body_temp_cold' => 'Lạnh'
+                                    ];
+                                    foreach ($temp_opts as $k => $v): ?>
                                         <label class="checkbox-tag">
-                                            <input type="radio" name="history[body_temp]" value="<?php echo $opt; ?>" <?php echo ($data['body_temp'] ?? '') == $opt ? 'checked' : ''; ?>>
-                                            <span><?php echo $opt; ?></span>
+                                            <input type="radio" name="history[body_temp]" value="<?php echo $v; ?>" <?php echo ($data['body_temp'] ?? '') == $v ? 'checked' : ''; ?>>
+                                            <span><?php echo __($k); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -904,10 +1108,21 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                 <div class="premium-card">
                     <label class="section-label-premium"><i class="fas fa-tags"></i> <?php echo __('medical.form.bat_cuong_label'); ?></label>
                     <div class="medical-form-grid" style="grid-template-columns: repeat(4, 1fr); gap: 1rem;">
-                        <?php foreach (['Biểu', 'Lý', 'Hàn', 'Nhiệt', 'Hư', 'Thực', 'Âm', 'Dương'] as $opt): ?>
+                        <?php 
+                        $bat_cuong_opts = [
+                            'medical.dong_y.bat_cuong_bieu' => 'Biểu',
+                            'medical.dong_y.bat_cuong_ly' => 'Lý',
+                            'medical.dong_y.bat_cuong_han' => 'Hàn',
+                            'medical.dong_y.bat_cuong_nhiet' => 'Nhiệt',
+                            'medical.dong_y.bat_cuong_hu' => 'Hư',
+                            'medical.dong_y.bat_cuong_thuc' => 'Thực',
+                            'medical.dong_y.bat_cuong_am' => 'Âm',
+                            'medical.dong_y.bat_cuong_duong' => 'Dương'
+                        ];
+                        foreach ($bat_cuong_opts as $k => $v): ?>
                             <label class="checkbox-tag" style="justify-content: center; padding: 1rem;">
-                                <input type="checkbox" name="history[bat_cuong][]" value="<?php echo $opt; ?>" <?php echo in_array($opt, $data['bat_cuong'] ?? []) ? 'checked' : ''; ?>>
-                                <span><?php echo $opt; ?></span>
+                                <input type="checkbox" name="history[bat_cuong][]" value="<?php echo $v; ?>" <?php echo in_array($v, $data['bat_cuong'] ?? []) ? 'checked' : ''; ?>>
+                                <span><?php echo __($k); ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -916,18 +1131,18 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
 
         <?php else: ?>
             <!-- Chiropractic / Generic Sections -->
-            <?php foreach ($questions as $section => $options): ?>
+            <?php foreach ($questions as $section_key => $options): ?>
                 <div style="margin-bottom: 2.5rem;">
                     <h3 style="font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
                         <span style="width: 4px; height: 16px; background: var(--primary); border-radius: 2px;"></span>
-                        <?php echo $section; ?>
+                        <?php echo __($section_key); ?>
                     </h3>
                     <div class="medical-form-grid">
                         <?php foreach ($options as $opt): ?>
                             <label class="checkbox-card">
-                                <input type="checkbox" name="history[<?php echo $section; ?>][]" value="<?php echo $opt['label']; ?>" <?php echo in_array($opt['label'], $data[$section] ?? []) ? 'checked' : ''; ?>>
+                                <input type="checkbox" name="history[<?php echo $section_key; ?>][]" value="<?php echo $opt['label']; ?>" <?php echo in_array($opt['label'], $data[$section_key] ?? []) ? 'checked' : ''; ?>>
                                 <i class="fas <?php echo $opt['icon']; ?>"></i>
-                                <span class="label-text"><?php echo $opt['label']; ?></span>
+                                <span class="label-text"><?php echo __($opt['key']); ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>

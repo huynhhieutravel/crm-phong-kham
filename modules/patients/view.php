@@ -6,7 +6,7 @@ $page_title = __('patient.detail.title');
 $current_page = 'patients';
 require_once '../../templates/header.php';
 
-$id = $_GET['id'] ?? 0;
+$id = isset($_GET['id']) ? $_GET['id'] : 0;
 $db = getDB();
 
 $stmt = $db->prepare("
@@ -279,20 +279,22 @@ $treatments = $stmt->fetchAll();
                                     <?php foreach ($item['parts'] as $part): 
                                         $p_is_tr = isset($part['session_data']);
                                         $p_type = $p_is_tr ? 'treatment' : $part['type'];
-                                        $p_label = [
-                                            'chiro_history' => __('medical.part.history'),
-                                            'chiro_exam' => __('medical.part.exam'),
-                                            'chiropractic' => __('medical.part.soap'),
-                                            'dong_y' => __('medical.part.dong_y'),
-                                            'treatment' => __('medical.part.treatment')
-                                        ][$p_type] ?? __('medical.part.other');
-                                        $p_icon = [
+                                            $labels = [
+                                                'chiro_history' => __('medical.part.history'),
+                                                'chiro_exam' => __('medical.part.exam'),
+                                                'chiropractic' => __('medical.part.soap'),
+                                                'dong_y' => __('medical.part.dong_y'),
+                                                'treatment' => __('medical.part.treatment')
+                                            ];
+                                            $p_label = isset($labels[$p_type]) ? $labels[$p_type] : __('medical.part.other');
+                                        $icons = [
                                             'chiro_history' => 'fa-history',
                                             'chiro_exam' => 'fa-stethoscope',
                                             'chiropractic' => 'fa-notes-medical',
                                             'dong_y' => 'fa-leaf',
                                             'treatment' => 'fa-hand-holding-medical'
-                                        ][$p_type] ?? 'fa-file';
+                                        ];
+                                        $p_icon = isset($icons[$p_type]) ? $icons[$p_type] : 'fa-file';
                                     ?>
                                         <span class="part-badge">
                                             <i class="fas <?php echo $p_icon; ?>"></i> <?php echo $p_label; ?>
@@ -305,13 +307,14 @@ $treatments = $stmt->fetchAll();
                             // Render orphan history/treatment as a simple node
                             $i = $item['data'];
                             $is_tr = ($item['type'] === 'treatment');
-                            $type_label = $is_tr ? __('medical.type.treatment') : [
-                                'chiro_exam' => __('medical.type.chiro_exam'),
-                                'chiro_history' => __('medical.type.chiro_history'),
-                                'chiropractic' => __('medical.type.chiropractic'),
-                                'soap_note' => __('medical.type.chiropractic'),
-                                'dong_y' => __('medical.type.dong_y')
-                            ][$i['type']] ?? __('medical.type.general');
+                                $types = [
+                                    'chiro_exam' => __('medical.type.chiro_exam'),
+                                    'chiro_history' => __('medical.type.chiro_history'),
+                                    'chiropractic' => __('medical.type.chiropractic'),
+                                    'soap_note' => __('medical.type.chiropractic'),
+                                    'dong_y' => __('medical.type.dong_y')
+                                ];
+                                $type_label = isset($types[$i['type']]) ? $types[$i['type']] : __('medical.type.general');
                             $color = $is_tr ? '#10b981' : '#6366f1';
                         ?>
                             <div class="timeline-node" data-type="<?php echo $item['type']; ?>" style="position: relative; margin-bottom: 2rem; padding-left: 1rem;">

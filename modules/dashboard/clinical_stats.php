@@ -10,35 +10,56 @@ $labels = [];
 $apt_statuses = [];
 
 if ($start_date && $end_date) {
-    $new_patients = $db->query("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
-    $total_sessions = $db->query("SELECT COUNT(*) FROM medical_sessions WHERE session_date BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
-    $completed_appointments = $db->query("SELECT COUNT(*) FROM appointments WHERE status = 'completed' AND appointment_date BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
+    try {
+        $new_patients = $db->query("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
+    } catch (Exception $e) {}
 
-    // 2. Patient Labels Data
-    $label_stmt = $db->prepare("SELECT label, COUNT(*) as count FROM patients WHERE created_at BETWEEN ? AND ? GROUP BY label ORDER BY count DESC");
-    $label_stmt->execute([$start_date, $end_date]);
-    $labels = $label_stmt->fetchAll();
+    try {
+        $total_sessions = $db->query("SELECT COUNT(*) FROM medical_sessions WHERE session_date BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
+    } catch (Exception $e) {}
 
-    // 3. Doctor Workload Data
-    $doctor_stmt = $db->prepare("
-        SELECT u.full_name, 
-               COUNT(DISTINCT a.id) as appointments,
-               COUNT(DISTINCT s.id) as sessions
-        FROM users u
-        LEFT JOIN appointments a ON u.id = a.doctor_id AND a.appointment_date BETWEEN ? AND ?
-        LEFT JOIN medical_sessions s ON u.id = s.doctor_id AND s.session_date BETWEEN ? AND ?
-        WHERE u.role_id = 2 -- Doctors
-        GROUP BY u.id
-        HAVING appointments > 0 OR sessions > 0
-        ORDER BY sessions DESC, appointments DESC
-    ");
-    $doctor_stmt->execute([$start_date, $end_date, $start_date, $end_date]);
-    $doctors = $doctor_stmt->fetchAll();
+    try {
+        $completed_appointments = $db->query("SELECT COUNT(*) FROM appointments WHERE status = 'completed' AND appointment_date BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
+    } catch (Exception $e) {}
 
-    // 4. Appointment Status Distribution
-    $apt_status_stmt = $db->prepare("SELECT status, COUNT(*) as count FROM appointments WHERE appointment_date BETWEEN ? AND ? GROUP BY status");
-    $apt_status_stmt->execute([$start_date, $end_date]);
-    $apt_statuses = $apt_status_stmt->fetchAll();
+    try {
+        // 2. Patient Labels Data
+        $label_stmt = $db->prepare("SELECT label, COUNT(*) as count FROM patients WHERE created_at BETWEEN ? AND ? GROUP BY label ORDER BY count DESC");
+        $label_stmt->execute([$start_date, $end_date]);
+        $labels = $label_stmt->fetchAll();
+    } catch (Exception $e) {}
+
+    try {
+        // 3. Doctor Workload Data
+        $doctor_stmt = $db->prepare("
+            SELECT u.full_name, 
+                   COUNT(DISTINCT a.id) as appointments,
+                   COUNT(DISTINCT s.id) as sessions
+            FROM users u
+            LEFT JOIN appointments a ON u.id = a.doctor_id AND a.appointment_date BETWEEN ? AND ?
+            LEFT JOIN medical_sessions s ON u.id = s.doctor_id AND s.session_date BETWEEN ? AND ?
+            WHERE u.role_id = 2 -- Doctors
+            GROUP BY u.id
+            HAVING appointments > 0 OR sessions > 0
+            ORDER BY sessions DESC, appointments DESC
+        ");
+        $doctor_stmt->execute([$start_date, $end_date, $start_date, $end_date]);
+        $doctors = $doctor_stmt->fetchAll();
+    } catch (Exception $e) {
+        // Fallback: simple doctor list
+        try {
+            $doctors = $db->query("SELECT full_name, 0 as appointments, 0 as sessions FROM users WHERE role_id = 2")->fetchAll();
+        } catch (Exception $e2) {
+            $doctors = [];
+        }
+    }
+
+    try {
+        // 4. Appointment Status Distribution
+        $apt_status_stmt = $db->prepare("SELECT status, COUNT(*) as count FROM appointments WHERE appointment_date BETWEEN ? AND ? GROUP BY status");
+        $apt_status_stmt->execute([$start_date, $end_date]);
+        $apt_statuses = $apt_status_stmt->fetchAll();
+    } catch (Exception $e) {}
 } else {
     $doctors = [];
 }

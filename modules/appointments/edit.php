@@ -5,7 +5,7 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-$id = $_GET['id'] ?? 0;
+$id = isset($_GET['id']) ? $_GET['id'] : 0;
 
 $stmt = $db->prepare("SELECT * FROM appointments WHERE id = ?");
 $stmt->execute([$id]);
@@ -17,22 +17,33 @@ if (!$appointment) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $end_time = !empty($_POST['appointment_end_time']) ? $_POST['appointment_end_time'] : null;
-    $stmt = $db->prepare("
-        UPDATE appointments 
-        SET doctor_id = ?, appointment_date = ?, appointment_end_time = ?, type = ?, notes = ?, status = ?
-        WHERE id = ?
-    ");
-    
-    $stmt->execute([
-        $_POST['doctor_id'] ?: null,
-        $_POST['appointment_date'] . ' ' . $_POST['appointment_time'],
-        $end_time,
-        $_POST['type'],
-        $_POST['notes'],
-        $_POST['status'],
-        $id
-    ]);
+    $optionals = [
+        'doctor_id' => $_POST['doctor_id'] ?: null,
+        'appointment_date' => $_POST['appointment_date'] . ' ' . $_POST['appointment_time'],
+        'appointment_end_time' => !empty($_POST['appointment_end_time']) ? $_POST['appointment_end_time'] : null,
+        'type' => $_POST['type'],
+        'notes' => $_POST['notes'],
+        'status' => $_POST['status']
+    ];
+
+    // Detect available columns
+    $available_cols = $db->query("SHOW COLUMNS FROM appointments")->fetchAll(PDO::FETCH_COLUMN);
+    $data = [];
+    foreach ($optionals as $col => $val) {
+        if (in_array($col, $available_cols)) {
+            $data[$col] = $val;
+        }
+    }
+
+    if (!empty($data)) {
+        $set_parts = [];
+        foreach (array_keys($data) as $col) {
+            $set_parts[] = "$col = ?";
+        }
+        $sql = "UPDATE appointments SET " . implode(", ", $set_parts) . " WHERE id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->execute(array_merge(array_values($data), [$id]));
+    }
 
     set_flash(__('appointment.msg.update_success'));
     redirect('index.php');
@@ -49,7 +60,7 @@ $doctors = $db->query("
     WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
     ORDER BY r.name = 'doctor' DESC, u.full_name ASC
 ")->fetchAll();
-$status_options = ['scheduled', 'confirmed', 'arrived', 'completed', 'no_show', 'cancelled'];
+$status_options = ['scheduled', 'confirmed', 'arrived', 'treated', 'completed', 'no_show', 'cancelled', 'staff_sick', 'staff_busy'];
 ?>
 
 <div class="card" style="max-width: 600px; margin: 0 auto; padding: 2rem;">

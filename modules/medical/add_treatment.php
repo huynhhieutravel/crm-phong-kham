@@ -5,8 +5,8 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-$patient_id = $_GET['patient_id'] ?? 0;
-$session_id = $_GET['session_id'] ?? null;
+$patient_id = isset($_GET['patient_id']) ? $_GET['patient_id'] : 0;
+$session_id = isset($_GET['session_id']) ? $_GET['session_id'] : null;
 
 $stmt = $db->prepare("SELECT full_name FROM patients WHERE id = ?");
 $stmt->execute([$patient_id]);

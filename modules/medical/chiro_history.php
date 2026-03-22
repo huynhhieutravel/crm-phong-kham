@@ -111,10 +111,17 @@ require_once '../../templates/header.php';
                 <div class="form-group">
                     <label class="form-label"><?php echo __('medical.history.job_label'); ?></label>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem;">
-                        <?php foreach (['Ngồi nhiều', 'Đứng nhiều', 'Lao động tay chân', 'Di chuyển nhiều'] as $job): ?>
+                        <?php 
+                        $job_options = [
+                            'Ngồi nhiều'      => __('medical.history.job_sitting'),
+                            'Đứng nhiều'      => __('medical.history.job_standing'),
+                            'Lao động tay chân' => __('medical.history.job_manual'),
+                            'Di chuyển nhiều' => __('medical.history.job_moving')
+                        ];
+                        foreach ($job_options as $val => $label): ?>
                             <label class="checkbox-tag">
-                                <input type="checkbox" name="exam[lifestyle][job][]" value="<?php echo $job; ?>" <?php echo checked_v('lifestyle.job', $job); ?>>
-                                <span><?php echo $job; ?></span>
+                                <input type="checkbox" name="exam[lifestyle][job][]" value="<?php echo $val; ?>" <?php echo checked_v('lifestyle.job', $val); ?>>
+                                <span><?php echo $label; ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -122,9 +129,15 @@ require_once '../../templates/header.php';
                 <div class="form-group">
                     <label class="form-label"><?php echo __('medical.history.exercise_freq_label'); ?></label>
                     <div style="display: flex; gap: 1.5rem; margin-top: 1rem;">
-                        <?php foreach (['Không tập', 'Thỉnh thoảng', 'Thường xuyên'] as $freq): ?>
+                        <?php 
+                        $exercise_options = [
+                            'Không tập'      => __('medical.history.exercise_never'),
+                            'Thỉnh thoảng'  => __('medical.history.exercise_sometimes'),
+                            'Thường xuyên'   => __('medical.history.exercise_often')
+                        ];
+                        foreach ($exercise_options as $val => $label): ?>
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
-                                <input type="radio" name="exam[lifestyle][exercise]" value="<?php echo $freq; ?>" <?php echo checked_v('lifestyle.exercise', $freq); ?>> <?php echo $freq; ?>
+                                <input type="radio" name="exam[lifestyle][exercise]" value="<?php echo $val; ?>" <?php echo checked_v('lifestyle.exercise', $val); ?>> <?php echo $label; ?>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -134,13 +147,19 @@ require_once '../../templates/header.php';
             <div class="form-group" style="margin-top: 2rem;">
                 <label class="form-label"><?php echo __('medical.history.birth_history_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 0.75rem; align-items: center;">
-                    <?php foreach (['Sinh thường', 'Sinh mổ', 'Có dùng kẹp/giác hút'] as $birth): ?>
+                    <?php 
+                    $birth_options = [
+                        'Sinh thường'        => __('medical.history.birth_natural'),
+                        'Sinh mổ'           => __('medical.history.birth_c_section'),
+                        'Có dùng kẹp/giác hút' => __('medical.history.birth_assisted')
+                    ];
+                    foreach ($birth_options as $val => $label): ?>
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
-                            <input type="radio" name="exam[lifestyle][birth_history]" value="<?php echo $birth; ?>" <?php echo checked_v('lifestyle.birth_history', $birth); ?>> <?php echo $birth; ?>
+                            <input type="radio" name="exam[lifestyle][birth_history]" value="<?php echo $val; ?>" <?php echo checked_v('lifestyle.birth_history', $val); ?>> <?php echo $label; ?>
                         </label>
                     <?php endforeach; ?>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
-                        <input type="radio" name="exam[lifestyle][birth_history]" value="Khác" <?php echo checked_v('lifestyle.birth_history', 'Khác'); ?>> Khác
+                        <input type="radio" name="exam[lifestyle][birth_history]" value="Khác" <?php echo checked_v('lifestyle.birth_history', 'Khác'); ?>> <?php echo __('common.other'); ?>
                     </label>
                     <input type="text" name="exam[lifestyle][birth_history_other]" placeholder="<?php echo __('medical.history.other_note'); ?>" class="form-input" style="width: 300px;" value="<?php echo get_v('lifestyle.birth_history_other'); ?>">
                 </div>
@@ -156,32 +175,45 @@ require_once '../../templates/header.php';
             <div class="form-group" style="margin-bottom: 2.5rem;">
                 <label class="form-label"><?php echo __('medical.history.pain_locations_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; align-items: center;">
-                    <?php foreach ([
-                        'Cổ (Halswirbelsäule)', 
-                        'Ngực/Lưng trên (Brustwirbelsäule)', 
-                        'Thắt lưng (Lendenwirbelsäule)', 
-                        'Khớp (Vai/Khuỷu tay/Cổ tay/Háng/Gối/Cổ chân)'
-                    ] as $loc): ?>
+                    <?php 
+                    $loc_options = [
+                        'Cổ (Halswirbelsäule)'             => __('medical.history.loc_neck'),
+                        'Ngực/Lưng trên (Brustwirbelsäule)' => __('medical.history.loc_thoracic'),
+                        'Thắt lưng (Lendenwirbelsäule)'    => __('medical.history.loc_lumbar'),
+                        'Khớp Vai'                         => __('medical.exam.joint_shoulder'),
+                        'Khớp Khuỷu tay'                   => __('medical.exam.joint_elbow'),
+                        'Khớp Cổ tay'                      => __('medical.exam.joint_wrist'),
+                        'Khớp Háng'                        => __('medical.exam.joint_hip'),
+                        'Khớp Gối'                         => __('medical.exam.joint_knee'),
+                        'Khớp Cổ chân'                     => __('medical.exam.joint_ankle'),
+                        'Khác'                             => __('common.other')
+                    ];
+                    foreach ($loc_options as $val => $label): ?>
                         <label class="checkbox-tag">
-                            <input type="checkbox" name="exam[pathology][locations][]" value="<?php echo $loc; ?>" <?php echo checked_v('pathology.locations', $loc); ?>>
-                            <span><?php echo $loc; ?></span>
+                            <input type="checkbox" name="exam[pathology][locations][]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.locations', $val); ?>>
+                            <span><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
-                    <label class="checkbox-tag">
-                        <input type="checkbox" name="exam[pathology][locations][]" value="Khác" <?php echo checked_v('pathology.locations', 'Khác'); ?>>
-                        <span>Khác</span>
-                    </label>
                     <input type="text" name="exam[pathology][locations_other]" placeholder="<?php echo __('medical.history.locations_other_placeholder'); ?>" class="form-input" style="width: 250px;" value="<?php echo get_v('pathology.locations_other'); ?>">
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label"><?php echo __('medical.history.pain_nature_label'); ?></label>
+            <div id="pain-details-section" style="display: none;">
+                <div class="form-group" style="margin-bottom: 2.5rem;">
+                    <label class="form-label"><?php echo __('medical.history.pain_nature_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
-                    <?php foreach (['Đau nhói', 'Đau âm ỉ', 'Tê bì', 'Yêu cơ', 'Hạn chế vận động'] as $nature): ?>
+                    <?php 
+                    $nature_options = [
+                        'Đau nhói'          => __('medical.history.pain_nature_sharp'),
+                        'Đau âm ỉ'          => __('medical.history.pain_nature_dull'),
+                        'Tê bì'            => __('medical.history.pain_nature_numb'),
+                        'Yêu cơ'           => __('medical.history.pain_nature_weak'),
+                        'Hạn chế vận động' => __('medical.history.pain_nature_limited')
+                    ];
+                    foreach ($nature_options as $val => $label): ?>
                         <label class="checkbox-tag">
-                            <input type="checkbox" name="exam[pathology][nature][]" value="<?php echo $nature; ?>" <?php echo checked_v('pathology.nature', $nature); ?>>
-                            <span><?php echo $nature; ?></span>
+                            <input type="checkbox" name="exam[pathology][nature][]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.nature', $val); ?>>
+                            <span><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -190,10 +222,19 @@ require_once '../../templates/header.php';
             <div class="form-group" style="margin-bottom: 2.5rem;">
                 <label class="form-label"><?php echo __('medical.history.pain_triggers_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
-                    <?php foreach (['Đi bộ', 'Ngồi lâu', 'Đứng lâu', 'Lúc ngủ', 'Sau khi ngủ dậy', 'Vận động mạnh'] as $trigger): ?>
+                    <?php 
+                    $trigger_options = [
+                        'Đi bộ'          => __('medical.history.trigger_walk'),
+                        'Ngồi lâu'       => __('medical.history.trigger_sit'),
+                        'Đứng lâu'       => __('medical.history.trigger_stand'),
+                        'Lúc ngủ'        => __('medical.history.trigger_sleep'),
+                        'Sau khi ngủ dậy' => __('medical.history.trigger_wake'),
+                        'Vận động mạnh'  => __('medical.history.trigger_active')
+                    ];
+                    foreach ($trigger_options as $val => $label): ?>
                         <label class="checkbox-tag">
-                            <input type="checkbox" name="exam[pathology][triggers][]" value="<?php echo $trigger; ?>" <?php echo checked_v('pathology.triggers', $trigger); ?>>
-                            <span><?php echo $trigger; ?></span>
+                            <input type="checkbox" name="exam[pathology][triggers][]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.triggers', $val); ?>>
+                            <span><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -212,13 +253,15 @@ require_once '../../templates/header.php';
                 <div class="form-group">
                     <label class="form-label"><?php echo __('medical.history.symptom_duration_label'); ?></label>
                     <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
-                        <?php foreach ([
-                            'Cấp tính (vài ngày)', 
-                            'Mạn tính (vài tháng/năm)', 
-                            'Tái phát nhiều lần'
-                        ] as $duration): ?>
+                        <?php 
+                        $duration_options = [
+                            'Cấp tính (vài ngày)'      => __('medical.history.duration_acute'),
+                            'Mạn tính (vài tháng/năm)' => __('medical.history.duration_chronic'),
+                            'Tái phát nhiều lần'      => __('medical.history.duration_recurrent')
+                        ];
+                        foreach ($duration_options as $val => $label): ?>
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
-                                <input type="radio" name="exam[pathology][duration]" value="<?php echo $duration; ?>" <?php echo checked_v('pathology.duration', $duration); ?>> <?php echo $duration; ?>
+                                <input type="radio" name="exam[pathology][duration]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.duration', $val); ?>> <?php echo $label; ?>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -228,14 +271,16 @@ require_once '../../templates/header.php';
             <div class="form-group">
                 <label class="form-label"><?php echo __('medical.history.activating_causes_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
-                    <?php foreach ([
-                        'Ngã/Va chạm', 
-                        'Tai nạn xe', 
-                        'Tự nhiên bị'
-                    ] as $cause): ?>
+                    <?php 
+                    $cause_options = [
+                        'Ngã/Va chạm' => __('medical.history.cause_fall'),
+                        'Tai nạn xe'  => __('medical.history.cause_accident'),
+                        'Tự nhiên bị' => __('medical.history.cause_natural')
+                    ];
+                    foreach ($cause_options as $val => $label): ?>
                         <label class="checkbox-tag">
-                            <input type="checkbox" name="exam[pathology][activating_causes][]" value="<?php echo $cause; ?>" <?php echo checked_v('pathology.activating_causes', $cause); ?>>
-                            <span><?php echo $cause; ?></span>
+                            <input type="checkbox" name="exam[pathology][activating_causes][]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.activating_causes', $val); ?>>
+                            <span><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -296,8 +341,9 @@ require_once '../../templates/header.php';
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- PART 3: TIỀN SỬ Y KHOA & CHẤN THƯƠNG -->
+    <!-- PART 3: TIỀN SỬ Y KHOA & CHẤN THƯƠNG -->
         <div style="margin-bottom: 4rem;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
                 <i class="fas fa-history"></i> <?php echo __('medical.history.part3_title'); ?>
@@ -307,17 +353,19 @@ require_once '../../templates/header.php';
             <div class="form-group" style="margin-bottom: 2.5rem;">
                 <label class="form-label"><?php echo __('medical.history.suspected_causes_label'); ?></label>
                 <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.75rem;">
-                    <?php foreach ([
-                        'Tai nhận xe' => 'tai_nan_xe', 
-                        'Ngã/Chấn thương thể thao' => 'nga_chan_thuong', 
-                        'Không rõ nguyên nhân' => 'khong_ro'
-                    ] as $label => $val): ?>
+                    <?php 
+                    $cause_options = [
+                        'Tai nhận xe'              => __('medical.history.cause_accident'),
+                        'Ngã/Chấn thương thể thao' => __('medical.history.cause_sports'),
+                        'Không rõ nguyên nhân'     => __('medical.history.cause_unknown')
+                    ];
+                    foreach ($cause_options as $val => $label): ?>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
-                                <input type="checkbox" name="exam[medical_history][causes][]" value="<?php echo $label; ?>" <?php echo checked_v('medical_history.causes', $label); ?>> <?php echo $label; ?>
+                                <input type="checkbox" name="exam[medical_history][causes][]" value="<?php echo $val; ?>" <?php echo checked_v('medical_history.causes', $val); ?>> <?php echo $label; ?>
                             </label>
-                            <?php if ($val !== 'khong_ro'): ?>
-                                <input type="text" name="exam[medical_history][cause_time][<?php echo $label; ?>]" class="form-input" placeholder="<?php echo __('medical.history.time_placeholder'); ?>" style="width: 120px; padding: 0.25rem 0.5rem; font-size: 0.8rem;" value="<?php echo get_v('medical_history.cause_time.'.$label); ?>">
+                            <?php if ($val !== 'Không rõ nguyên nhân'): ?>
+                                <input type="text" name="exam[medical_history][cause_time][<?php echo $val; ?>]" class="form-input" placeholder="<?php echo __('medical.history.time_placeholder'); ?>" style="width: 120px; padding: 0.25rem 0.5rem; font-size: 0.8rem;" value="<?php echo get_v('medical_history.cause_time.'.$val); ?>">
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -359,9 +407,14 @@ require_once '../../templates/header.php';
                     <!-- Imaging -->
                     <div style="display: flex; align-items: center; gap: 1.5rem;">
                          <span style="font-size: 0.9rem; font-weight: 800;"><?php echo __('medical.history.imaging_label'); ?></span>
-                         <?php foreach (['X-Ray', 'MRI/CT'] as $p): ?>
+                         <?php 
+                         $imaging_options = [
+                             'X-Ray' => 'X-Ray',
+                             'MRI/CT' => 'MRI/CT'
+                         ];
+                         foreach ($imaging_options as $val => $label): ?>
                             <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; font-weight: 600;">
-                                <input type="checkbox" name="exam[medical_history][imaging][]" value="<?php echo $p; ?>" <?php echo checked_v('medical_history.imaging', $p); ?>> <?php echo $p; ?>
+                                <input type="checkbox" name="exam[medical_history][imaging][]" value="<?php echo $val; ?>" <?php echo checked_v('medical_history.imaging', $val); ?>> <?php echo $label; ?>
                             </label>
                          <?php endforeach; ?>
                     </div>
@@ -369,9 +422,15 @@ require_once '../../templates/header.php';
                      <!-- Treatments -->
                     <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
                          <span style="font-size: 0.9rem; font-weight: 800;"><?php echo __('medical.history.prev_treatments_label'); ?></span>
-                         <?php foreach (['Chiropractic khác', 'Vật lý trị liệu', 'Osteopath'] as $t): ?>
+                         <?php 
+                         $prev_treatment_options = [
+                             'Chiropractic khác' => __('medical.history.prev_chiro'),
+                             'Vật lý trị liệu'  => __('medical.history.prev_physio'),
+                             'Osteopath'        => 'Osteopath'
+                         ];
+                         foreach ($prev_treatment_options as $val => $label): ?>
                             <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; font-weight: 600;">
-                                <input type="checkbox" name="exam[medical_history][prev_treatments][]" value="<?php echo $t; ?>" <?php echo checked_v('medical_history.prev_treatments', $t); ?>> <?php echo $t; ?>
+                                <input type="checkbox" name="exam[medical_history][prev_treatments][]" value="<?php echo $val; ?>" <?php echo checked_v('medical_history.prev_treatments', $val); ?>> <?php echo $label; ?>
                             </label>
                          <?php endforeach; ?>
                     </div>
@@ -390,17 +449,19 @@ require_once '../../templates/header.php';
             <div class="form-group" style="margin-bottom: 2.5rem;">
                 <label class="form-label"><?php echo __('medical.history.ortho_diseases_label'); ?></label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                    <?php foreach ([
-                        'Thoát vị đĩa đệm (Bandscheibenvorfall): Đã có chẩn đoán xác định.',
-                        'Viêm khớp dạng thấp (Rheumatoid Polyarthritis): Hoặc các bệnh tự miễn về khớp.',
-                        'Loãng xương (Osteoporosis): Nguy cơ gãy xương khi nắn chỉnh lực mạnh.',
-                        'Thoái hóa cột sống nặng: Gây hẹp ống sống hoặc gai xương lớn.',
-                        'Vẹo cột sống (Skoliose): Cột sống hình chữ S đã biết.',
-                        'Viêm cột sống dính khớp: Gây cứng hóa các đốt sống.'
-                    ] as $disease): ?>
+                    <?php 
+                    $ortho_diseases = [
+                        'Thoát vị đĩa đệm (Bandscheibenvorfall): Đã có chẩn đoán xác định.' => __('medical.history.ortho_herniation'),
+                        'Viêm khớp dạng thấp (Rheumatoid Polyarthritis): Hoặc các bệnh tự miễn về khớp.' => __('medical.history.ortho_arthritis'),
+                        'Loãng xương (Osteoporosis): Nguy cơ gãy xương khi nắn chỉnh lực mạnh.' => __('medical.history.ortho_osteoporosis'),
+                        'Thoái hóa cột sống nặng: Gây hẹp ống sống hoặc gai xương lớn.' => __('medical.history.ortho_degeneration'),
+                        'Vẹo cột sống (Skoliose): Cột sống hình chữ S đã biết.' => __('medical.history.ortho_scoliosis'),
+                        'Viêm cột sống dính khớp: Gây cứng hóa các đốt sống.' => __('medical.history.ortho_ankylosing')
+                    ];
+                    foreach ($ortho_diseases as $val => $label): ?>
                         <label style="display: flex; align-items: start; gap: 0.75rem; font-size: 0.85rem; cursor: pointer; border: 1px solid #e2e8f0; padding: 0.75rem; border-radius: 12px; background: #fff; transition: all 0.2s; line-height: 1.4;">
-                            <input type="checkbox" name="exam[medical_history][ortho][]" value="<?php echo $disease; ?>" style="margin-top: 0.15rem;" <?php echo checked_v('medical_history.ortho', $disease); ?>> 
-                            <span><?php echo $disease; ?></span>
+                            <input type="checkbox" name="exam[medical_history][ortho][]" value="<?php echo $val; ?>" style="margin-top: 0.15rem;" <?php echo checked_v('medical_history.ortho', $val); ?>> 
+                            <span><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -409,16 +470,18 @@ require_once '../../templates/header.php';
             <div class="form-group" style="margin-bottom: 2.5rem;">
                 <label class="form-label"><?php echo __('medical.history.internal_diseases_label'); ?></label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                    <?php foreach ([
-                        'Ung thư (Krebs): Bất kỳ loại nào, đặc biệt là ung thư xương hoặc di cá.',
-                        'Huyết áp cao (Bluthochdruck): Liên quan đến nguy cơ lưu thông máu lên não.',
-                        'Tiểu đường (Diabetes): Ảnh hưởng đến tốc độ phục hồi thần kinh và mạch máu.',
-                        'Rối loạn đông máu: Hoặc đang sử dụng thuốc làm loãng máu (nguy cơ xuất huyết nội).',
-                        'Bệnh lý tim mạch: Đã từng đặt stent, phẫu thuật tim hoặc dùng máy tạo nhịp.'
-                    ] as $disease): ?>
+                    <?php 
+                    $internal_diseases = [
+                        'Ung thư (Krebs): Bất kỳ loại nào, đặc biệt là ung thư xương hoặc di cá.' => __('medical.history.internal_cancer'),
+                        'Huyết áp cao (Bluthochdruck): Liên quan đến nguy cơ lưu thông máu lên não.' => __('medical.history.internal_bp'),
+                        'Tiểu đường (Diabetes): Ảnh hưởng đến tốc độ phục hồi thần kinh và mạch máu.' => __('medical.history.internal_diabetes'),
+                        'Rối loạn đông máu: Hoặc đang sử dụng thuốc làm loãng máu (nguy cơ xuất huyết nội).' => __('medical.history.internal_clotting'),
+                        'Bệnh lý tim mạch: Đã từng đặt stent, phẫu thuật tim hoặc dùng máy tạo nhịp.' => __('medical.history.internal_cardiac')
+                    ];
+                    foreach ($internal_diseases as $val => $label): ?>
                         <label style="display: flex; align-items: start; gap: 0.75rem; font-size: 0.85rem; cursor: pointer; border: 1px solid #e2e8f0; padding: 0.75rem; border-radius: 12px; background: #fff; transition: all 0.2s; line-height: 1.4;">
-                            <input type="checkbox" name="exam[medical_history][internal][]" value="<?php echo $disease; ?>" style="margin-top: 0.15rem;" <?php echo checked_v('medical_history.internal', $disease); ?>> 
-                            <span><?php echo $disease; ?></span>
+                            <input type="checkbox" name="exam[medical_history][internal][]" value="<?php echo $val; ?>" style="margin-top: 0.15rem;" <?php echo checked_v('medical_history.internal', $val); ?>> 
+                            <span><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -433,16 +496,18 @@ require_once '../../templates/header.php';
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
-                    <?php foreach ([
-                        'Giảm đau / Chống viêm', 
-                        'Thuốc huyết áp / Tim mạch', 
-                        'Thuốc tiểu đường', 
-                        'Thuốc chống đông máu', 
-                        'Thực phẩm chức năng (Xương khớp, Vitamin...)'
-                    ] as $med): ?>
+                    <?php 
+                    $med_options = [
+                        'Giảm đau / Chống viêm' => __('medical.history.meds_pain'),
+                        'Thuốc huyết áp / Tim mạch' => __('medical.history.meds_bp'),
+                        'Thuốc tiểu đường' => __('medical.history.meds_diabetes'),
+                        'Thuốc chống đông máu' => __('medical.history.meds_blood'),
+                        'Thực phẩm chức năng (Xương khớp, Vitamin...)' => __('medical.history.meds_supplements')
+                    ];
+                    foreach ($med_options as $val => $label): ?>
                         <label class="checkbox-tag" style="background: white; width: 100%; justify-content: start; text-align: left;">
-                            <input type="checkbox" name="exam[medical_history][meds_common][]" value="<?php echo $med; ?>" <?php echo checked_v('medical_history.meds_common', $med); ?>>
-                            <span style="padding: 0.75rem 1rem; width: 100%; box-sizing: border-box;"><?php echo $med; ?></span>
+                            <input type="checkbox" name="exam[medical_history][meds_common][]" value="<?php echo $val; ?>" <?php echo checked_v('medical_history.meds_common', $val); ?>>
+                            <span style="padding: 0.75rem 1rem; width: 100%; box-sizing: border-box;"><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -455,9 +520,15 @@ require_once '../../templates/header.php';
             <div class="form-group" style="margin-top: 2rem;">
                 <label class="form-label" style="color: #991b1b;"><i class="fas fa-exclamation-triangle"></i> <?php echo __('medical.history.red_flags_label'); ?></label>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
-                    <?php foreach (['Mất kiểm soát đại/tiểu tiện', 'Tê vùng yên ngựa', 'Yếu liệt chi tiến triển nhanh'] as $flag): ?>
+                    <?php 
+                    $flag_options = [
+                        'Mất kiểm soát đại/tiểu tiện' => __('medical.history.red_flag_control'),
+                        'Tê vùng yên ngựa'          => __('medical.history.red_flag_saddle'),
+                        'Yếu liệt chi tiến triển nhanh' => __('medical.history.red_flag_weakness')
+                    ];
+                    foreach ($flag_options as $val => $label): ?>
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #991b1b; font-weight: 600; cursor: pointer;">
-                            <input type="checkbox" name="exam[medical_history][red_flags][]" value="<?php echo $flag; ?>" <?php echo checked_v('medical_history.red_flags', $flag); ?>> <?php echo $flag; ?>
+                            <input type="checkbox" name="exam[medical_history][red_flags][]" value="<?php echo $val; ?>" <?php echo checked_v('medical_history.red_flags', $val); ?>> <?php echo $label; ?>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -476,13 +547,18 @@ require_once '../../templates/header.php';
                 <div style="margin-bottom: 2rem; margin-top: 1rem;">
                     <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;"><?php echo __('medical.history.ros_head_face'); ?></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
-                        <?php foreach ([
-                            'Đau đầu', 'Chóng mặt', 'Ù tai', 
-                            'Vấn đề hàm (Khớp thái dương hàm)', 'Đang niềng răng'
-                        ] as $item): ?>
+                        <?php 
+                        $ros_head_options = [
+                            'Đau đầu' => __('medical.history.ros_headache'),
+                            'Chóng mặt' => __('medical.history.ros_dizzy'),
+                            'Ù tai' => __('medical.history.ros_tinnitus'),
+                            'Vấn đề hàm (Khớp thái dương hàm)' => __('medical.history.ros_tmj'),
+                            'Đang niềng răng' => __('medical.history.ros_braces')
+                        ];
+                        foreach ($ros_head_options as $val => $label): ?>
                             <label class="checkbox-tag" style="background: white; width: 100%; justify-content: start; text-align: left;">
-                                <input type="checkbox" name="exam[medical_history][ros][]" value="<?php echo $item; ?>" <?php echo checked_v('medical_history.ros', $item); ?>>
-                                <span style="padding: 0.8rem 1rem; width: 100%; box-sizing: border-box; display: inline-block; border-radius: 12px;"><?php echo $item; ?></span>
+                                <input type="checkbox" name="exam[medical_history][ros][]" value="<?php echo $val; ?>" <?php echo checked_v('medical_history.ros', $val); ?>>
+                                <span style="padding: 0.8rem 1rem; width: 100%; box-sizing: border-box; display: inline-block; border-radius: 12px;"><?php echo $label; ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -492,13 +568,17 @@ require_once '../../templates/header.php';
                 <div style="margin-bottom: 2rem;">
                     <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;"><?php echo __('medical.history.ros_organs'); ?></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
-                        <?php foreach ([
-                            'Tê lan xuống ngón tay', 'Đau tức ngực (không do tim)', 
-                            'Đau/Tê lan xuống mông/chân', 'Có tiền sử Vẹo cột sống (S-form)'
-                        ] as $item): ?>
+                        <?php 
+                        $ros_organ_options = [
+                            'Tê lan xuống ngón tay' => __('medical.history.ros_numb_fingers'),
+                            'Đau tức ngực (không do tim)' => __('medical.history.ros_chest_pain'),
+                            'Đau/Tê lan xuống mông/chân' => __('medical.history.ros_sciatica'),
+                            'Có tiền sử Vẹo cột sống (S-form)' => __('medical.history.ros_scoliosis')
+                        ];
+                        foreach ($ros_organ_options as $val => $label): ?>
                             <label class="checkbox-tag" style="background: white; width: 100%; justify-content: start; text-align: left;">
-                                <input type="checkbox" name="exam[medical_history][ros][]" value="<?php echo $item; ?>" <?php echo checked_v('medical_history.ros', $item); ?>>
-                                <span style="padding: 0.8rem 1rem; width: 100%; box-sizing: border-box; display: inline-block; border-radius: 12px;"><?php echo $item; ?></span>
+                                <input type="checkbox" name="exam[medical_history][ros][]" value="<?php echo $val; ?>" <?php echo checked_v('medical_history.ros', $val); ?>>
+                                <span style="padding: 0.8rem 1rem; width: 100%; box-sizing: border-box; display: inline-block; border-radius: 12px;"><?php echo $label; ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -508,14 +588,16 @@ require_once '../../templates/header.php';
                 <div>
                     <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.75rem;"><?php echo __('medical.history.ros_feet'); ?></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
-                        <?php foreach ([
-                            'Chênh lệch chiều dài chân', 
-                            'Hay bị lật sơ mi (bong gân cổ chân)', 
-                            'Đang dùng miếng lót giày/đế nâng'
-                        ] as $item): ?>
+                        <?php 
+                        $ros_foot_options = [
+                            'Chênh lệch chiều dài chân'            => __('medical.history.ros_leg_length'),
+                            'Hay bị lật sơ mi (bong gân cổ chân)' => __('medical.history.ros_ankle_sprain'),
+                            'Đang dùng miếng lót giày/đế nâng'   => __('medical.history.ros_insoles')
+                        ];
+                        foreach ($ros_foot_options as $val => $label): ?>
                             <label class="checkbox-tag" style="background: white; width: 100%; justify-content: start; text-align: left;">
-                                <input type="checkbox" name="exam[medical_history][ros][]" value="<?php echo $item; ?>" <?php echo checked_v('medical_history.ros', $item); ?>>
-                                <span style="padding: 0.8rem 1rem; width: 100%; box-sizing: border-box; display: inline-block; border-radius: 12px;"><?php echo $item; ?></span>
+                                <input type="checkbox" name="exam[medical_history][ros][]" value="<?php echo $val; ?>" <?php echo checked_v('medical_history.ros', $val); ?>>
+                                <span style="padding: 0.8rem 1rem; width: 100%; box-sizing: border-box; display: inline-block; border-radius: 12px;"><?php echo $label; ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -531,10 +613,16 @@ require_once '../../templates/header.php';
             </h3>
             <div class="form-group">
                 <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem;">
-                    <?php foreach (['Giảm đau nhanh chóng', 'Phục hồi chức năng vận động', 'Chăm sóc sức khỏe lâu dài'] as $goal): ?>
+                    <?php 
+                    $goal_options = [
+                        'Giảm đau nhanh chóng'          => __('medical.history.goal_relief'),
+                        'Phục hồi chức năng vận động' => __('medical.history.goal_restore'),
+                        'Chăm sóc sức khỏe lâu dài'    => __('medical.history.goal_wellness')
+                    ];
+                    foreach ($goal_options as $val => $label): ?>
                         <label class="checkbox-tag">
-                            <input type="radio" name="exam[goals]" value="<?php echo $goal; ?>" <?php echo checked_v('goals', $goal); ?>>
-                            <span><?php echo $goal; ?></span>
+                            <input type="radio" name="exam[goals]" value="<?php echo $val; ?>" <?php echo checked_v('goals', $val); ?>>
+                            <span><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -686,12 +774,28 @@ require_once '../../templates/header.php';
 
 <script src="../../assets/js/medical_marking.js"></script>
 <script>
+function togglePainDetails() {
+    const locations = document.querySelectorAll('input[name="exam[pathology][locations][]"]:checked');
+    const section = document.getElementById('pain-details-section');
+    if (section) {
+        section.style.display = locations.length > 0 ? 'block' : 'none';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Existing logic
     new MedicalMarking(
         'anatomy-canvas', 
         'marking-data', 
         '../../assets/images/anatomy_4_views_clean.png'
     );
+
+    // Visibility logic
+    const locationCheckboxes = document.querySelectorAll('input[name="exam[pathology][locations][]"]');
+    locationCheckboxes.forEach(input => {
+        input.addEventListener('change', togglePainDetails);
+    });
+    togglePainDetails();
 });
 
 const slider = document.querySelector('.slider');

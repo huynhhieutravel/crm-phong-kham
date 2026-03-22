@@ -11,9 +11,9 @@ require_once '../../templates/header.php';
 $db = getDB();
 
 // Period Filter Logic
-$period = $_GET['period'] ?? 'month';
-$start_date_filter = $_GET['start_date'] ?? '';
-$end_date_filter = $_GET['end_date'] ?? '';
+$period = isset($_GET['period']) ? $_GET['period'] : 'month';
+$start_date_filter = isset($_GET['start_date']) ? $_GET['start_date'] : '';
+$end_date_filter = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 $range = get_date_range($period, $start_date_filter, $end_date_filter);
 $params = [$range['start'], $range['end']];
 

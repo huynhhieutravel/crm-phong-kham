@@ -11,12 +11,12 @@ require_once '../../templates/header.php';
 
 $db = getDB();
 
-$search = $_GET['search'] ?? '';
-$status_filter = $_GET['status'] ?? '';
-$date_filter = $_GET['date'] ?? '';
-$doctor_filter = $_GET['doctor_id'] ?? '';
-$type_filter = $_GET['type'] ?? '';
-$view = $_GET['view'] ?? 'timeline'; // Default to Day view for timeline page
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+$status_filter = isset($_GET['status']) ? $_GET['status'] : '';
+$date_filter = isset($_GET['date']) ? $_GET['date'] : '';
+$doctor_filter = isset($_GET['doctor_id']) ? $_GET['doctor_id'] : '';
+$type_filter = isset($_GET['type']) ? $_GET['type'] : '';
+$view = isset($_GET['view']) ? $_GET['view'] : 'timeline'; 
 
 // If "view=list" somehow gets here, redirect back to index.php
 if ($view === 'list') {
@@ -257,8 +257,8 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
         <?php 
         $active_filters = [];
         if ($search) $active_filters[] = __('appointment.filter_labels.search') . ": $search";
-        if ($status_filter) $active_filters[] = __('appointment.filter_labels.status') . ": " . ($status_map[$status_filter]['label'] ?? $status_filter);
-        if ($type_filter) $active_filters[] = __('appointment.filter_labels.type') . ": " . ($type_map[$type_filter]['label'] ?? $type_filter);
+        if ($status_filter) $active_filters[] = __('appointment.filter_labels.status') . ": " . (isset($status_map[$status_filter]['label']) ? $status_map[$status_filter]['label'] : $status_filter);
+        if ($type_filter) $active_filters[] = __('appointment.filter_labels.type') . ": " . (isset($type_map[$type_filter]['label']) ? $type_map[$type_filter]['label'] : $type_filter);
         
         if ($date_filter) {
             if ($view === 'timeline_month') {
@@ -312,7 +312,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
             <?php foreach ($doctors_with_unassigned as $doc): ?>
                 <?php 
-                $staff_appts = $day_grouped[$doc['id']] ?? [];
+                $staff_appts = isset($day_grouped[$doc['id']]) ? $day_grouped[$doc['id']] : [];
                 if (empty($staff_appts) && $doc['id'] !== 0) continue; 
                 ?>
                 <div class="staff-day-column" style="background: #f8fafc; border-radius: 16px; padding: 1.25rem; border: 1px solid var(--border-color);">
@@ -333,7 +333,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
                             </div>
                         <?php else: ?>
                             <?php foreach ($staff_appts as $a): 
-                                $status = $status_map[$a['status']] ?? ['color' => '#64748b', 'label' => 'Unknown'];
+                                $status = isset($status_map[$a['status']]) ? $status_map[$a['status']] : ['color' => '#64748b', 'label' => 'Unknown'];
                             ?>
                                 <div class="day-event-card" style="background: white; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-sm); border-left: 4px solid <?php echo $status['color']; ?>; cursor: pointer; transition: transform 0.2s;" onclick="location.href='view.php?id=<?php echo $a['id']; ?>'">
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -345,7 +345,13 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
                                         </span>
                                         <span style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: <?php echo $status['color']; ?>;"><?php echo $status['label']; ?></span>
                                     </div>
-                                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;"><?php echo e($a['contact_name']); ?></div>
+                                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">
+                                        [<?php echo $a['contact_type'] === 'Patient' ? __('appointment.contact_type.patient') : __('appointment.contact_type.lead'); ?>] 
+                                        <?php echo e($a['contact_name']); ?>
+                                        <?php if(!empty($a['patient_label'])): ?>
+                                            (<?php echo e(get_patient_label_translation($a['patient_label'])); ?>)
+                                        <?php endif; ?>
+                                    </div>
                                     <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
                                         <i class="fas fa-phone-alt" style="font-size: 0.6rem;"></i> <?php echo e($a['contact_phone']); ?>
                                     </div>
@@ -397,13 +403,19 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
                 <?php foreach ($week_days as $day): ?>
                     <div style="border-bottom: 1px solid #e2e8f0; border-left: 1px solid #f1f5f9; padding: 0.5rem; min-height: 100px; background: white;">
                         <?php 
-                        $day_appts = $grouped_week[$doc['id']][$day] ?? [];
+                        $day_appts = isset($grouped_week[$doc['id']][$day]) ? $grouped_week[$doc['id']][$day] : [];
                         foreach ($day_appts as $a): 
-                            $status = $status_map[$a['status']] ?? ['color' => '#64748b'];
+                            $status = isset($status_map[$a['status']]) ? $status_map[$a['status']] : ['color' => '#64748b'];
                         ?>
                             <div class="week-event" style="background: <?php echo $status['color']; ?>; color: white; padding: 0.35rem 0.6rem; border-radius: 6px; font-size: 0.7rem; margin-bottom: 0.25rem; cursor: pointer; position: relative;" onclick="location.href='view.php?id=<?php echo $a['id']; ?>'">
                                 <strong style="display: block;"><?php echo date('H:i', strtotime($a['appointment_date'])); ?><?php if (!empty($a['appointment_end_time'])) echo '–' . substr($a['appointment_end_time'], 0, 5); ?></strong>
-                                <span style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo e($a['contact_name']); ?></span>
+                                <span style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    [<?php echo $a['contact_type'] === 'Patient' ? __('appointment.contact_type.patient') : __('appointment.contact_type.lead'); ?>] 
+                                    <?php echo e($a['contact_name']); ?>
+                                    <?php if(!empty($a['patient_label'])): ?>
+                                        (<?php echo e(get_patient_label_translation($a['patient_label'])); ?>)
+                                    <?php endif; ?>
+                                </span>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -442,7 +454,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
             <?php for ($d = 1; $d <= $days_in_month; $d++): 
                 $current_date_str = "$year-$month-" . str_pad($d, 2, '0', STR_PAD_LEFT);
                 $is_today = ($current_date_str == date('Y-m-d'));
-                $day_appts = $grouped_month[$d] ?? [];
+                $day_appts = isset($grouped_month[$d]) ? $grouped_month[$d] : [];
             ?>
                 <div style="min-height: 130px; background: white; border-radius: 16px; border: 1px solid <?php echo $is_today ? 'var(--primary)' : '#eef2f6'; ?>; padding: 0.85rem; cursor: pointer;" 
                      class="calendar-day-cell <?php echo $is_today ? 'today' : ''; ?>"
@@ -459,7 +471,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
 
                     <div style="display: flex; flex-direction: column; gap: 5px;">
                         <?php foreach (array_slice($day_appts, 0, 3) as $a): 
-                                $status = $status_map[$a['status']] ?? ['color' => '#64748b'];
+                                $status = isset($status_map[$a['status']]) ? $status_map[$a['status']] : ['color' => '#64748b'];
                         ?>
                             <div style="font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; background: <?php echo $status['color']; ?>; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700;">
                                 <?php echo date('H:i', strtotime($a['appointment_date'])); ?> <?php echo e($a['contact_name']); ?>

@@ -6,7 +6,7 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-$session_id = $_GET['id'] ?? 0;
+$session_id = isset($_GET['id']) ? $_GET['id'] : 0;
 
 if (!$session_id) {
     die(__('medical.print.err_missing_id'));
@@ -219,7 +219,7 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
             <div class="section-title"><?php echo __('medical.print.sec4_title'); ?></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                 <?php foreach ($all_att as $att): ?>
-                <?php if (strpos($att['type'] ?? '', 'image') !== false): ?>
+                <?php if (strpos(isset($att['type']) ? $att['type'] : '', 'image') !== false): ?>
                 <div style="text-align: center;">
                     <img src="<?php echo $att['path']; ?>" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" alt="<?php echo e($att['name']); ?>">
                     <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;"><?php echo e($att['name']); ?></div>

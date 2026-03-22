@@ -52,7 +52,7 @@ $GLOBALS['_role_permissions'] = [
  * Check if current user has a specific permission
  */
 function can($permission) {
-    $role = $_SESSION['role'] ?? 'staff';
+    $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'staff';
     
     // Admin always has all permissions
     if ($role === 'admin') return true;
@@ -62,7 +62,7 @@ function can($permission) {
     if ($db_perms === null) {
         try {
             $db = getDB();
-            $user_id = $_SESSION['user_id'] ?? 0;
+            $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
             $stmt = $db->prepare("
                 SELECT p.permission_key 
                 FROM role_permissions rp
@@ -74,15 +74,16 @@ function can($permission) {
             $db_perms = $stmt->fetchAll(PDO::FETCH_COLUMN);
         } catch (Exception $e) {
             // Table doesn't exist yet, fall back to defaults
-            $db_perms = [];
+            $db_perms = array();
         }
+
     }
     
     // Check DB permissions
     if (in_array($permission, $db_perms)) return true;
     
     // Fall back to default role permissions
-    $defaults = $GLOBALS['_role_permissions'][$role] ?? [];
+    $defaults = isset($GLOBALS['_role_permissions'][$role]) ? $GLOBALS['_role_permissions'][$role] : array();
     return in_array($permission, $defaults);
 }
 
@@ -90,8 +91,8 @@ function can($permission) {
  * Get all permissions for current user
  */
 function get_user_permissions() {
-    $role = $_SESSION['role'] ?? 'staff';
-    $all = $GLOBALS['_role_permissions'][$role] ?? [];
+    $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'staff';
+    $all = isset($GLOBALS['_role_permissions'][$role]) ? $GLOBALS['_role_permissions'][$role] : array();
     return $all;
 }
 

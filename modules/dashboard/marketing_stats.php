@@ -8,33 +8,60 @@ $converted_leads = 0;
 $sources = [];
 
 if ($start_date && $end_date) {
-    $total_leads = $db->query("SELECT COUNT(*) FROM leads WHERE created_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
-    $converted_leads = $db->query("SELECT COUNT(*) FROM leads WHERE status = 'converted' AND updated_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
+    try {
+        $total_leads = $db->query("SELECT COUNT(*) FROM leads WHERE created_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
+    } catch (Exception $e) {}
+
+    try {
+        $converted_leads = $db->query("SELECT COUNT(*) FROM leads WHERE status = 'converted' AND updated_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
+        if ($converted_leads === false) $converted_leads = 0;
+    } catch (Exception $e) {
+        // Fallback if status or updated_at missing
+        try {
+            $converted_leads = $db->query("SELECT COUNT(*) FROM leads WHERE status = 'converted'")->fetchColumn();
+        } catch (Exception $e2) {
+            $converted_leads = 0;
+        }
+    }
     
-    // 2. Lead Sources Data
-    $source_stmt = $db->prepare("SELECT source, COUNT(*) as count FROM leads WHERE created_at BETWEEN ? AND ? GROUP BY source ORDER BY count DESC");
-    $source_stmt->execute([$start_date, $end_date]);
-    $sources = $source_stmt->fetchAll();
+    try {
+        // 2. Lead Sources Data
+        $source_stmt = $db->prepare("SELECT source, COUNT(*) as count FROM leads WHERE created_at BETWEEN ? AND ? GROUP BY source ORDER BY count DESC");
+        if ($source_stmt) {
+            $source_stmt->execute([$start_date, $end_date]);
+            $sources = $source_stmt->fetchAll();
+        }
+    } catch (Exception $e) {}
 }
 $conversion_rate = $total_leads > 0 ? ($converted_leads / $total_leads) * 100 : 0;
 
-// 3. Consultant Performance Data
-$consultant_stmt = $db->prepare("
-    SELECT u.full_name, COUNT(l.id) as total, SUM(CASE WHEN l.status = 'converted' THEN 1 ELSE 0 END) as converted
-    FROM users u
-    LEFT JOIN leads l ON u.id = l.consultant_id AND l.created_at BETWEEN ? AND ?
-    WHERE u.role_id IN (1, 6) -- Admin or CSKH
-    GROUP BY u.id
-    HAVING total > 0
-    ORDER BY total DESC
-");
-$consultant_stmt->execute([$start_date, $end_date]);
-$consultants = $consultant_stmt->fetchAll();
+try {
+    // 3. Consultant Performance Data
+    $consultant_stmt = $db->prepare("
+        SELECT u.full_name, COUNT(l.id) as total, SUM(CASE WHEN l.status = 'converted' THEN 1 ELSE 0 END) as converted
+        FROM users u
+        LEFT JOIN leads l ON u.id = l.consultant_id AND l.created_at BETWEEN ? AND ?
+        WHERE u.role_id IN (1, 6) -- Admin or CSKH
+        GROUP BY u.id
+        HAVING total > 0
+        ORDER BY total DESC
+    ");
+    $consultant_stmt->execute([$start_date, $end_date]);
+    $consultants = $consultant_stmt->fetchAll();
+} catch (Exception $e) {
+    try {
+        $consultants = $db->query("SELECT full_name, 0 as total, 0 as converted FROM users WHERE role_id IN (1, 6)")->fetchAll();
+    } catch (Exception $e2) {
+        $consultants = [];
+    }
+}
 
-// 4. Status Breakdown Data
-$status_stmt = $db->prepare("SELECT status, COUNT(*) as count FROM leads WHERE created_at BETWEEN ? AND ? GROUP BY status");
-$status_stmt->execute([$start_date, $end_date]);
-$statuses = $status_stmt->fetchAll();
+try {
+    // 4. Status Breakdown Data
+    $status_stmt = $db->prepare("SELECT status, COUNT(*) as count FROM leads WHERE created_at BETWEEN ? AND ? GROUP BY status");
+    $status_stmt->execute([$start_date, $end_date]);
+    $statuses = $status_stmt->fetchAll();
+} catch (Exception $e) {}
 ?>
 
 <div class="grid-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">

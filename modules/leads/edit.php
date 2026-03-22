@@ -4,7 +4,7 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-$id = $_GET['id'] ?? 0;
+$id = isset($_GET['id']) ? $_GET['id'] : 0;
 $db = getDB();
 
 // Fetch lead data
@@ -32,28 +32,38 @@ $lead_sources = get_lead_sources();
 
 // Handle form submission before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $full_name = $_POST['full_name'];
-    $phone = $_POST['phone'];
-    $gender = $_POST['gender'];
-    $birthday = !empty($_POST['birthday']) ? $_POST['birthday'] : null;
-    $email = $_POST['email'];
-    $address = $_POST['address'];
-    $source = $_POST['source'];
-    $medical_group = $_POST['medical_group'];
-    $consultant_id = $_POST['consultant_id'] ?: null;
-    $status = $_POST['status'];
-    $notes = $_POST['notes'];
+    $optionals = [
+        'full_name' => $_POST['full_name'],
+        'phone' => $_POST['phone'],
+        'gender' => $_POST['gender'],
+        'birthday' => !empty($_POST['birthday']) ? $_POST['birthday'] : null,
+        'email' => $_POST['email'],
+        'address' => $_POST['address'],
+        'source' => $_POST['source'],
+        'medical_group' => $_POST['medical_group'],
+        'consultant_id' => $_POST['consultant_id'] ?: null,
+        'status' => $_POST['status'],
+        'notes' => $_POST['notes']
+    ];
 
-    $stmt = $db->prepare("
-        UPDATE leads 
-        SET full_name = ?, phone = ?, gender = ?, birthday = ?, email = ?, address = ?, 
-            source = ?, medical_group = ?, consultant_id = ?, status = ?, notes = ?
-        WHERE id = ?
-    ");
-    $stmt->execute([
-        $full_name, $phone, $gender, $birthday, $email, $address, 
-        $source, $medical_group, $consultant_id, $status, $notes, $id
-    ]);
+    // Detect available columns
+    $available_cols = $db->query("SHOW COLUMNS FROM leads")->fetchAll(PDO::FETCH_COLUMN);
+    $data = [];
+    foreach ($optionals as $col => $val) {
+        if (in_array($col, $available_cols)) {
+            $data[$col] = $val;
+        }
+    }
+
+    if (!empty($data)) {
+        $set_parts = [];
+        foreach (array_keys($data) as $col) {
+            $set_parts[] = "$col = ?";
+        }
+        $sql = "UPDATE leads SET " . implode(", ", $set_parts) . " WHERE id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->execute(array_merge(array_values($data), [$id]));
+    }
     
     set_flash(__('lead.msg_edit_success'));
     redirect('index.php');
@@ -130,8 +140,8 @@ require_once '../../templates/header.php';
                 <label class="form-label"><?php echo __('leads.form.label_medical_group'); ?></label>
                 <select name="medical_group" class="form-input">
                     <option value=""><?php echo __('leads.form.label_medical_group_placeholder', '-- Chọn nhóm bệnh --'); ?></option>
-                    <?php foreach ($medical_groups as $mg): ?>
-                        <option value="<?php echo $mg; ?>" <?php echo $lead['medical_group'] === $mg ? 'selected' : ''; ?>><?php echo $mg; ?></option>
+                    <?php foreach ($medical_groups as $val => $key): ?>
+                        <option value="<?php echo $val; ?>" <?php echo $lead['medical_group'] === $val ? 'selected' : ''; ?>><?php echo __($key); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

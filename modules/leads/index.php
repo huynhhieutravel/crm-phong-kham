@@ -8,21 +8,40 @@ $db = getDB();
 
 // Handle Quick Add
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_add'])) {
-    $stmt = $db->prepare("
-        INSERT INTO leads (full_name, phone, source, medical_group, consultant_id, status)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ");
-    $stmt->execute([
-        $_POST['full_name'],
-        $_POST['phone'],
-        $_POST['source'],
-        $_POST['medical_group'],
-        $_POST['consultant_id'] ?: null,
-        $_POST['status'] ?? 'new'
-    ]);
-    set_flash(__('lead.msg_quick_add_success'));
+    $data = [
+        'full_name' => $_POST['full_name'],
+        'phone' => $_POST['phone']
+    ];
+
+    $optionals = [
+        'source' => $_POST['source'] ?? '',
+        'medical_group' => $_POST['medical_group'] ?? '',
+        'consultant_id' => $_POST['consultant_id'] ?: null,
+        'status' => $_POST['status'] ?? 'new'
+    ];
+
+    // Detect available columns in leads table
+    try {
+        $available_cols = $db->query("SHOW COLUMNS FROM leads")->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($optionals as $col => $val) {
+            if (in_array($col, $available_cols)) {
+                $data[$col] = $val;
+            }
+        }
+
+        $cols = implode(", ", array_keys($data));
+        $placeholders = implode(", ", array_fill(0, count($data), "?"));
+        
+        $stmt = $db->prepare("INSERT INTO leads ($cols) VALUES ($placeholders)");
+        $stmt->execute(array_values($data));
+        set_flash(__('lead.msg_quick_add_success'));
+    } catch (Exception $e) {
+        error_log("Quick add failed: " . $e->getMessage());
+        set_flash("Lỗi khi thêm nhanh: " . $e->getMessage(), 'danger');
+    }
     redirect('index.php');
 }
+
 
 $page_title = __('lead.title');
 $current_page = 'leads';
@@ -86,20 +105,38 @@ $limit = 20;
 $page = (int)($_GET['page'] ?? 1);
 if ($page < 1) $page = 1;
 
+// Count total for pagination
 $count_sql = "SELECT COUNT(*) FROM leads";
 if (!empty($conditions)) {
     $count_sql .= " WHERE " . implode(" AND ", $conditions);
 }
-$c_stmt = $db->prepare($count_sql);
-$c_stmt->execute($params);
-$total_count = $c_stmt->fetchColumn();
+
+try {
+    $c_stmt = $db->prepare($count_sql);
+    $c_stmt->execute($params);
+    $total_count = $c_stmt->fetchColumn();
+} catch (Exception $e) {
+    // If table missing, total count is 0
+    $total_count = 0;
+}
 
 $sql .= " ORDER BY created_at DESC";
 $sql .= get_sql_limit($limit, $page);
 
-$stmt = $db->prepare($sql);
-$stmt->execute($params);
-$leads = $stmt->fetchAll();
+try {
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    $leads = $stmt->fetchAll();
+} catch (Exception $e) {
+    // Fallback: simpler query if complex one failed (maybe lead_logs missing)
+    try {
+        $simple_sql = "SELECT * FROM leads ORDER BY created_at DESC " . get_sql_limit($limit, $page);
+        $leads = $db->query($simple_sql)->fetchAll();
+    } catch (Exception $e2) {
+        $leads = [];
+    }
+}
+
 
 // Statistics
 $stats_stmt = $db->query("SELECT status, COUNT(*) as count FROM leads GROUP BY status");
@@ -303,7 +340,7 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
                 <div class="filter-group">
                     <label class="filter-label"><?php echo __('leads.index.filter_status'); ?></label>
                     <select name="status" class="form-input filter-input" onchange="this.form.submit()">
-                        <option value=""><?php echo __('leads.index.filter_status_placeholder', '-- Trạng thái --'); ?></option>
+                        <option value=""><?php echo __('leads.index.filter_status_placeholder'); ?></option>
                         <option value="new" <?php echo $status_filter === 'new' ? 'selected' : ''; ?>><?php echo __('leads.status.new'); ?></option>
                         <option value="contacted" <?php echo $status_filter === 'contacted' ? 'selected' : ''; ?>><?php echo __('leads.status.contacted'); ?></option>
                         <option value="scheduled" <?php echo $status_filter === 'scheduled' ? 'selected' : ''; ?>><?php echo __('leads.status.scheduled'); ?></option>
@@ -317,8 +354,8 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
                     <label class="filter-label"><?php echo __('leads.index.filter_group'); ?></label>
                     <select name="medical_group" class="form-input filter-input" onchange="this.form.submit()">
                         <option value=""><?php echo __('leads.index.filter_group_placeholder'); ?></option>
-                        <?php foreach ($medical_groups as $mg): ?>
-                            <option value="<?php echo $mg; ?>" <?php echo $group_filter === $mg ? 'selected' : ''; ?>><?php echo $mg; ?></option>
+                        <?php foreach ($medical_groups as $val => $key): ?>
+                            <option value="<?php echo $val; ?>" <?php echo $group_filter === $val ? 'selected' : ''; ?>><?php echo __($key); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -353,7 +390,7 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
                         <?php if($period === 'month'): ?>
                             <select name="sel_month" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
                                 <?php for($m=1; $m<=12; $m++): ?>
-                                    <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                                    <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>><?php echo __('common.month_prefix'); ?><?php echo $m; ?></option>
                                 <?php endfor; ?>
                             </select>
                         <?php endif; ?>
@@ -361,14 +398,14 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
                         <?php if($period === 'quarter'): ?>
                             <select name="sel_quarter" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
                                 <?php for($q=1; $q<=4; $q++): ?>
-                                    <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                                    <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>><?php echo __('common.quarter_prefix'); ?><?php echo $q; ?></option>
                                 <?php endfor; ?>
                             </select>
                         <?php endif; ?>
 
                         <select name="sel_year" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
                             <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
-                                <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                                <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>><?php echo __('common.year_prefix'); ?><?php echo $y; ?></option>
                             <?php endfor; ?>
                         </select>
                     </div>
@@ -384,9 +421,9 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
                 </div>
 
                 <?php if ($is_filtered): ?>
-                    <div style="margin-left: auto;">
-                        <a href="index.php" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="fas fa-times-circle"></i> <?php echo __('common.clear_filter'); ?>
+                    <div style="margin-left: auto; display: flex; align-items: center;">
+                        <a href="index.php" style="color: #ef4444; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem; background: #fff1f2; padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid #fecaca;">
+                            <i class="fas fa-trash-alt"></i> <?php echo __('common.clear_filter'); ?>
                         </a>
                     </div>
                 <?php endif; ?>
@@ -457,8 +494,8 @@ function setPeriod(p) {
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 0.5rem; background: #f1f5f9;">
                         <select name="medical_group" class="form-input" style="padding: 0.35rem; font-size: 0.8rem; border-radius: 8px;" form="quick-add-form">
                             <option value=""><?php echo __('leads.index.placeholder_mg'); ?></option>
-                            <?php foreach ($medical_groups as $mg): ?>
-                                <option value="<?php echo $mg; ?>"><?php echo $mg; ?></option>
+                            <?php foreach ($medical_groups as $val => $key): ?>
+                                <option value="<?php echo $val; ?>"><?php echo __($key); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </td>
@@ -505,12 +542,12 @@ function setPeriod(p) {
                                         <div class="note-badge"><?php echo $l['log_count']; ?></div>
                                         <div class="tooltip-text">
                                             <div style="border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 8px; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
-                                                <span style="font-weight: 800; color: #3b82f6;">Ghi chú mới nhất</span>
+                                                <span style="font-weight: 800; color: #3b82f6;"><?php echo __('leads.index.latest_note_title'); ?></span>
                                                 <span style="font-size: 0.7rem; opacity: 0.8;">Tổng: <?php echo $l['log_count']; ?></span>
                                             </div>
                                             <?php echo nl2br(e($l['latest_note'])); ?>
                                             <div style="margin-top: 8px; font-size: 0.7rem; text-align: right; opacity: 0.6; font-style: italic;">
-                                                Xem tất cả trong mục Chỉnh sửa
+                                                <?php echo __('leads.index.view_all_in_edit'); ?>
                                             </div>
                                         </div>
                                     </div>
@@ -524,7 +561,7 @@ function setPeriod(p) {
                                     <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                     <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #64748b;">
                                         <i class="fas fa-share-alt"></i>
-                                        <select name="source" class="form-input" style="padding: 0; font-size: 0.8rem; border: none; background: transparent; color: inherit; width: auto; font-weight: 600;" onchange="updateLead(this)">
+                                        <select name="source" class="form-input truncate-select" style="padding: 0; font-size: 0.8rem; border: none; background: transparent; color: inherit; font-weight: 600;" onchange="updateLead(this)" title="<?php echo $l['source'] ? e($lead_sources[$l['source']]) : ''; ?>">
                                             <?php foreach ($lead_sources as $key => $label): ?>
                                                 <option value="<?php echo $key; ?>" <?php echo $l['source'] === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
                                             <?php endforeach; ?>
@@ -537,10 +574,10 @@ function setPeriod(p) {
                                     <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                     <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #4f46e5; font-weight: 600;">
                                         <i class="fas fa-stethoscope"></i>
-                                        <select name="medical_group" class="form-input" style="padding: 0; font-size: 0.8rem; border: none; background: transparent; color: inherit; width: auto; font-weight: 700;" onchange="updateLead(this)">
-                                            <option value="">-- Nhóm bệnh --</option>
-                                            <?php foreach ($medical_groups as $mg): ?>
-                                                <option value="<?php echo $mg; ?>" <?php echo $l['medical_group'] === $mg ? 'selected' : ''; ?>><?php echo $mg; ?></option>
+                                        <select name="medical_group" class="form-input truncate-select" style="padding: 0; font-size: 0.8rem; border: none; background: transparent; color: inherit; font-weight: 700;" onchange="updateLead(this)" title="<?php echo e($l['medical_group']); ?>">
+                                            <option value=""><?php echo __('leads.index.placeholder_mg'); ?></option>
+                                            <?php foreach ($medical_groups as $val => $key): ?>
+                                                <option value="<?php echo $val; ?>" <?php echo $l['medical_group'] === $val ? 'selected' : ''; ?>><?php echo __($key); ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -562,14 +599,14 @@ function setPeriod(p) {
                             <form action="update_quick.php" method="POST" class="quick-status-form">
                                 <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                 <select name="consultation_status" class="form-input" style="padding: 0.4rem; font-size: 0.8rem; border-radius: 8px; font-weight: 600; border: 1px solid #e2e8f0;" onchange="updateLead(this)">
-                                    <option value=""><?php echo __('leads.index.filter_status_placeholder', '-- Trạng thái --'); ?></option>
+                                    <option value=""><?php echo __('leads.index.filter_status_placeholder'); ?></option>
                                     <?php 
                                     $statuses = [
                                         'Mới' => __('leads.status.new'), 
                                         'Đã liên hệ' => __('leads.status.contacted'), 
-                                        'Hẹn gọi lại' => __('leads.status.recall', 'Hẹn gọi lại'), 
+                                        'Hẹn gọi lại' => __('leads.status.recall'), 
                                         'Đã đặt lịch' => __('leads.status.scheduled'), 
-                                        'Đã đến khám' => __('leads.status.visited', 'Đã đến khám'), 
+                                        'Đã đến khám' => __('leads.status.visited'), 
                                         'Hủy/Không nhu cầu' => __('leads.status.cancelled')
                                     ];
                                     foreach ($statuses as $val => $lbl): ?>
@@ -660,12 +697,12 @@ function updateLead(select) {
     .then(data => {
         select.style.opacity = '1';
         if (data.success) {
-            let label = '<?php echo __('leads.index.toast_label_info', 'thông tin'); ?>';
-            if (selectName === 'consultation_status') label = '<?php echo __('leads.index.toast_label_status', 'trạng thái'); ?>';
-            else if (selectName === 'consultant_id') label = '<?php echo __('leads.index.toast_label_tvv', 'TVV'); ?>';
-            else if (selectName === 'source') label = '<?php echo __('leads.index.toast_label_source', 'nguồn'); ?>';
-            else if (selectName === 'medical_group') label = '<?php echo __('leads.index.toast_label_group', 'nhóm bệnh'); ?>';
-            showToast('<?php echo __('leads.index.toast_saved_info_prefix', 'Đã lưu '); ?>' + label + '!');
+            let label = '<?php echo __('leads.index.toast_label_info'); ?>';
+            if (selectName === 'consultation_status') label = '<?php echo __('leads.index.toast_label_status'); ?>';
+            else if (selectName === 'consultant_id') label = '<?php echo __('leads.index.toast_label_tvv'); ?>';
+            else if (selectName === 'source') label = '<?php echo __('leads.index.toast_label_source'); ?>';
+            else if (selectName === 'medical_group') label = '<?php echo __('leads.index.toast_label_group'); ?>';
+            showToast('<?php echo __('leads.index.toast_saved_info_prefix'); ?>' + label + '!');
         } else {
             alert('<?php echo __('lead.msg_err_save'); ?>');
             location.reload();

@@ -20,8 +20,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$patient_id = $_POST['patient_id'] ?? 0;
-$record_id = $_POST['record_id'] ?? 0;
+$patient_id = isset($_POST['patient_id']) ? $_POST['patient_id'] : 0;
+$record_id = isset($_POST['record_id']) ? $_POST['record_id'] : 0;
 
 if (!$patient_id) {
     echo json_encode(['success' => false, 'error' => 'Missing patient_id']);

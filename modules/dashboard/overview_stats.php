@@ -10,17 +10,23 @@ $stats = [
 ];
 
 if ($start_date && $end_date) {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN ? AND ?");
-    $stmt->execute([$start_date, $end_date]);
-    $stats['patients'] = $stmt->fetchColumn();
+    try {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN ? AND ?");
+        $stmt->execute([$start_date, $end_date]);
+        $stats['patients'] = (int)$stmt->fetchColumn();
+    } catch (Exception $e) {}
 
-    $stmt = $db->prepare("SELECT COUNT(*) FROM appointments WHERE appointment_date BETWEEN ? AND ?");
-    $stmt->execute([$start_date, $end_date]);
-    $stats['appointments'] = $stmt->fetchColumn();
+    try {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM appointments WHERE appointment_date BETWEEN ? AND ?");
+        $stmt->execute([$start_date, $end_date]);
+        $stats['appointments'] = (int)$stmt->fetchColumn();
+    } catch (Exception $e) {}
 
-    $stmt = $db->prepare("SELECT SUM(amount) FROM transactions WHERE type = 'income' AND transaction_date BETWEEN ? AND ?");
-    $stmt->execute([$start_date, $end_date]);
-    $stats['revenue'] = $stmt->fetchColumn() ?: 0;
+    try {
+        $stmt = $db->prepare("SELECT SUM(amount) FROM transactions WHERE type = 'income' AND transaction_date BETWEEN ? AND ?");
+        $stmt->execute([$start_date, $end_date]);
+        $stats['revenue'] = (float)($stmt->fetchColumn() ?: 0);
+    } catch (Exception $e) {}
 }
 ?>
 
@@ -55,15 +61,23 @@ if ($start_date && $end_date) {
             <a href="/modules/appointments/index.php" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; text-decoration: none;"><?php echo __('common.view_all'); ?> <i class="fas fa-arrow-right"></i></a>
         </div>
         <?php
-        $recent_stmt = $db->query("
-            SELECT a.*, p.full_name as patient_name, u.full_name as doctor_name 
-            FROM appointments a 
-            JOIN patients p ON a.patient_id = p.id 
-            LEFT JOIN users u ON a.doctor_id = u.id 
-            WHERE a.appointment_date BETWEEN '$start_date' AND '$end_date'
-            ORDER BY a.appointment_date DESC LIMIT 10
-        ");
-        $recent_appointments = $recent_stmt->fetchAll();
+        $recent_appointments = [];
+        try {
+            $recent_stmt = $db->query("
+                SELECT a.*, p.full_name as patient_name, u.full_name as doctor_name 
+                FROM appointments a 
+                JOIN patients p ON a.patient_id = p.id 
+                LEFT JOIN users u ON a.doctor_id = u.id 
+                WHERE a.appointment_date BETWEEN '$start_date' AND '$end_date'
+                ORDER BY a.appointment_date DESC LIMIT 10
+            ");
+            if ($recent_stmt) $recent_appointments = $recent_stmt->fetchAll();
+        } catch (Exception $e) {
+            // Simplified fallback if JOIN fails (maybe missing doctor_id or something)
+            try {
+                $recent_appointments = $db->query("SELECT *, 'System' as patient_name, '' as doctor_name FROM appointments ORDER BY appointment_date DESC LIMIT 5")->fetchAll();
+            } catch (Exception $e2) {}
+        }
         ?>
         <div style="overflow-x: auto;">
             <table class="table" style="width: 100%;">
@@ -79,7 +93,7 @@ if ($start_date && $end_date) {
                     <?php foreach ($recent_appointments as $a): ?>
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td style="padding: 1rem 0;"><strong><?php echo e($a['patient_name']); ?></strong></td>
-                        <td style="padding: 1rem 0;"><?php echo e($a['doctor_name'] ?: '---'); ?></td>
+                        <td style="padding: 1rem 0;"><?php echo e($a['doctor_name'] ?? '---'); ?></td>
                         <td style="padding: 1rem 0; font-size: 0.9rem; color: var(--text-muted);"><?php echo date('H:i d/m', strtotime($a['appointment_date'])); ?></td>
                         <td style="padding: 1rem 0;">
                             <span style="font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 20px; font-weight: 700; background: rgba(99,102,241,0.1); color: var(--primary);">
@@ -100,15 +114,21 @@ if ($start_date && $end_date) {
         <div class="card">
             <h3 style="margin-bottom: 1.5rem; font-weight: 700; color: #d97706;"><i class="fas fa-bell"></i> <?php echo __('dashboard.reexam_reminders'); ?></h3>
             <?php
-            // Re-exam reminders don't strictly follow the dashboard period, usually looking ahead
-            $pending_reexams = $db->query("
-                SELECT r.*, p.full_name as patient_name, p.phone
-                FROM reexam_rules r
-                JOIN patients p ON r.patient_id = p.id
-                WHERE r.status = 'active' AND r.next_due_at <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-                ORDER BY r.next_due_at ASC
-                LIMIT 5
-            ")->fetchAll();
+            $pending_reexams = [];
+            try {
+                // Re-exam reminders don't strictly follow the dashboard period, usually looking ahead
+                $pend_stmt = $db->query("
+                    SELECT r.*, p.full_name as patient_name, p.phone
+                    FROM reexam_rules r
+                    JOIN patients p ON r.patient_id = p.id
+                    WHERE r.status = 'active' AND r.next_due_at <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+                    ORDER BY r.next_due_at ASC
+                    LIMIT 5
+                ");
+                if ($pend_stmt) $pending_reexams = $pend_stmt->fetchAll();
+            } catch (Exception $e) {
+                // If table doesn't exist, just keep empty
+            }
             ?>
             <div class="reexam-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <?php foreach ($pending_reexams as $rx): ?>

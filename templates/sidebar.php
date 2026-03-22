@@ -55,6 +55,9 @@
                 <a href="<?php echo $base_url; ?>modules/appointments/timeline.php" class="submenu-item <?php echo ($current_page == 'appointments' && strpos($_SERVER['PHP_SELF'], 'timeline.php') !== false) ? 'active' : ''; ?>">
                     <i class="fas fa-clock"></i> <?php echo __('menu.appointments.timeline'); ?>
                 </a>
+                <a href="<?php echo $base_url; ?>modules/appointments/staff_timeline.php" class="submenu-item <?php echo ($current_page == 'appointments' && strpos($_SERVER['PHP_SELF'], 'staff_timeline.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-user-clock"></i> <?php echo __('menu.appointments.staff_timeline'); ?>
+                </a>
                 <a href="<?php echo $base_url; ?>modules/appointments/dashboard.php" class="submenu-item <?php echo ($current_page == 'appointments' && strpos($_SERVER['PHP_SELF'], 'dashboard.php') !== false) ? 'active' : ''; ?>">
                     <i class="fas fa-chart-pie"></i> <?php echo __('menu.appointments.stats'); ?>
                 </a>
@@ -70,26 +73,10 @@
         <?php endif; ?>
 
         <?php if (can('view_medical')): ?>
-        <div class="nav-item-wrapper">
-            <a href="<?php echo $base_url; ?>modules/medical/index.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
-                <i class="fas fa-file-medical"></i>
-                <span><?php echo __('menu.medical'); ?></span>
-            </a>
-            <div class="submenu">
-                <a href="<?php echo $base_url; ?>modules/medical/index.php" class="submenu-item">
-                    <i class="fas fa-list"></i> <?php echo __('menu.medical.sessions'); ?>
-                </a>
-                <a href="<?php echo $base_url; ?>modules/medical/chiro_exam.php" class="submenu-item">
-                    <i class="fas fa-stethoscope"></i> <?php echo __('menu.medical.chiro_exam'); ?>
-                </a>
-                <a href="<?php echo $base_url; ?>modules/medical/chiro_history.php" class="submenu-item">
-                    <i class="fas fa-hospital-user"></i> <?php echo __('menu.medical.chiro_history'); ?>
-                </a>
-                <a href="<?php echo $base_url; ?>modules/medical/form.php?type=dong_y" class="submenu-item">
-                    <i class="fas fa-leaf"></i> <?php echo __('menu.medical.dong_y'); ?>
-                </a>
-            </div>
-        </div>
+        <a href="<?php echo $base_url; ?>modules/medical/index.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
+            <i class="fas fa-file-medical"></i>
+            <span><?php echo __('menu.medical'); ?></span>
+        </a>
         <?php endif; ?>
 
         <div class="nav-section-label" style="padding: 1.5rem 1.5rem 0.5rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;"><?php echo __('menu.management_label'); ?></div>

@@ -2,7 +2,7 @@
 // templates/header.php
 require_once __DIR__ . '/../includes/auth_middleware.php';
 
-$current_page = $current_page ?? 'dashboard';
+$current_page = isset($current_page) ? $current_page : 'dashboard';
 
 // Dynamic base_url calculation if not set
 if (!isset($base_url)) {
@@ -17,7 +17,7 @@ if (!isset($base_url)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title ?? __('common.crm_title'); ?></title>
+    <title><?php echo isset($page_title) ? $page_title : __('common.crm_title'); ?></title>
     <link rel="stylesheet" href="/assets/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -37,7 +37,7 @@ if (!isset($base_url)) {
                             <?php echo __('common.crm_title'); ?> / <?php echo e(ucfirst($current_page)); ?>
                         </div>
                         <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">
-                            <?php echo $page_title ?? __('menu.dashboard'); ?>
+                            <?php echo isset($page_title) ? $page_title : __('menu.dashboard'); ?>
                         </h1>
                     </div>
                 </div>
@@ -77,15 +77,15 @@ if (!isset($base_url)) {
                             <span class="user-role" style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('role.admin'); ?></span>
                         </div>
                         <div class="avatar-wrapper" style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), #818cf8); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
-                            <?php echo substr($_SESSION['full_name'] ?? 'U', 0, 1); ?>
+                            <?php echo substr(isset($_SESSION['full_name']) ? $_SESSION['full_name'] : 'U', 0, 1); ?>
                         </div>
                     </div>
                 </div>
             </header>
             <div class="content-body">
                 <?php if (isset($_SESSION['flash_message'])): ?>
-                    <div class="alert alert-<?php echo $_SESSION['flash_type'] ?? 'success'; ?>" id="flashMessage">
-                        <i class="fas <?php echo ($_SESSION['flash_type'] ?? 'success') === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
+                    <div class="alert alert-<?php echo isset($_SESSION['flash_type']) ? $_SESSION['flash_type'] : 'success'; ?>" id="flashMessage">
+                        <i class="fas <?php echo (isset($_SESSION['flash_type']) ? $_SESSION['flash_type'] : 'success') === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
                         <?php 
                         echo $_SESSION['flash_message']; 
                         unset($_SESSION['flash_message']);

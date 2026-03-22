@@ -123,18 +123,25 @@ $spine_nodes = [
         'L1' => 'L1', 'L2' => 'L2', 'L3' => 'L3', 'L4' => 'L4', 'L5' => 'L5'
     ],
     __('medical.exam.spine_sacrum') => [
-        'Sac' => 'Sacrum (S1-S5)', 
-        'Coc' => 'Coccyx (X. Cụt)'
+        'Sac' => __('medical.exam.spine_sacrum_label'), 
+        'Coc' => __('medical.exam.spine_coccyx_label')
     ],
     __('medical.exam.spine_becken') => [
-        'Rlli' => 'P. Ilium (R)', 
-        'Llli' => 'T. Ilium (L)'
+        'Rlli' => __('medical.exam.spine_p_ilium'), 
+        'Llli' => __('medical.exam.spine_t_ilium')
     ]
 ];
 
 $becken_nodes = ['AS', 'PI', 'IN-Ilium', 'EX-Ilium', 'Up-Slip', 'Down-Slip'];
 
-$joint_nodes = ['Khớp vai', 'Khớp khuỷu tay', 'Khớp cổ tay', 'Khớp háng', 'Khớp gối', 'Khớp cổ chân'];
+$joint_nodes = [
+    'Khớp vai' => __('medical.exam.joint_shoulder'),
+    'Khớp khuỷu tay' => __('medical.exam.joint_elbow'),
+    'Khớp cổ tay' => __('medical.exam.joint_wrist'),
+    'Khớp háng' => __('medical.exam.joint_hip'),
+    'Khớp gối' => __('medical.exam.joint_knee'),
+    'Khớp cổ chân' => __('medical.exam.joint_ankle')
+];
 $markers = $existing_data['markers'] ?? [];
 ?>
 
@@ -273,23 +280,23 @@ $markers = $existing_data['markers'] ?? [];
                                 <i class="fas fa-joint"></i> <?php echo __('medical.exam.joints_area'); ?>
                             </h4>
                             <table style="width: 100%;">
-                                <?php foreach ($joint_nodes as $node): ?>
-                                    <tr>
-                                        <td style="text-align: center; padding: 6px;">
-                                            <label class="matrix-dot">
-                                                <input type="checkbox" name="exam[joints][<?php echo $node; ?>][L]" value="1" <?php echo isset($existing_data['joints'][$node]['L']) ? 'checked' : ''; ?>>
-                                                <span>L</span>
-                                            </label>
-                                        </td>
-                                        <td style="text-align: center; font-weight: 700; font-size: 0.85rem; color: #334155;"><?php echo $node; ?></td>
-                                        <td style="text-align: center; padding: 6px;">
-                                            <label class="matrix-dot">
-                                                <input type="checkbox" name="exam[joints][<?php echo $node; ?>][R]" value="1" <?php echo isset($existing_data['joints'][$node]['R']) ? 'checked' : ''; ?>>
-                                                <span>R</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
+                                        <?php foreach ($joint_nodes as $val => $label): ?>
+                                            <tr>
+                                                <td style="text-align: center; padding: 6px;">
+                                                    <label class="matrix-dot">
+                                                        <input type="checkbox" name="exam[joints][<?php echo $val; ?>][L]" value="1" <?php echo isset($existing_data['joints'][$val]['L']) ? 'checked' : ''; ?>>
+                                                        <span>L</span>
+                                                    </label>
+                                                </td>
+                                                <td style="text-align: center; font-weight: 700; font-size: 0.85rem; color: #334155;"><?php echo $label; ?></td>
+                                                <td style="text-align: center; padding: 6px;">
+                                                    <label class="matrix-dot">
+                                                        <input type="checkbox" name="exam[joints][<?php echo $val; ?>][R]" value="1" <?php echo isset($existing_data['joints'][$val]['R']) ? 'checked' : ''; ?>>
+                                                        <span>R</span>
+                                                    </label>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
                             </table>
                         </div>
                     </div>
@@ -413,32 +420,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Symptom Correlation Logic matching Text File/DOCX 100%
 const symptomMap = {
-    'C1': { organs: 'Não, tuyến yên, tai trong, hệ thần kinh giao cảm', symptoms: 'Đau đầu, mất ngủ, chóng mặt, huyết áp cao' },
-    'C2': { organs: 'Mắt, thần kinh thị giác, xoang, lưỡi', symptoms: 'Viêm xoang, dị ứng, đau quanh mắt' },
-    'C3': { organs: 'Má, tai ngoài, răng, dây thần kinh mặt', symptoms: 'Đau dây thần kinh, mụn trứng cá, chàm' },
-    'C4': { organs: 'Mũi, môi, miệng, vòi Eustachian (tai)', symptoms: 'Sổ mũi, điếc nhẹ, các vấn đề về vùng miệng' },
-    'C5': { organs: 'Dây thanh quản, các tuyến ở cổ', symptoms: 'Viêm họng, khàn tiếng' },
-    'C6': { organs: 'Cơ cổ, vai, amidan', symptoms: 'Đau vai, cứng cổ, ho mãn tính' },
-    'C7': { organs: 'Tuyến giáp, khuỷu tay', symptoms: 'Viêm bao hoạt dịch vai, các vấn đề tuyến giáp' },
-    'D1': { organs: 'Cẳng tay, bàn tay, thực quản, khí quản', symptoms: 'Đau tay, khó thở, hen suyễn' },
-    'D2': { organs: 'Tim, động mạch vành', symptoms: 'Các vấn đề về ngực, rối loạn nhịp tim' },
-    'D3': { organs: 'Phổi, phế quản, ngực', symptoms: 'Viêm phế quản, viêm phổi, khó thở' },
-    'D4': { organs: 'Túi mật, ống mật', symptoms: 'Các vấn đề về túi mật, sỏi mật' },
-    'D5': { organs: 'Gan, hệ tuần hoàn', symptoms: 'Huyết áp thấp, các vấn đề về gan' },
-    'D6': { organs: 'Dạ dày', symptoms: 'Khó tiêu, ợ chua, đau dạ dày' },
-    'D7': { organs: 'Tuyến tụy, tá tràng', symptoms: 'Viêm loét tá tràng, vấn đề về đường huyết' },
-    'D8': { organs: 'Lá lách', symptoms: 'Sức đề kháng kém, vấn đề về máu' },
-    'D9': { organs: 'Tuyến thượng thận', symptoms: 'Dị ứng, nổi mề đay' },
-    'D10': { organs: 'Thận', symptoms: 'Mệt mỏi mãn tính, các vấn đề về thận' },
-    'D11': { organs: 'Thận, niệu quản', symptoms: 'Các vấn đề về da, tiểu tiện khó' },
-    'D12': { organs: 'Ruột non, hệ bạch huyết', symptoms: 'Đau thấp khớp, đầy hơi' },
-    'L1': { organs: 'Ruột già, đại tràng', symptoms: 'Táo bón, tiêu chảy, viêm đại tràng' },
-    'L2': { organs: 'Ruột thừa, bụng, đùi', symptoms: 'Đau bụng, chuột rút' },
-    'L3': { organs: 'Cơ quan sinh dục, bàng quang, đầu gối', symptoms: 'Các vấn đề về kinh nguyệt, bàng quang' },
-    'L4': { organs: 'Tuyến tiền liệt, cơ lưng dưới, dây thần kinh tọa', symptoms: 'Đau thần kinh tọa, đau lưng dưới' },
-    'L5': { organs: 'Cẳng chân, cổ chân, bàn chân', symptoms: 'Tuần hoàn kém ở chân, sưng mắt cá' },
-    'Sac': { organs: 'Xương chậu, mông', symptoms: 'Đau khớp cùng chậu, vấn đề vùng chậu' },
-    'Coc': { organs: 'Trực tràng, hậu môn', symptoms: 'Trĩ, đau khi ngồi' }
+    'C1': { organs: '<?php echo __('medical.exam.correlation_c1_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_c1_symptoms'); ?>' },
+    'C2': { organs: '<?php echo __('medical.exam.correlation_c2_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_c2_symptoms'); ?>' },
+    'C3': { organs: '<?php echo __('medical.exam.correlation_c3_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_c3_symptoms'); ?>' },
+    'C4': { organs: '<?php echo __('medical.exam.correlation_c4_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_c4_symptoms'); ?>' },
+    'C5': { organs: '<?php echo __('medical.exam.correlation_c5_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_c5_symptoms'); ?>' },
+    'C6': { organs: '<?php echo __('medical.exam.correlation_c6_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_c6_symptoms'); ?>' },
+    'C7': { organs: '<?php echo __('medical.exam.correlation_c7_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_c7_symptoms'); ?>' },
+    'D1': { organs: '<?php echo __('medical.exam.correlation_d1_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d1_symptoms'); ?>' },
+    'D2': { organs: '<?php echo __('medical.exam.correlation_d2_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d2_symptoms'); ?>' },
+    'D3': { organs: '<?php echo __('medical.exam.correlation_d3_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d3_symptoms'); ?>' },
+    'D4': { organs: '<?php echo __('medical.exam.correlation_d4_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d4_symptoms'); ?>' },
+    'D5': { organs: '<?php echo __('medical.exam.correlation_d5_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d5_symptoms'); ?>' },
+    'D6': { organs: '<?php echo __('medical.exam.correlation_d6_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d6_symptoms'); ?>' },
+    'D7': { organs: '<?php echo __('medical.exam.correlation_d7_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d7_symptoms'); ?>' },
+    'D8': { organs: '<?php echo __('medical.exam.correlation_d8_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d8_symptoms'); ?>' },
+    'D9': { organs: '<?php echo __('medical.exam.correlation_d9_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d9_symptoms'); ?>' },
+    'D10': { organs: '<?php echo __('medical.exam.correlation_d10_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d10_symptoms'); ?>' },
+    'D11': { organs: '<?php echo __('medical.exam.correlation_d11_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d11_symptoms'); ?>' },
+    'D12': { organs: '<?php echo __('medical.exam.correlation_d12_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_d12_symptoms'); ?>' },
+    'L1': { organs: '<?php echo __('medical.exam.correlation_l1_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_l1_symptoms'); ?>' },
+    'L2': { organs: '<?php echo __('medical.exam.correlation_l2_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_l2_symptoms'); ?>' },
+    'L3': { organs: '<?php echo __('medical.exam.correlation_l3_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_l3_symptoms'); ?>' },
+    'L4': { organs: '<?php echo __('medical.exam.correlation_l4_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_l4_symptoms'); ?>' },
+    'L5': { organs: '<?php echo __('medical.exam.correlation_l5_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_l5_symptoms'); ?>' },
+    'Sac': { organs: '<?php echo __('medical.exam.correlation_sac_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_sac_symptoms'); ?>' },
+    'Coc': { organs: '<?php echo __('medical.exam.correlation_coc_organs'); ?>', symptoms: '<?php echo __('medical.exam.correlation_coc_symptoms'); ?>' }
 };
 
 document.querySelectorAll('.spine-node').forEach(node => {

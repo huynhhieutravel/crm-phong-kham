@@ -88,34 +88,59 @@ if ($view === 'list') {
     if ($conditions) {
         $count_query .= " WHERE " . implode(" AND ", $conditions);
     }
-    $c_stmt = $db->prepare($count_query);
-    $c_stmt->execute($params);
-    $total_count = $c_stmt->fetchColumn();
+    try {
+        $c_stmt = $db->prepare($count_query);
+        $c_stmt->execute($params);
+        $total_count = $c_stmt->fetchColumn();
+    } catch (Exception $e) {
+        $total_count = 0;
+    }
     
     $query .= get_sql_limit($limit, $page);
 }
 
-$stmt = $db->prepare($query);
-$stmt->execute($params);
-$appointments = $stmt->fetchAll();
+try {
+    $stmt = $db->prepare($query);
+    $stmt->execute($params);
+    $appointments = $stmt->fetchAll();
+} catch (Exception $e) {
+    // Fallback: simple query if JOIN or new columns like label failed
+    try {
+        $fallback_query = "SELECT *, 'Patient/Lead' as contact_name, '' as contact_phone FROM appointments ORDER BY appointment_date ASC " . get_sql_limit($limit, $page);
+        $appointments = $db->query($fallback_query)->fetchAll();
+    } catch (Exception $e2) {
+        $appointments = [];
+    }
+}
+
 
 // Fetch staff for assignment (Doctors, CSKH, Admins)
-$doctors_stmt = $db->query("
-    SELECT u.id, u.full_name, r.display_name as role_name 
-    FROM users u 
-    JOIN roles r ON u.role_id = r.id 
-    WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
-    ORDER BY r.name = 'doctor' DESC, u.full_name ASC
-");
-$doctors = $doctors_stmt->fetchAll();
+try {
+    $role_cols = $db->query("SHOW COLUMNS FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+    $role_label_col = in_array('display_name', $role_cols) ? 'display_name' : 'name';
+    
+    $doctors_stmt = $db->query("
+        SELECT u.id, u.full_name, r.$role_label_col as role_name 
+        FROM users u 
+        JOIN roles r ON u.role_id = r.id 
+        WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
+        ORDER BY r.name = 'doctor' DESC, u.full_name ASC
+    ");
+    $doctors = $doctors_stmt->fetchAll();
+} catch (Exception $e) {
+    $doctors = [];
+}
 
 $status_map = [
-    'scheduled' => ['label' => __('appointment.status.scheduled'), 'color' => '#6366f1', 'icon' => 'fa-calendar-alt'],
+    'scheduled' => ['label' => __('appointment.status.scheduled'), 'color' => '#64748b', 'icon' => 'fa-calendar-alt'],
     'confirmed' => ['label' => __('appointment.status.confirmed'), 'color' => '#8b5cf6', 'icon' => 'fa-check-double'],
-    'arrived'   => ['label' => __('appointment.status.arrived'), 'color' => '#10b981', 'icon' => 'fa-walking'],
-    'completed' => ['label' => __('appointment.status.completed'), 'color' => '#059669', 'icon' => 'fa-check-circle'],
-    'no_show'   => ['label' => __('appointment.status.no_show'), 'color' => '#f59e0b', 'icon' => 'fa-user-slash'],
-    'cancelled' => ['label' => __('appointment.status.cancelled'), 'color' => '#ef4444', 'icon' => 'fa-times-circle']
+    'arrived'   => ['label' => __('appointment.status.arrived'), 'color' => '#166534', 'icon' => 'fa-walking'],
+    'treated'   => ['label' => __('appointment.status.treated'), 'color' => '#0ea5e9', 'icon' => 'fa-hand-holding-medical'],
+    'completed' => ['label' => __('appointment.status.completed'), 'color' => '#1e40af', 'icon' => 'fa-check-circle'],
+    'no_show'   => ['label' => __('appointment.status.no_show'), 'color' => '#eab308', 'icon' => 'fa-user-slash'],
+    'cancelled' => ['label' => __('appointment.status.cancelled'), 'color' => '#f43f5e', 'icon' => 'fa-times-circle'],
+    'staff_sick'=> ['label' => __('appointment.status.staff_sick'), 'color' => '#dc2626', 'icon' => 'fa-user-md-slash'],
+    'staff_busy'=> ['label' => __('appointment.status.staff_busy'), 'color' => '#f59e0b', 'icon' => 'fa-clock']
 ];
 
 $type_map = [
@@ -254,13 +279,13 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                         <input type="hidden" name="period" id="periodInput" value="<?php echo e($period); ?>">
                         <input type="hidden" name="date" id="dateInput" value="<?php echo e($date_filter); ?>">
                         
-                        <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod(event, '')"><?php echo __('common.all'); ?></a>
-                        <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod(event, 'today')"><?php echo __('common.today'); ?></a>
-                        <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod(event, 'week')"><?php echo __('common.week'); ?></a>
-                        <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod(event, 'month')"><?php echo __('common.month'); ?></a>
-                        <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod(event, 'quarter')"><?php echo __('common.quarter'); ?></a>
-                        <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod(event, 'year')"><?php echo __('common.year'); ?></a>
-                        <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod(event, 'custom')"><?php echo __('common.custom'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod(event, '')"><?php echo __('filter.all'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod(event, 'today')"><?php echo __('filter.today'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod(event, 'week')"><?php echo __('filter.week'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod(event, 'month')"><?php echo __('filter.month'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod(event, 'quarter')"><?php echo __('filter.quarter'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'year' ? 'active' : ''; ?>" onclick="setPeriod(event, 'year')"><?php echo __('filter.year'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod(event, 'custom')"><?php echo __('filter.custom'); ?></a>
                     </div>
 
                     <?php if($period === 'today' || $period === 'week' || $period === 'month' || $period === 'quarter' || $period === 'year'): ?>
@@ -276,7 +301,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                             <?php if($period === 'month'): ?>
                                 <select name="sel_month" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
                                     <?php for($m=1; $m<=12; $m++): ?>
-                                        <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                                        <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>><?php echo __('common.month_prefix') . $m . __('common.month_suffix'); ?></option>
                                     <?php endfor; ?>
                                 </select>
                             <?php endif; ?>
@@ -284,7 +309,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                             <?php if($period === 'quarter'): ?>
                                 <select name="sel_quarter" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
                                     <?php for($q=1; $q<=4; $q++): ?>
-                                        <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                                        <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>><?php echo __('common.quarter_prefix') . $q . __('common.quarter_suffix'); ?></option>
                                     <?php endfor; ?>
                                 </select>
                             <?php endif; ?>
@@ -292,7 +317,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                             <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
                                 <select name="sel_year" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
                                     <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
-                                        <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                                        <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>><?php echo __('common.year_prefix') . $y . __('common.year_suffix'); ?></option>
                                     <?php endfor; ?>
                                 </select>
                             <?php endif; ?>
@@ -309,21 +334,14 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                     </div>
                 </div>
 
-                <?php if ($is_filtered): ?>
-                    <div style="margin-left: auto;">
-                        <a href="?view=<?php echo $view; ?>" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="fas fa-times-circle"></i> <?php echo __('common.clear_filter'); ?>
-                        </a>
-                    </div>
-                <?php endif; ?>
             </div>
             <div style="margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <?php 
                     $active_filters = [];
                     if ($search) $active_filters[] = __('appointment.filter_labels.search') . ": $search";
-                    if ($status_filter) $active_filters[] = __('appointment.filter_labels.status') . ": " . ($status_map[$status_filter]['label'] ?? $status_filter);
-                    if ($type_filter) $active_filters[] = __('appointment.filter_labels.type') . ": " . ($type_map[$type_filter]['label'] ?? $type_filter);
+                    if ($status_filter) $active_filters[] = __('appointment.filter_labels.status') . ": " . (isset($status_map[$status_filter]['label']) ? $status_map[$status_filter]['label'] : $status_filter);
+                    if ($type_filter) $active_filters[] = __('appointment.filter_labels.type') . ": " . (isset($type_map[$type_filter]['label']) ? $type_map[$type_filter]['label'] : $type_filter);
                     
                     if ($period) {
                         $range = get_date_range($period, $start_date_param, $end_date_param);
@@ -338,14 +356,15 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                 </div>
 
                 <?php if ($is_filtered): ?>
-                    <div style="margin-left: auto;">
-                        <a href="?view=list" style="color: #ef4444; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="fas fa-times-circle"></i> <?php echo __('common.clear_filter'); ?>
+                    <div style="margin-left: auto; display: flex; align-items: center;">
+                        <a href="?view=<?php echo e($view); ?>" style="color: #ef4444; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.25rem; background: #fff1f2; padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid #fecaca;">
+                            <i class="fas fa-trash-alt"></i> <?php echo __('common.clear_filter'); ?>
                         </a>
                     </div>
                 <?php endif; ?>
             </div>
         </form>
+
         <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
             <i class="fas fa-plus"></i> <?php echo __('appointment.book_btn'); ?>
         </a>
@@ -407,12 +426,12 @@ function setPeriod(event, p) {
                                     
                                     <div style="display: flex; gap: 0.25rem; align-items: center;">
                                         <span style="font-size: 0.6rem; font-weight: 800; padding: 0.15rem 0.4rem; border-radius: 4px; text-transform: uppercase; <?php echo $a['contact_type'] === 'Patient' ? 'background: #e0f2fe; color: #0369a1;' : 'background: #fef3c7; color: #92400e;'; ?>">
-                                            <?php echo $a['contact_type'] === 'Patient' ? 'PATIENT' : 'LEAD'; ?>
+                                            <?php echo $a['contact_type'] === 'Patient' ? __('appointment.contact_type.patient') : __('appointment.contact_type.lead'); ?>
                                         </span>
                                         
                                         <?php if (!empty($a['patient_label'])): ?>
                                             <span style="font-size: 0.6rem; font-weight: 800; padding: 0.15rem 0.4rem; border-radius: 4px; background: #fee2e2; color: #b91c1c; text-transform: uppercase;">
-                                                <i class="fas fa-tag"></i> <?php echo e($a['patient_label']); ?>
+                                                <i class="fas fa-tag"></i> <?php echo e(get_patient_label_translation($a['patient_label'])); ?>
                                             </span>
                                         <?php endif; ?>
 
@@ -429,7 +448,7 @@ function setPeriod(event, p) {
                                     <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600;"><i class="fas fa-phone-alt" style="font-size: 0.7rem;"></i> <?php echo e($a['contact_phone']); ?></div>
                                     
                                     <?php 
-                                    $t = $type_map[$a['type']] ?? ['label' => $a['type'], 'color' => '#64748b', 'icon' => 'fa-calendar'];
+                                    $t = $type_map[$a['type']] ?? array('label' => $a['type'], 'color' => '#64748b', 'icon' => 'fa-calendar');
                                     ?>
                                     <span style="font-size: 0.65rem; font-weight: 700; color: <?php echo $t['color']; ?>; background: <?php echo $t['color']; ?>1a; padding: 0.1rem 0.6rem; border-radius: 50px; border: 1px solid <?php echo $t['color']; ?>33;">
                                         <i class="fas <?php echo $t['icon']; ?>" style="font-size: 0.6rem;"></i> <?php echo $t['label']; ?>
@@ -449,7 +468,7 @@ function setPeriod(event, p) {
                             </td>
                             <td style="padding: 1.25rem 1.5rem;">
                                 <?php 
-                                $status = $status_map[$a['status']] ?? ['label' => $a['status'], 'color' => '#64748b', 'icon' => 'fa-question-circle'];
+                                $status = $status_map[$a['status']] ?? array('label' => $a['status'], 'color' => '#64748b', 'icon' => 'fa-question-circle');
                                 ?>
                                 <form action="update_appointment.php" method="POST">
                                     <input type="hidden" name="id" value="<?php echo $a['id']; ?>">

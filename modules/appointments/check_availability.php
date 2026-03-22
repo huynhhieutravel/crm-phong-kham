@@ -23,17 +23,32 @@ $results = [
 ];
 
 // 1. Count morning/afternoon load
-$stmt = $db->prepare("
-    SELECT 
-        SUM(CASE WHEN HOUR(appointment_date) < 12 THEN 1 ELSE 0 END) as morning,
-        SUM(CASE WHEN HOUR(appointment_date) >= 12 THEN 1 ELSE 0 END) as afternoon
-    FROM appointments 
-    WHERE DATE(appointment_date) = ? AND branch_id = ?
-");
-$stmt->execute([$date, $branch_id]);
-$counts = $stmt->fetch();
-$results['morning_count'] = (int)($counts['morning'] ?? 0);
-$results['afternoon_count'] = (int)($counts['afternoon'] ?? 0);
+try {
+    $available_cols = $db->query("SHOW COLUMNS FROM appointments")->fetchAll(PDO::FETCH_COLUMN);
+    $has_branch_id = in_array('branch_id', $available_cols);
+    
+    $where_clause = "DATE(appointment_date) = ?";
+    $query_params = [$date];
+    
+    if ($has_branch_id) {
+        $where_clause .= " AND branch_id = ?";
+        $query_params[] = $branch_id;
+    }
+
+    $stmt = $db->prepare("
+        SELECT 
+            SUM(CASE WHEN HOUR(appointment_date) < 12 THEN 1 ELSE 0 END) as morning,
+            SUM(CASE WHEN HOUR(appointment_date) >= 12 THEN 1 ELSE 0 END) as afternoon
+        FROM appointments 
+        WHERE $where_clause
+    ");
+    $stmt->execute($query_params);
+    $counts = $stmt->fetch();
+    $results['morning_count'] = (int)($counts['morning'] ?? 0);
+    $results['afternoon_count'] = (int)($counts['afternoon'] ?? 0);
+} catch (Exception $e) {
+    // Fail gracefully
+}
 
 // 2. Check doctor overlap if doctor and time are selected
 if (!empty($time) && !empty($doctor_id)) {

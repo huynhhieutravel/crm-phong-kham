@@ -4,59 +4,113 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-$db = getDB();
+try {
+    $db = getDB();
+} catch (Exception $e) {
+    die("Database Connection Error: " . $e->getMessage());
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contact_val = $_POST['contact_id'] ?? '';
     list($type, $cid) = explode(':', $contact_val);
     
-    $patient_id = ($type === 'patient') ? $cid : null;
-    $lead_id = ($type === 'lead') ? $cid : null;
+    $patient_id = ($type === 'patient' && !empty($cid)) ? (int)$cid : null;
+    $lead_id = ($type === 'lead' && !empty($cid)) ? (int)$cid : null;
+    $doctor_id = !empty($_POST['doctor_id']) ? (int)$_POST['doctor_id'] : null;
 
-    $stmt = $db->prepare("
-        INSERT INTO appointments (patient_id, lead_id, doctor_id, branch_id, appointment_date, appointment_end_time, type, reexam_rule_id, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    
-    $doctor_id = !empty($_POST['doctor_id']) ? $_POST['doctor_id'] : null;
-    $rule_id = !empty($_GET['reexam_rule_id']) ? $_GET['reexam_rule_id'] : null;
-    $end_time = !empty($_POST['appointment_end_time']) ? $_POST['appointment_end_time'] : null;
+    // Build dynamic INSERT to be 100% safe against missing columns on VPS
+    $data = [
+        'patient_id' => $patient_id,
+        'lead_id' => $lead_id,
+        'doctor_id' => $doctor_id,
+        'appointment_date' => $_POST['appointment_date'] . ' ' . $_POST['appointment_time'],
+        'notes' => $_POST['notes'] ?? ''
+    ];
 
-    $stmt->execute([
-        $patient_id,
-        $lead_id,
-        $doctor_id,
-        $_SESSION['branch_id'] ?? 1,
-        $_POST['appointment_date'] . ' ' . $_POST['appointment_time'],
-        $end_time,
-        $_POST['type'] ?? 'consultation',
-        $rule_id,
-        $_POST['notes']
-    ]);
-    
-    // Update booking time for lead if applicable
-    if ($lead_id) {
-        $db->prepare("UPDATE leads SET appointment_booking_time = NOW(), status = 'scheduled' WHERE id = ?")
-           ->execute([$lead_id]);
+    // Optional columns that might be missing on an old VPS schema
+    $optionals = [
+        'branch_id' => $_SESSION['branch_id'] ?? 1,
+        'appointment_end_time' => $_POST['appointment_end_time'] ?: null,
+        'type' => $_POST['type'] ?? 'consultation',
+        'reexam_rule_id' => $_GET['reexam_rule_id'] ?: null
+    ];
+
+    // Detect available columns
+    $available_cols = $db->query("SHOW COLUMNS FROM appointments")->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($optionals as $col => $val) {
+        if (in_array($col, $available_cols)) {
+            $data[$col] = $val;
+        }
     }
 
-    set_flash(__('appointment.msg.add_success'));
-    redirect('index.php');
+    $cols = implode(", ", array_keys($data));
+    $placeholders = implode(", ", array_fill(0, count($data), "?"));
+    
+    try {
+        $stmt = $db->prepare("INSERT INTO appointments ($cols) VALUES ($placeholders)");
+        $stmt->execute(array_values($data));
+        
+        // Update lead status if applicable
+        if ($lead_id) {
+            $lead_cols = $db->query("SHOW COLUMNS FROM leads")->fetchAll(PDO::FETCH_COLUMN);
+            $update_fields = [];
+            $update_params = [];
+            
+            if (in_array('appointment_booking_time', $lead_cols)) {
+                $update_fields[] = "appointment_booking_time = NOW()";
+            }
+            if (in_array('status', $lead_cols)) {
+                $update_fields[] = "status = 'scheduled'";
+            }
+            
+            if (!empty($update_fields)) {
+                $update_sql = "UPDATE leads SET " . implode(", ", $update_fields) . " WHERE id = ?";
+                $update_params[] = $lead_id;
+                $db->prepare($update_sql)->execute($update_params);
+            }
+        }
+
+        set_flash(__('appointment.msg.add_success'));
+        redirect('index.php');
+    } catch (Exception $e) {
+        die("Fatal Error during save: " . $e->getMessage());
+    }
 }
+
 
 $page_title = __('appointment.add.title');
 $current_page = 'appointments';
 require_once '../../templates/header.php';
 
-$patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_name ASC")->fetchAll();
-$leads = $db->query("SELECT id, full_name, phone FROM leads WHERE status != 'converted' ORDER BY full_name ASC")->fetchAll();
-$doctors = $db->query("
-    SELECT u.id, u.full_name, r.display_name as role_name 
-    FROM users u 
-    JOIN roles r ON u.role_id = r.id 
-    WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
-    ORDER BY r.name = 'doctor' DESC, u.full_name ASC
-")->fetchAll();
+try {
+    $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_name ASC LIMIT 500")->fetchAll();
+} catch (Exception $e) {
+    $patients = [];
+}
+
+try {
+    // Check if status column exists in leads, otherwise ignore the filter
+    $leads = $db->query("SELECT id, full_name, phone FROM leads ORDER BY full_name ASC LIMIT 500")->fetchAll();
+} catch (Exception $e) {
+    $leads = [];
+}
+
+try {
+    // Fetch staff - attempt with display_name, fallback to name
+    $role_cols = $db->query("SHOW COLUMNS FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+    $role_label_col = in_array('display_name', $role_cols) ? 'display_name' : 'name';
+
+    $doctors = $db->query("
+        SELECT u.id, u.full_name, r.$role_label_col as role_name 
+        FROM users u 
+        JOIN roles r ON u.role_id = r.id 
+        WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
+        ORDER BY r.name = 'doctor' DESC, u.full_name ASC
+    ")->fetchAll();
+} catch (Exception $e) {
+    $doctors = [];
+}
+
 
 $prefill_lead_id = $_GET['lead_id'] ?? null;
 $prefill_patient_id = $_GET['patient_id'] ?? null;

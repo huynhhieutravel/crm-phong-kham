@@ -57,9 +57,9 @@ $period_label = $range['label'];
             </div>
             
             <div id="customRangeBlock" style="display: <?php echo $period === 'custom' ? 'flex' : 'none'; ?>; align-items: center; gap: 0.5rem; margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid var(--border-color);">
-                <input type="date" name="start" value="<?php echo e($start ?: date('Y-m-d')); ?>" class="form-control" style="width: 140px; padding: 0.4rem;">
+                <input type="date" name="start" value="<?php echo e($start ?? date('Y-m-d')); ?>" class="form-control" style="width: 140px; padding: 0.4rem;">
                 <span><?php echo __('common.to'); ?></span>
-                <input type="date" name="end" value="<?php echo e($end ?: date('Y-m-d')); ?>" class="form-control" style="width: 140px; padding: 0.4rem;">
+                <input type="date" name="end" value="<?php echo e($end ?? date('Y-m-d')); ?>" class="form-control" style="width: 140px; padding: 0.4rem;">
                 <input type="hidden" name="period" value="custom">
                 <button type="submit" class="btn btn-icon" style="background: var(--primary); color: white; height: 34px; width: 34px;">
                     <i class="fas fa-search"></i>

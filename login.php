@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (login($username, $password)) {
         redirect('/index.php');
     } else {
-        $error = __('auth.login_failed') ?? 'Tên đăng nhập hoặc mật khẩu không đúng.';
+        $error = $auth_login_failed_trans ?? 'Tên đăng nhập hoặc mật khẩu không đúng.';
     }
 }
 ?>

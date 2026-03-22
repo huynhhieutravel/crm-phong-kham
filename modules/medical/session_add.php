@@ -6,8 +6,8 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 $db = getDB();
-$patient_id = $_GET['patient_id'] ?? 0;
-$appointment_id = $_GET['appointment_id'] ?? null;
+$patient_id = isset($_GET['patient_id']) ? $_GET['patient_id'] : 0;
+$appointment_id = isset($_GET['appointment_id']) ? $_GET['appointment_id'] : null;
 
 if (!$patient_id) {
     set_flash('Thiếu thông tin bệnh nhân.', 'error');

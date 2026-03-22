@@ -21,14 +21,15 @@ if (!$record) {
 }
 
 $data = json_decode($record['history_data'], true);
-$type_label = [
+$type_map_list = [
     'chiropractic'  => 'Theo dõi SOAP',
     'soap_note'     => 'Theo dõi SOAP',
     'dong_y'        => 'Phiếu khám Đông Y',
     'initial_exam'  => 'Khám Chiro (Hệ thống cũ)',
     'chiro_history' => 'Khám tiền sử bệnh Chiropractic',
     'chiro_exam'    => 'Khám bệnh lần đầu Chiropractic'
-][$record['type']] ?? 'Hồ sơ y tế';
+];
+$type_label = $type_map_list[$record['type']] ?? 'Hồ sơ y tế';
 
 $page_title = 'Xem ' . $type_label;
 $current_page = 'medical';
@@ -286,7 +287,7 @@ require_once '../../templates/header.php';
             </h3>
             <div class="info-box" style="background: #f8fafc; margin-bottom: 2.5rem; border-color: #e2e8f0; padding: 1.5rem;">
                 <?php 
-                $ros_data = $data['medical_history']['ros'] ?? $data['pathology']['systems'] ?? [];
+                $ros_data = $data['medical_history']['ros'] ?? ($data['pathology']['systems'] ?? []);
                 $ros_categories = [
                     'Vùng đầu mặt' => ['Đau đầu', 'Chóng mặt', 'Ù tai', 'Vấn đề hàm (Khớp thái dương hàm)', 'Đang niềng răng'],
                     'Cơ quan liên quan' => ['Tê lan xuống ngón tay', 'Đau tức ngực (không do tim)', 'Đau/Tê lan xuống mông/chân', 'Có tiền sử Vẹo cột sống (S-form)'],
@@ -493,7 +494,7 @@ require_once '../../templates/header.php';
                     <div style="font-family: monospace; font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
                         <?php 
                         $adj = [];
-                        foreach($data['a']['spine'] ?? [] as $k => $v) { $adj[] = "<span style='background:white; padding: 2px 6px; border-radius: 4px;'>$k (".(isset($v['L'])?'L':'').(isset($v['R'])?'R':'').")</span>"; }
+                        foreach(($data['a']['spine'] ?? []) as $k => $v) { $adj[] = "<span style='background:white; padding: 2px 6px; border-radius: 4px;'>$k (".(isset($v['L'])?'L':'').(isset($v['R'])?'R':'').")</span>"; }
                         echo !empty($adj) ? implode(' ', $adj) : 'Không nắn chỉnh đốt sống.';
                         ?>
                     </div>
@@ -730,11 +731,11 @@ require_once '../../templates/header.php';
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
                         <div>
                             <div style="font-size: 0.75rem; font-weight: 800; color: #dc2626;">NHIỆT</div>
-                            <div style="font-size: 0.85rem;"><?php echo implode(', ', $data['sensation_heat'] ?? []); ?></div>
+                            <div style="font-size: 0.85rem;"><?php echo implode(', ', ($data['sensation_heat'] ?? [])); ?></div>
                         </div>
                         <div>
                             <div style="font-size: 0.75rem; font-weight: 800; color: #2563eb;">HÀN</div>
-                            <div style="font-size: 0.85rem;"><?php echo implode(', ', $data['sensation_cold'] ?? []); ?></div>
+                            <div style="font-size: 0.85rem;"><?php echo implode(', ', ($data['sensation_cold'] ?? [])); ?></div>
                         </div>
                     </div>
                 </div>

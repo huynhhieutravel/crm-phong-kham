@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/auth_middleware.php';
 
 $db = getDB();
-$id = $_GET['id'] ?? 0;
+$id = isset($_GET['id']) ? $_GET['id'] : 0;
 
 // Fetch active consultants
 $consultants_stmt = $db->query("
@@ -27,46 +27,49 @@ if (!$p) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Self-healing database check (with safety wrapper)
-    try {
-        ensure_patient_columns($db);
-    } catch (\Throwable $e) {}
-    
-    $stmt = $db->prepare("
-        UPDATE patients SET 
-            customer_id = ?, full_name = ?, gender = ?, birthday = ?, phone = ?, email = ?, address = ?, 
-            branch = ?, occupation = ?, source = ?, consultant_id = ?, label = ?, zalo_number = ?, facebook_link = ?, instagram_link = ?, twitter_link = ?,
-            guardian_name = ?, guardian_id_card = ?, guardian_phone = ?, guardian_relationship = ?, notes = ?
-        WHERE id = ?
-    ");
-    
-    $birthday = !empty($_POST['birthday']) ? $_POST['birthday'] : null;
-    $consultant_id = $_POST['consultant_id'] ?: null;
-    
-    $stmt->execute([
-        $_POST['customer_id'] ?: null,
-        $_POST['full_name'],
-        $_POST['gender'],
-        $birthday,
-        $_POST['phone'],
-        $_POST['email'],
-        $_POST['address'],
-        $_POST['branch'],
-        $_POST['occupation'],
-        $_POST['source'],
-        $consultant_id,
-        $_POST['label'],
-        $_POST['zalo_number'],
-        $_POST['facebook_link'],
-        $_POST['instagram_link'],
-        $_POST['twitter_link'],
-        $_POST['guardian_name'],
-        $_POST['guardian_id_card'],
-        $_POST['guardian_phone'],
-        $_POST['guardian_relationship'],
-        $_POST['notes'],
-        $id
-    ]);
+    $optionals = [
+        'customer_id' => $_POST['customer_id'] ?: null,
+        'full_name' => $_POST['full_name'] ?: '',
+        'gender' => $_POST['gender'] ?: '',
+        'birthday' => !empty($_POST['birthday']) ? $_POST['birthday'] : null,
+        'phone' => $_POST['phone'] ?: '',
+        'email' => $_POST['email'] ?: '',
+        'address' => $_POST['address'] ?: '',
+        'branch' => $_POST['branch'] ?: '',
+        'branch_id' => 1,
+        'occupation' => $_POST['occupation'] ?: '',
+        'source' => $_POST['source'] ?: '',
+        'consultant_id' => $_POST['consultant_id'] ?: null,
+        'label' => $_POST['label'] ?: '',
+        'zalo_number' => $_POST['zalo_number'] ?: '',
+        'facebook_link' => $_POST['facebook_link'] ?: '',
+        'instagram_link' => $_POST['instagram_link'] ?: '',
+        'twitter_link' => $_POST['twitter_link'] ?: '',
+        'guardian_name' => $_POST['guardian_name'] ?: '',
+        'guardian_id_card' => $_POST['guardian_id_card'] ?: '',
+        'guardian_phone' => $_POST['guardian_phone'] ?: '',
+        'guardian_relationship' => $_POST['guardian_relationship'] ?: '',
+        'notes' => $_POST['notes'] ?: ''
+    ];
+
+    // Detect available columns
+    $available_cols = $db->query("SHOW COLUMNS FROM patients")->fetchAll(PDO::FETCH_COLUMN);
+    $data = [];
+    foreach ($optionals as $col => $val) {
+        if (in_array($col, $available_cols)) {
+            $data[$col] = $val;
+        }
+    }
+
+    if (!empty($data)) {
+        $set_parts = [];
+        foreach (array_keys($data) as $col) {
+            $set_parts[] = "$col = ?";
+        }
+        $sql = "UPDATE patients SET " . implode(", ", $set_parts) . " WHERE id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->execute(array_merge(array_values($data), [$id]));
+    }
     
     set_flash(__('patient.msg.update_success'));
     redirect("view.php?id=$id");

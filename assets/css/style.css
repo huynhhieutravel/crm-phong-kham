@@ -114,22 +114,42 @@ body {
 .submenu {
     list-style: none;
     padding: 0.5rem;
-    display: none;
+    display: flex;
     flex-direction: column;
     gap: 0.25rem;
     background: #1e293b;
     border-radius: 12px;
     position: absolute;
-    left: calc(100% + 10px);
+    left: calc(100% + 5px); /* Reduced gap */
     top: 0;
     min-width: 180px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     border: 1px solid rgba(255,255,255,0.1);
     z-index: 9999;
+    
+    /* Animation & Stability */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition-delay: 0.3s; /* Buffer time before disappearing */
+}
+
+/* Bridge the gap so the menu doesn't close when moving the mouse from item to submenu */
+.submenu::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -15px; /* Cover the gap */
+    width: 15px;
+    bottom: 0;
 }
 
 .nav-item-wrapper:hover .submenu {
-    display: flex;
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0s; /* Appear immediately */
 }
 
 .submenu-item {
@@ -481,4 +501,20 @@ body {
     }
     .sidebar.open { left: 0; }
     .content-body { padding: 1.5rem; }
+}
+
+/* Utilities */
+.text-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.truncate-select {
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
 }

@@ -11,6 +11,7 @@ require_once '../../templates/header.php';
 $db = getDB();
 $search = $_GET['search'] ?? '';
 $label = $_GET['label'] ?? '';
+$gender_filter = $_GET['gender'] ?? '';
 $gender = $_GET['gender'] ?? '';
 $period = $_GET['period'] ?? '';
 $start_date_filter = $_GET['start_date'] ?? '';
@@ -165,7 +166,7 @@ $is_filtered = $search || $label || $gender || $period;
                     <select name="label" class="form-input filter-input" onchange="this.form.submit()">
                         <option value=""><?php echo __('patient.filter.all_labels'); ?></option>
                         <?php foreach ($labels as $l): ?>
-                            <option value="<?php echo e($l); ?>" <?php echo $label === $l ? 'selected' : ''; ?>><?php echo e($l); ?></option>
+                            <option value="<?php echo e($l); ?>" <?php echo $label === $l ? 'selected' : ''; ?>><?php echo e(get_patient_label_translation($l)); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -257,7 +258,7 @@ function setPeriod(p) {
                                     ?>; color: <?php 
                                         echo strtolower($p['label']) === 'vip' ? '#d97706' : '#16a34a'; 
                                     ?>; padding: 0.1rem 0.5rem; border-radius: 99px;">
-                                        <?php echo e($p['label']); ?>
+                                        <?php echo e(get_patient_label_translation($p['label'])); ?>
                                     </span>
                                 <?php endif; ?>
                             </div>

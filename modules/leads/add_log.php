@@ -7,8 +7,8 @@ require_once '../../includes/auth_middleware.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $lead_id = $_POST['lead_id'] ?? 0;
-    $note = trim($_POST['note'] ?? '');
+    $lead_id = isset($_POST['lead_id']) ? $_POST['lead_id'] : 0;
+    $note = trim(isset($_POST['note']) ? $_POST['note'] : '');
     $user_id = $_SESSION['user_id'];
 
     if ($lead_id && $note) {

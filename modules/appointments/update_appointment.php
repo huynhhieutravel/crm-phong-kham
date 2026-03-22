@@ -6,7 +6,7 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = $_POST['id'] ?? 0;
+    $id = isset($_POST['id']) ? $_POST['id'] : 0;
     $db = getDB();
 
     if (isset($_POST['doctor_id'])) {
