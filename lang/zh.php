@@ -1224,4 +1224,13 @@ return [
     'audit.diff_header' => '数据变更',
     'audit.old' => '旧值:',
     'audit.new' => '新值:',
+    'menu.guide' => '用户手册',
+    'guide.title' => '指南与培训中心',
+    'guide.subtitle' => '用户文档和 CRM 操作程序。',
+    'guide.overview' => '系统概览',
+    'guide.roles' => '角色与权限',
+    'guide.leads' => '营销与线索',
+    'guide.appointments' => '预约与接待',
+    'guide.medical' => '临床与记录',
+    'guide.sales' => '财务与报告',
 ];

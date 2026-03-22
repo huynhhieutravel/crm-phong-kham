@@ -13,6 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role_id = $_POST['role_id'];
     $branch_id = $_POST['branch_id'] ?: null;
     $status = $_POST['status'] ?? 'active';
+    $role_id = $_POST['role_id'];
+
+    // Security: Non-admin cannot create an Admin account
+    if ($role_id == 1 && $_SESSION['role'] !== 'admin') {
+        set_flash('Bạn không có quyền tạo tài khoản Administrator!', 'danger');
+        redirect('users.php');
+    }
 
     // Check if username exists
     $check = $db->prepare("SELECT id FROM users WHERE username = ?");
@@ -67,6 +74,7 @@ $branches = $db->query("SELECT * FROM branches ORDER BY name ASC")->fetchAll();
                 <select name="role_id" class="form-input" required>
                     <option value="">-- Chọn vai trò --</option>
                     <?php foreach ($roles as $r): ?>
+                        <?php if ($r['id'] == 1 && $_SESSION['role'] !== 'admin') continue; ?>
                         <option value="<?php echo $r['id']; ?>"><?php echo e($r['display_name']); ?></option>
                     <?php endforeach; ?>
                 </select>

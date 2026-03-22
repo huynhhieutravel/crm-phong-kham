@@ -108,13 +108,42 @@
             <span><?php echo __('menu.reports'); ?></span>
         </a>
         <?php endif; ?>
-
         <?php if (can('view_audit_logs')): ?>
         <a href="<?php echo $base_url; ?>modules/admin/audit_logs.php" class="nav-item <?php echo $current_page === 'admin_audit' ? 'active' : ''; ?>">
             <i class="fas fa-shield-alt"></i>
             <span><?php echo __('menu.audit_logs'); ?></span>
         </a>
         <?php endif; ?>
+
+        <div class="nav-section-label" style="padding: 1.5rem 1.5rem 0.5rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 1rem;"><?php echo __('menu.guide'); ?></div>
+        
+        <?php 
+        $guide_section = isset($_GET['section']) ? $_GET['section'] : 'overview';
+        ?>
+        <a href="<?php echo $base_url; ?>modules/guide/index.php?section=overview" class="nav-item <?php echo ($current_page === 'guide' && $guide_section === 'overview') ? 'active' : ''; ?>">
+            <i class="fas fa-info-circle"></i>
+            <span><?php echo __('guide.overview'); ?></span>
+        </a>
+        <a href="<?php echo $base_url; ?>modules/guide/index.php?section=roles" class="nav-item <?php echo ($current_page === 'guide' && $guide_section === 'roles') ? 'active' : ''; ?>">
+            <i class="fas fa-user-shield"></i>
+            <span><?php echo __('guide.roles'); ?></span>
+        </a>
+        <a href="<?php echo $base_url; ?>modules/guide/index.php?section=leads" class="nav-item <?php echo ($current_page === 'guide' && $guide_section === 'leads') ? 'active' : ''; ?>">
+            <i class="fas fa-filter"></i>
+            <span><?php echo __('guide.leads'); ?></span>
+        </a>
+        <a href="<?php echo $base_url; ?>modules/guide/index.php?section=appointments" class="nav-item <?php echo ($current_page === 'guide' && $guide_section === 'appointments') ? 'active' : ''; ?>">
+            <i class="fas fa-calendar-check"></i>
+            <span><?php echo __('guide.appointments'); ?></span>
+        </a>
+        <a href="<?php echo $base_url; ?>modules/guide/index.php?section=medical" class="nav-item <?php echo ($current_page === 'guide' && $guide_section === 'medical') ? 'active' : ''; ?>">
+            <i class="fas fa-file-medical"></i>
+            <span><?php echo __('guide.medical'); ?></span>
+        </a>
+        <a href="<?php echo $base_url; ?>modules/guide/index.php?section=sales" class="nav-item <?php echo ($current_page === 'guide' && $guide_section === 'sales') ? 'active' : ''; ?>">
+            <i class="fas fa-shopping-cart"></i>
+            <span><?php echo __('guide.sales'); ?></span>
+        </a>
     </nav>
     <div class="sidebar-footer" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
         <a href="<?php echo $base_url; ?>logout.php" class="nav-item" style="color: #f87171;">

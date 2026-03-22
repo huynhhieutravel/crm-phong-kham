@@ -1297,4 +1297,13 @@ return [
     'audit.diff_header' => 'Biến động dữ liệu',
     'audit.old' => 'Cũ:',
     'audit.new' => 'Mới:',
+    'menu.guide' => 'Sổ tay hướng dẫn',
+    'guide.title' => 'Trung tâm Hướng dẫn & Đào tạo',
+    'guide.subtitle' => 'Tài liệu hướng dẫn sử dụng và quy trình vận hành CRM.',
+    'guide.overview' => 'Tổng quan',
+    'guide.roles' => 'Vai trò & Quyền hạn',
+    'guide.leads' => 'Marketing & Leads',
+    'guide.appointments' => 'Lịch hẹn & Tiếp đón',
+    'guide.medical' => 'Chuyên môn & Bệnh án',
+    'guide.sales' => 'Tài chính & Báo cáo',
 ];

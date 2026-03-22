@@ -16,11 +16,23 @@ if (!$user) {
     redirect('users.php');
 }
 
+// Security: Non-admin cannot edit an Admin account
+if ($user['role_id'] == 1 && $_SESSION['role'] !== 'admin') {
+    set_flash('Bạn không có quyền chỉnh sửa tài khoản Administrator!', 'danger');
+    redirect('users.php');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $full_name = $_POST['full_name'];
     $username = $_POST['username'];
     $role_id = $_POST['role_id'];
     $branch_id = $_POST['branch_id'] ?: null;
+
+    // Security: Non-admin cannot promote someone to Admin
+    if ($role_id == 1 && $_SESSION['role'] !== 'admin') {
+        set_flash('Bạn không có quyền gán vai trò Administrator!', 'danger');
+        redirect('users.php');
+    }
     $status = $_POST['status'];
 
     // Update basic info
@@ -77,6 +89,7 @@ $branches = $db->query("SELECT * FROM branches ORDER BY name ASC")->fetchAll();
                 <select name="role_id" class="form-input" required>
                     <option value="">-- Chọn vai trò --</option>
                     <?php foreach ($roles as $r): ?>
+                        <?php if ($r['id'] == 1 && $_SESSION['role'] !== 'admin') continue; ?>
                         <option value="<?php echo $r['id']; ?>" <?php echo (int)$user['role_id'] === (int)$r['id'] ? 'selected' : ''; ?>><?php echo e($r['display_name']); ?></option>
                     <?php endforeach; ?>
                 </select>

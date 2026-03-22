@@ -1301,4 +1301,13 @@ return [
     'audit.diff_header' => 'Data Changes',
     'audit.old' => 'Old:',
     'audit.new' => 'New:',
+    'menu.guide' => 'User Manual',
+    'guide.title' => 'Guide & Training Center',
+    'guide.subtitle' => 'User documentation and CRM operational procedures.',
+    'guide.overview' => 'System Overview',
+    'guide.roles' => 'Roles & Permissions',
+    'guide.leads' => 'Marketing & Leads',
+    'guide.appointments' => 'Scheduling & Reception',
+    'guide.medical' => 'Clinical & Records',
+    'guide.sales' => 'Finance & Reports',
 ];

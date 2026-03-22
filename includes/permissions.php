@@ -24,6 +24,18 @@ $GLOBALS['_role_permissions'] = [
         'view_audit_logs',
         'manage_settings',
     ],
+    'manager' => [
+        'manage_patients', 'view_patients',
+        'manage_appointments', 'view_appointments',
+        'manage_medical', 'view_medical',
+        'manage_leads', 'view_leads',
+        'manage_sales', 'view_sales',
+        'manage_inventory', 'view_inventory',
+        'manage_hr', 'view_hr',
+        'view_reports', 'export_reports',
+        'view_audit_logs',
+        'manage_users',
+    ],
     'doctor' => [
         'view_patients', 'manage_patients',
         'view_appointments', 'manage_appointments',

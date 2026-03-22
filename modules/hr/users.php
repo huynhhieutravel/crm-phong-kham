@@ -101,6 +101,7 @@ $roles = $db->query("SELECT * FROM roles ORDER BY id ASC")->fetchAll();
                         <span class="badge" style="background: <?php 
                             echo match($u['role_id']) {
                                 1 => '#fee2e2; color: #991b1b', // admin
+                                7 => '#fdf2f8; color: #9d174d', // manager
                                 2 => '#eff6ff; color: #1e40af', // doctor
                                 6 => '#f0fdf4; color: #166534', // cskh
                                 default => '#f1f5f9; color: #475569'

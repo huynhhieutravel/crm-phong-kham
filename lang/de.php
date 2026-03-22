@@ -1222,4 +1222,13 @@ return [
     'audit.diff_header' => 'Datenänderungen',
     'audit.old' => 'Alt:',
     'audit.new' => 'Neu:',
+    'menu.guide' => 'Benutzerhandbuch',
+    'guide.title' => 'Leitfaden & Schulungszentrum',
+    'guide.subtitle' => 'Benutzerdokumentation und CRM-Betriebsverfahren.',
+    'guide.overview' => 'Systemübersicht',
+    'guide.roles' => 'Rollen & Berechtigungen',
+    'guide.leads' => 'Marketing & Leads',
+    'guide.appointments' => 'Terminplanung & Empfang',
+    'guide.medical' => 'Klinik & Unterlagen',
+    'guide.sales' => 'Finanzen & Berichte',
 ];
