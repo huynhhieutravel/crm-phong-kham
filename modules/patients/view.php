@@ -114,20 +114,28 @@ $treatments = $stmt->fetchAll();
             </div>
         </div>
 
-        <div style="padding: 1.5rem 2.5rem; background: #f8fafc; display: flex; align-items: center; gap: 1.5rem;">
-            <i class="fas fa-quote-left" style="color: #cbd5e1; font-size: 1.5rem;"></i>
-            <div style="font-size: 0.95rem; color: var(--text-muted); font-style: italic; font-weight: 500; flex: 1;">
-                <?php echo nl2br(e($patient['notes'] ?: __('patient.info.no_notes'))); ?>
-            </div>
-            <?php if ($patient['guardian_name']): ?>
-                <div style="background: white; padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid #fed7aa; display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 32px; height: 32px; background: #fff7ed; color: #f97316; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-user-shield"></i></div>
-                    <div>
-                        <div style="font-size: 0.75rem; font-weight: 800; color: #ea580c; text-transform: uppercase;"><?php echo __('patient.info.guardian'); ?></div>
-                        <div style="font-size: 0.85rem; font-weight: 700; color: #9a3412;"><?php echo e($patient['guardian_name']); ?> <small>(<?php echo e($patient['guardian_phone']); ?>)</small></div>
+        <div style="padding: 1.5rem 2.5rem; background: #f8fafc; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; border-top: 1px solid #f1f5f9;">
+            <!-- Medical Notes (For Doctor) -->
+            <div style="display: flex; align-items: flex-start; gap: 1rem; border-right: 1px solid #e2e8f0; padding-right: 2rem;">
+                <div style="width: 40px; height: 40px; background: #eef2ff; color: #6366f1; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fas fa-user-md"></i></div>
+                <div style="flex: 1;">
+                    <div style="font-size: 0.75rem; font-weight: 800; color: #6366f1; text-transform: uppercase; margin-bottom: 0.25rem;"><?php echo __('medical.record.medical'); ?></div>
+                    <div style="font-size: 0.9rem; color: var(--text-main); line-height: 1.5;">
+                        <?php echo nl2br(e($patient['notes'] ?: __('patient.info.no_notes'))); ?>
                     </div>
                 </div>
-            <?php endif; ?>
+            </div>
+
+            <!-- Personal Preferences (For Consultant/Receptionist) -->
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                <div style="width: 40px; height: 40px; background: #fdf2f8; color: #db2777; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fas fa-heart"></i></div>
+                <div style="flex: 1;">
+                    <div style="font-size: 0.75rem; font-weight: 800; color: #db2777; text-transform: uppercase; margin-bottom: 0.25rem;"><?php echo __('patient.info.personal_notes'); ?></div>
+                    <div style="font-size: 0.95rem; color: #9d174d; font-weight: 600; line-height: 1.5;">
+                        <?php echo nl2br(e($patient['personal_notes'] ?: __('common.no_data'))); ?>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -296,7 +296,7 @@ return [
     'lead.status.converted' => '已转化（销售）',
     'lead.status.junk' => '垃圾数据',
     'common.apply' => '应用',
-    'common.view_details' => '查看详情',
+    'common.view_details' => '查看',
     'common.time_colon' => '时间：',
     'appointment.book_title' => '预约',
     'patient.list.title' => '患者列表',

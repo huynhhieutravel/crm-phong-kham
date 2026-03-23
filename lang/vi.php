@@ -37,6 +37,7 @@ return [
     'common.edit' => 'Sửa',
     'common.view' => 'Xem xem',
     'common.search' => 'Tìm kiếm',
+    'common.view_details' => 'Xem',
     'common.filter' => 'Lọc',
     'common.clear_filter' => 'Xóa lọc',
     'common.back' => 'Quay lại',
@@ -123,6 +124,9 @@ return [
     'appointment.type.regular' => 'Khám mới',
     'appointment.type.reexam' => 'Tái khám',
     'appointment.notes' => 'Ghi chú',
+    'appointment.action.revert_checkin' => 'Hoàn tác Check-in',
+    'appointment.msg.revert_success' => 'Đã hoàn tác check-in thành công!',
+    'appointment.confirm.revert' => 'Bạn có chắc chắn muốn hoàn tác check-in cho khách này? (Hồ sơ bệnh nhân vẫn sẽ được giữ lại)',
 
     // Medical Sessions
     'medical.title' => 'Hồ sơ Bệnh án',
@@ -475,6 +479,9 @@ return [
     'patient.guardian.rel_sibling' => 'Anh/Chị',
     'patient.guardian.rel_other_relative' => 'Người thân khác',
     'patient.info.notes' => 'Ghi chú & Tiểu sử bệnh',
+    'patient.info.personal_notes' => 'Sở thích & Lưu ý riêng',
+    'patient.placeholder.personal_notes' => 'Ví dụ: thích màu hồng, thích được chào đón khi đến, hay quên...',
+    'patient.info.personal_notes_desc' => 'Ghi chú dành cho Tư vấn viên & Lễ tân (Không phải ghi chú y khoa)',
     'patient.placeholder.notes' => 'Nhập các lưu ý đặc biệt hoặc tình trạng bệnh sơ bộ...',
     'common.cancel_action' => 'Hủy bỏ',
     'patient.btn.save_profile' => 'LƯU HỒ SƠ',

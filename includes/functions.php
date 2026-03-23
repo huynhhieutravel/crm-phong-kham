@@ -3,6 +3,8 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/i18n.php';
 
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 /**
  * Escape HTML for output
  */

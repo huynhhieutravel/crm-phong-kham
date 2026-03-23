@@ -63,7 +63,9 @@ $end_hour = 20;
 $time_slots = [];
 for ($h = $start_hour; $h < $end_hour; $h++) {
     $time_slots[] = sprintf("%02d:00", $h);
+    $time_slots[] = sprintf("%02d:15", $h);
     $time_slots[] = sprintf("%02d:30", $h);
+    $time_slots[] = sprintf("%02d:45", $h);
 }
 
 // Status Color Mapping
@@ -88,7 +90,7 @@ function get_status_style($status) {
 
 <style>
 :root {
-    --timeline-row-height: 50px; /* More compact like THEORG */
+    --timeline-row-height: 40px; /* Reduced for 15-min slots */
     --staff-col-width: 200px;
 }
 
@@ -255,7 +257,7 @@ function get_status_style($status) {
 .timeline-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 
-<div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem !important; border-radius: 16px;">
+<div class="card" style="margin-bottom: 0.5rem; padding: 1.25rem !important; border-radius: 16px;">
     <form method="GET" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 1rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid #e2e8f0;">
@@ -293,7 +295,6 @@ function get_status_style($status) {
         </a>
     </div>
 </form>
-</div>
 
 <div class="timeline-container">
 <div class="timeline-header">
@@ -329,15 +330,15 @@ function get_status_style($status) {
                     if ($h < $start_hour || $h >= $end_hour) continue;
                     
                     $offset_minutes = (($h - $start_hour) * 60) + $m;
-                    $top = ($offset_minutes / 30) * 50; // 50px per 30 mins (matches --timeline-row-height)
+                    $top = ($offset_minutes / 15) * 40; // 40px per 15 mins (matches --timeline-row-height)
                     
                     // Calculate duration
-                    $duration = 30; // default
+                    $duration = 15; // default
                     if (!empty($a['appointment_end_time'])) {
                         $et = strtotime(date('Y-m-d', $st) . ' ' . $a['appointment_end_time']);
                         $duration = ($et - $st) / 60;
                     }
-                    $height = ($duration / 30) * 50 - 4; // -4 for margins
+                    $height = ($duration / 15) * 40 - 4; // -4 for margins
                     
                     $style = get_status_style($a['status']);
                 ?>

@@ -16,7 +16,7 @@ $status_filter = $_GET['status'] ?? '';
 $date_filter = $_GET['date'] ?? '';
 $doctor_filter = $_GET['doctor_id'] ?? '';
 $type_filter = $_GET['type'] ?? '';
-$period = $_GET['period'] ?? '';
+$period = $_GET['period'] ?? (empty($_GET) ? 'today' : '');
 $start_date_param = $_GET['start_date'] ?? '';
 $end_date_param = $_GET['end_date'] ?? '';
 $view = 'list'; // Strictly List view for index.php
@@ -156,7 +156,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
 <style>
 .filter-card {
     padding: 1rem !important;
-    margin-bottom: 1.5rem !important;
+    margin-bottom: 0.4rem !important;
     border-radius: 16px !important;
 }
 .filter-grid {
@@ -335,7 +335,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                 </div>
 
             </div>
-            <div style="margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin-top: 0.5rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <?php 
                     $active_filters = [];
@@ -481,7 +481,11 @@ function setPeriod(event, p) {
                             </td>
                             <td style="padding: 1.25rem 1.5rem;">
                                 <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-                                    <?php if ($a['contact_type'] === 'Lead' && $a['status'] !== 'cancelled' && $a['status'] !== 'arrived'): ?>
+                                    <?php 
+                                    $appt_date = date('Y-m-d', strtotime($a['appointment_date']));
+                                    $is_today = $appt_date === date('Y-m-d');
+                                    if ($a['contact_type'] === 'Lead' && $a['status'] !== 'cancelled' && $a['status'] !== 'arrived' && $is_today): 
+                                    ?>
                                         <a href="checkin.php?id=<?php echo $a['id']; ?>" class="btn btn-sm" style="background: #10b981; color: white; padding: 0.5rem 1rem; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
                                             <i class="fas fa-sign-in-alt"></i> <?php echo __('appointment.btn.checkin'); ?>
                                         </a>
@@ -491,12 +495,19 @@ function setPeriod(event, p) {
                                         <button onclick="toggleAction(<?php echo $a['id']; ?>, event)" class="btn btn-sm" style="background: #f1f5f9; color: var(--text-muted); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
-                                        <div id="action-menu-<?php echo $a['id']; ?>" class="action-menu" style="display: none; position: absolute; right: 0; top: 100%; width: 180px; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; padding: 0.5rem; border: 1px solid var(--border-color); margin-top: 0.5rem;">
+                                        <div id="action-menu-<?php echo $a['id']; ?>" class="action-menu" style="display: none; position: absolute; right: 0; top: 100%; min-width: 220px; width: max-content; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1100; padding: 0.5rem; border: 1px solid var(--border-color); margin-top: 0.5rem;">
                                             <a href="view.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-eye"></i> <?php echo __('common.view_details'); ?></a>
                                             <a href="edit.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-edit"></i> <?php echo __('common.edit'); ?></a>
                                             <?php if ($a['patient_id']): ?>
                                                 <a href="../patients/view.php?id=<?php echo $a['patient_id']; ?>" class="action-item"><i class="fas fa-user"></i> <?php echo __('appointment.action.patient_profile'); ?></a>
                                             <?php endif; ?>
+                                            
+                                            <?php if ($a['status'] === 'arrived' && !empty($a['lead_id'])): ?>
+                                                <a href="revert_checkin.php?id=<?php echo $a['id']; ?>" class="action-item" style="color: #f59e0b;" onclick="return confirm('<?php echo __('appointment.confirm.revert'); ?>')">
+                                                    <i class="fas fa-undo"></i> <?php echo __('appointment.action.revert_checkin'); ?>
+                                                </a>
+                                            <?php endif; ?>
+                                            
                                             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
                                             <a href="delete.php?id=<?php echo $a['id']; ?>" class="action-item" style="color: #ef4444;" onclick="return confirm('<?php echo __('appointment.confirm.delete'); ?>')"><i class="fas fa-trash-alt"></i> <?php echo __('appointment.action.delete'); ?></a>
                                         </div>
@@ -553,6 +564,7 @@ function setPeriod(event, p) {
     font-size: 0.85rem;
     font-weight: 600;
     border-radius: 8px;
+    white-space: nowrap;
     transition: all 0.2s;
 }
 .action-item:hover {
@@ -635,7 +647,24 @@ function toggleAction(id, event) {
         if (m.id !== 'action-menu-' + id) m.style.display = 'none';
     });
     
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    if (menu.style.display === 'none' || menu.style.display === '') {
+        menu.style.display = 'block';
+        // Auto-flip if near bottom of viewport
+        const rect = menu.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+            menu.style.top = 'auto';
+            menu.style.bottom = '100%';
+            menu.style.marginTop = '0';
+            menu.style.marginBottom = '0.5rem';
+        } else {
+            menu.style.top = '100%';
+            menu.style.bottom = 'auto';
+            menu.style.marginTop = '0.5rem';
+            menu.style.marginBottom = '0';
+        }
+    } else {
+        menu.style.display = 'none';
+    }
 }
 
 document.addEventListener('click', function() {

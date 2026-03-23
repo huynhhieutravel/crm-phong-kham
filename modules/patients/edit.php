@@ -49,7 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'guardian_id_card' => $_POST['guardian_id_card'] ?: '',
         'guardian_phone' => $_POST['guardian_phone'] ?: '',
         'guardian_relationship' => $_POST['guardian_relationship'] ?: '',
-        'notes' => $_POST['notes'] ?: ''
+        'notes' => $_POST['notes'] ?: '',
+        'personal_notes' => $_POST['personal_notes'] ?: ''
     ];
 
     // Detect available columns
@@ -235,12 +236,19 @@ require_once '../../templates/header.php';
             </div>
         </div>
 
-        <div class="card" style="margin-bottom: 2rem; padding: 2rem;">
             <h3 style="font-size: 1rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem;">
                 <i class="fas fa-sticky-note"></i> <?php echo __('patient.info.notes'); ?>
             </h3>
-            <div class="form-group">
-                <textarea name="notes" class="form-input" rows="4"><?php echo e($p['notes']); ?></textarea>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="form-group">
+                    <label class="form-label" style="color: #6366f1; font-weight: 800;"><?php echo __('medical.record.medical'); ?> (Doctor)</label>
+                    <textarea name="notes" class="form-input" rows="4"><?php echo e($p['notes']); ?></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="color: #db2777; font-weight: 800;"><?php echo __('patient.info.personal_notes'); ?> (Consultant)</label>
+                    <textarea name="personal_notes" class="form-input" rows="4" style="border-color: #fce7f3;"><?php echo e($p['personal_notes']); ?></textarea>
+                    <small style="color: var(--text-muted); font-style: italic;"><?php echo __('patient.info.personal_notes_desc'); ?></small>
+                </div>
             </div>
         </div>
         

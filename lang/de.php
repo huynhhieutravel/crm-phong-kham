@@ -294,7 +294,7 @@ return [
     'lead.status.converted' => 'Konvertiert (Verkauf)',
     'lead.status.junk' => 'Schrott / Ungültig',
     'common.apply' => 'Anwenden',
-    'common.view_details' => 'Details anzeigen',
+    'common.view_details' => 'Ansehen',
     'common.time_colon' => 'Zeit:',
     'appointment.book_title' => 'Termin buchen',
     'patient.list.title' => 'Patientenliste',
