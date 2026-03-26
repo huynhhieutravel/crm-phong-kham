@@ -3,6 +3,8 @@
 session_start();
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('manage_medical');
 
 $patient_id = isset($_GET['patient_id']) ? $_GET['patient_id'] : 0;
 $session_id = isset($_GET['session_id']) ? $_GET['session_id'] : null;

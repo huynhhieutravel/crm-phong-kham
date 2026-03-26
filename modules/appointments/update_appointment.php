@@ -4,6 +4,7 @@ session_start();
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
+require_permission('manage_appointments');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = isset($_POST['id']) ? $_POST['id'] : 0;

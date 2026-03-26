@@ -3,6 +3,8 @@
 session_start();
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('manage_appointments');
 
 // Ensure ID is passed and is a valid integer
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;

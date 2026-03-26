@@ -3,13 +3,8 @@
 session_start();
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
-require_once '../../includes/auth.php';
-
-// Only Admin can access
-if (!has_role('admin')) {
-    set_flash('Bạn không có quyền truy cập trang này.', 'error');
-    redirect('../../index.php');
-}
+require_once '../../includes/auth_middleware.php';
+require_permission('view_audit_logs');
 
 $db = getDB();
 $page_title = __('audit.title') . ' — ' . __('audit_logs');

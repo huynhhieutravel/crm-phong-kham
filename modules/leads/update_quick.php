@@ -3,6 +3,8 @@
 session_start();
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('manage_leads');
 require_once '../../includes/i18n.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

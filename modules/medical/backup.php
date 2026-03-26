@@ -3,6 +3,7 @@
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
+require_permission('manage_medical');
 
 error_reporting(0);
 ini_set('display_errors', 0);

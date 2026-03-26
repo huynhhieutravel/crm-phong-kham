@@ -3,6 +3,7 @@
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
+require_permission('view_leads');
 
 $page_title = __('leads.consultant.title');
 $current_page = 'leads_consultant_stats';

@@ -519,8 +519,10 @@ function setPeriod(event, p) {
                                                 </a>
                                             <?php endif; ?>
                                             
-                                            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
-                                            <a href="delete.php?id=<?php echo $a['id']; ?>" class="action-item" style="color: #ef4444;" onclick="return confirm('<?php echo __('appointment.confirm.delete'); ?>')"><i class="fas fa-trash-alt"></i> <?php echo __('appointment.action.delete'); ?></a>
+                                            <form action="delete.php" method="POST" style="display:inline" onsubmit="return confirm('<?php echo __('appointment.confirm.delete'); ?>')">
+                                                <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
+                                                <button type="submit" class="action-item" style="color: #ef4444; background: none; border: none; cursor: pointer; width: 100%; text-align: left; padding: 0.6rem 0.75rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; border-radius: 8px;"><i class="fas fa-trash-alt" style="width: 16px; text-align: center; font-size: 0.9rem;"></i> <?php echo __('appointment.action.delete'); ?></button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>

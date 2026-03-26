@@ -3,6 +3,7 @@
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
+require_permission('manage_users');
 
 $page_title = 'Quản lý Nhân sự';
 $current_page = 'hr';

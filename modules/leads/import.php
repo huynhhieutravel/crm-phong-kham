@@ -3,6 +3,7 @@
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
+require_permission('manage_leads');
 
 $page_title = "Import Leads (Khách hàng tiềm năng)";
 require_once '../../templates/header.php';

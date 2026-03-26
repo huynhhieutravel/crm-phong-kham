@@ -2,6 +2,8 @@
 // modules/patients/view.php
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('view_patients');
 $page_title = __('patient.detail.title');
 $current_page = 'patients';
 require_once '../../templates/header.php';

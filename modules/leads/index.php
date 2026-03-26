@@ -639,9 +639,12 @@ function setPeriod(p) {
                                 <a href="edit.php?id=<?php echo $l['id']; ?>" class="btn btn-sm" style="background: #f1f5f9; color: var(--text-main); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px;">
                                     <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
                                 </a>
-                                <a href="delete.php?id=<?php echo $l['id']; ?>" class="btn btn-sm" style="background: #fff1f2; color: #e11d48; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px;" onclick="return confirm('<?php echo __('lead.confirm_delete'); ?>')">
-                                    <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
-                                </a>
+                                <form action="delete.php" method="POST" style="display:inline" onsubmit="return confirm('<?php echo __('lead.confirm_delete'); ?>')">
+                                    <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
+                                    <button type="submit" class="btn btn-sm" style="background: #fff1f2; color: #e11d48; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px; border: none; cursor: pointer;">
+                                        <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>

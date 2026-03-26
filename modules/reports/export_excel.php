@@ -2,6 +2,7 @@
 // modules/reports/export_excel.php
 require_once '../../includes/db.php';
 require_once '../../includes/auth_middleware.php';
+require_permission('export_reports');
 
 $db = getDB();
 $month = date('m');
