@@ -318,3 +318,24 @@ function get_patient_label_translation($label) {
     
     return isset($map[$label]) ? __($map[$label]) : $label;
 }
+
+/**
+ * Synchronize and get sticky appointment date
+ */
+function get_sticky_appointment_date() {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    
+    if (isset($_GET['date']) && !empty($_GET['date'])) {
+        // Use provided date and save to session
+        $_SESSION['last_appointment_date'] = $_GET['date'];
+        return $_GET['date'];
+    }
+    
+    // Check session
+    if (isset($_SESSION['last_appointment_date']) && !empty($_SESSION['last_appointment_date'])) {
+        return $_SESSION['last_appointment_date'];
+    }
+    
+    // Default to today
+    return date('Y-m-d');
+}

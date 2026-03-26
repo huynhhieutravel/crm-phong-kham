@@ -11,7 +11,7 @@ require_once '../../templates/header.php';
 
 $db = getDB();
 
-$date_filter = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+$date_filter = get_sticky_appointment_date();
 $role_filter = isset($_GET['role']) ? $_GET['role'] : '';
 
 // Fetch relevant staff (Doctors & Technicians)

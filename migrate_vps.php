@@ -31,10 +31,12 @@ $migrations = [
     'patients' => [
         'branch_id' => "ALTER TABLE patients ADD COLUMN branch_id INT DEFAULT 1",
         'customer_id' => "ALTER TABLE patients ADD COLUMN customer_id VARCHAR(50) NULL",
+        'lead_id' => "ALTER TABLE patients ADD COLUMN lead_id INT NULL",
         'consultant_id' => "ALTER TABLE patients ADD COLUMN consultant_id INT NULL",
         'label' => "ALTER TABLE patients ADD COLUMN label VARCHAR(50) NULL",
         'zalo_number' => "ALTER TABLE patients ADD COLUMN zalo_number VARCHAR(20) NULL",
-        'source' => "ALTER TABLE patients ADD COLUMN source VARCHAR(50) NULL"
+        'source' => "ALTER TABLE patients ADD COLUMN source VARCHAR(50) NULL",
+        'personal_notes' => "ALTER TABLE patients ADD COLUMN personal_notes TEXT NULL"
     ]
 ];
 

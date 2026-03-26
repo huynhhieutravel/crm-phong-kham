@@ -348,7 +348,7 @@ return [
     'common.to' => 'to',
     'dashboard.viewing' => 'Viewing',
     'common.list' => 'List',
-    'common.crm_title' => 'Clinic CRM',
+    'common.crm_title' => 'Simon Center',
     'role.admin' => 'Administrator',
     'role.doctor' => 'Doctor',
     'role.technician' => 'Technician',

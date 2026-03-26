@@ -4,7 +4,7 @@
 <aside class="sidebar">
     <div class="brand">
         <i class="fas fa-hand-holding-medical"></i>
-        <span>CLINIC CRM</span>
+        <span>SIMON CENTER</span>
     </div>
     <nav class="nav-menu">
         <div class="nav-item-wrapper">
@@ -44,7 +44,7 @@
 
         <?php if (can('view_appointments')): ?>
         <div class="nav-item-wrapper">
-            <a href="<?php echo $base_url; ?>modules/appointments/index.php" class="nav-item <?php echo $current_page === 'appointments' ? 'active' : ''; ?>">
+            <a href="<?php echo $base_url; ?>modules/appointments/timeline.php" class="nav-item <?php echo $current_page === 'appointments' ? 'active' : ''; ?>">
                 <i class="fas fa-calendar-check"></i>
                 <span><?php echo __('menu.appointments'); ?></span>
             </a>

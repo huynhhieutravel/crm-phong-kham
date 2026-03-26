@@ -147,8 +147,9 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
         <div class="header">
             <div class="clinic-info">
                 <h1><?php echo __('medical.print.clinic_name'); ?></h1>
+                <p style="font-weight: 600; font-size: 11px;"><?php echo __('medical.print.clinic_intl_name'); ?></p>
+                <p><?php echo __('medical.print.clinic_tax_code'); ?></p>
                 <p><?php echo __('medical.print.clinic_address'); ?></p>
-                <p><?php echo __('medical.print.clinic_contact'); ?></p>
             </div>
             <div style="text-align: right;">
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.session_code_label'); ?><?php echo str_pad($session_id, 6, '0', STR_PAD_LEFT); ?></p>
@@ -164,7 +165,7 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
             <div class="col">
                 <div class="info-item"><label><?php echo __('medical.print.patient_name'); ?></label> <strong><?php echo e($session['patient_name']); ?></strong></div>
                 <div class="info-item"><label><?php echo __('medical.print.dob'); ?></label> <?php echo $session['birthday'] ? date('d/m/Y', strtotime($session['birthday'])) : 'N/A'; ?> <?php echo sprintf(__('medical.print.age_format'), $age); ?></div>
-                <div class="info-item"><label><?php echo __('medical.print.gender_label'); ?></label> <?php echo $session['gender'] === 'male' ? __('common.male') : __('common.female'); ?></div>
+                <div class="info-item"><label><?php echo __('medical.print.gender_label'); ?></label> <?php echo ($session['gender'] === 'male') ? __('patient.male') : __('patient.female'); ?></div>
             </div>
             <div class="col">
                 <div class="info-item"><label><?php echo __('medical.print.phone'); ?></label> <?php echo e($session['phone']); ?></div>

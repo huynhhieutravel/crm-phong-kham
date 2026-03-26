@@ -114,6 +114,72 @@ try {
 
 $prefill_lead_id = $_GET['lead_id'] ?? null;
 $prefill_patient_id = $_GET['patient_id'] ?? null;
+
+// Add Select2 CSS
+?>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+/* Select2 Premium Styling */
+.select2-container {
+    width: 100% !important;
+    display: block;
+}
+.select2-container--default .select2-selection--single {
+    background: rgba(248, 250, 252, 0.8);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    height: 48px;
+    padding-left: 8px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--open .select2-selection--single {
+    background: white;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    outline: none;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #1e293b;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: normal;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 46px;
+    right: 10px;
+}
+.select2-dropdown {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    z-index: 10001; /* Above top bar if needed */
+    background: white;
+}
+.select2-search--dropdown .select2-search__field {
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    padding: 8px 12px;
+    outline: none;
+}
+.select2-results__option--highlighted[aria-selected] {
+    background-color: var(--primary) !important;
+}
+.select2-results__group {
+    font-weight: 800;
+    color: #64748b;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 12px;
+    background: #f8fafc;
+}
+</style>
+<?php
 ?>
 
 <div class="premium-card" style="max-width: 700px; margin: 0 auto;">
@@ -163,7 +229,7 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
         <div class="premium-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
             <div class="form-group">
                 <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;"><?php echo __('appointment.add.customer_label'); ?> <span style="color: #ef4444;">*</span></label>
-                <select name="contact_id" class="form-premium-input" required>
+                <select name="contact_id" id="contact_id" class="form-premium-input" required>
                     <option value=""><?php echo __('appointment.add.select_customer'); ?></option>
                     <optgroup label="<?php echo __('appointment.add.patients_group'); ?>">
                         <?php foreach ($patients as $p): ?>
@@ -576,6 +642,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial check
     checkAvailability();
+
+    // Select2 Initialization
+    if (typeof jQuery !== 'undefined') {
+        $(document).ready(function() {
+            $('#contact_id').select2({
+                placeholder: "<?php echo __('appointment.add.select_customer'); ?>",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    }
+});
+</script>
+
+<!-- Select2 JS and Dependencies -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+// Re-initialize Select2 once scripts are loaded
+$(document).ready(function() {
+    $('#contact_id').select2({
+        placeholder: "<?php echo __('appointment.add.select_customer'); ?>",
+        allowClear: true,
+        width: '100%'
+    });
 });
 </script>
 

@@ -99,7 +99,7 @@ $all_permissions = get_all_permissions();
         <section id="overview" class="guide-section active">
             <h2><i class="fas fa-info-circle text-primary"></i> 1. Tổng quan hệ thống (System Overview)</h2>
             <div class="card">
-                <p>Chào mừng bạn đến với <strong>CLINIC CRM</strong>. Hệ thống được thiết kế để tối ưu hóa quy trình quản lý phòng khám Chiropractic & Đông Y, từ khâu tiếp nhận Marketing đến điều trị chuyên sâu.</p>
+                <p>Chào mừng bạn đến với <strong>Simon Center</strong>. Hệ thống được thiết kế để tối ưu hóa quy trình quản lý phòng khám Chiropractic & Đông Y, từ khâu tiếp nhận Marketing đến điều trị chuyên sâu.</p>
                 
                 <div class="workflow-steps">
                     <div class="step">

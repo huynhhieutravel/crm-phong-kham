@@ -429,14 +429,22 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
                 <?php endif; ?>
             </div>
         </form>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.5rem 1rem; font-weight: 700; font-size: 0.85rem; border-radius: 10px; white-space: nowrap;">
-                <i class="fas fa-plus"></i> <?php echo __('leads.index.btn_add'); ?>
-            </a>
-            <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; background: #f1f5f9; padding: 0.25rem 0.5rem; border-radius: 6px; text-align: center;">
-                <?php echo sprintf(__('leads.index.leads_count'), count($leads)); ?>
-            </p>
-        </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.5rem 1rem; font-weight: 700; font-size: 0.85rem; border-radius: 10px; white-space: nowrap;">
+                    <i class="fas fa-plus"></i> <?php echo __('leads.index.btn_add'); ?>
+                </a>
+                <div style="display: flex; gap: 0.4rem;">
+                    <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Xuất CSV">
+                        <i class="fas fa-file-export"></i> Xuất
+                    </a>
+                    <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Nhập CSV">
+                        <i class="fas fa-file-import"></i> Nhập
+                    </a>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; background: #f1f5f9; padding: 0.25rem 0.5rem; border-radius: 6px; text-align: center;">
+                    <?php echo sprintf(__('leads.index.leads_count'), count($leads)); ?>
+                </p>
+            </div>
     </div>
 </div>
 

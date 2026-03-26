@@ -58,7 +58,7 @@ if ($start_date && $end_date) {
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3 style="font-weight: 700;"><?php echo __('dashboard.recent_appointments'); ?></h3>
-            <a href="/modules/appointments/index.php" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; text-decoration: none;"><?php echo __('common.view_all'); ?> <i class="fas fa-arrow-right"></i></a>
+            <a href="/modules/appointments/timeline.php" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; text-decoration: none;"><?php echo __('common.view_all'); ?> <i class="fas fa-arrow-right"></i></a>
         </div>
         <?php
         $recent_appointments = [];

@@ -213,9 +213,22 @@ $is_filtered = $search || $label || $gender || $period;
                 <?php endif; ?>
             </div>
         </form>
-        <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
-            <i class="fas fa-plus"></i> <?php echo __('common.add_new'); ?>
-        </a>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
+                <i class="fas fa-plus"></i> <?php echo __('common.add_new'); ?>
+            </a>
+            <div style="display: flex; gap: 0.4rem;">
+                <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Xuất CSV">
+                    <i class="fas fa-file-export"></i> Xuất
+                </a>
+                <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Nhập CSV">
+                    <i class="fas fa-file-import"></i> Nhập
+                </a>
+                <a href="../medical/backup.php" class="btn btn-outline-danger" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Sao lưu bệnh án (SQL)">
+                    <i class="fas fa-database"></i> Backup
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 

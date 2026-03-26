@@ -13,7 +13,7 @@ $db = getDB();
 
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
-$date_filter = isset($_GET['date']) ? $_GET['date'] : '';
+$date_filter = get_sticky_appointment_date();
 $doctor_filter = isset($_GET['doctor_id']) ? $_GET['doctor_id'] : '';
 $type_filter = isset($_GET['type']) ? $_GET['type'] : '';
 $view = isset($_GET['view']) ? $_GET['view'] : 'timeline'; 

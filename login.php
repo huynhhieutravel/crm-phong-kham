@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('auth.login_title'); ?> | Clinic CRM</title>
+    <title><?php echo __('auth.login_title'); ?> | Simon Center</title>
     <link rel="stylesheet" href="/assets/css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-card">
         <div class="login-header">
             <i class="fas fa-hand-holding-medical"></i>
-            <h2>Clinic CRM</h2>
+            <h2>Simon Center</h2>
             <p style="color: var(--text-muted); margin-top: 0.5rem;"><?php echo __('auth.login_title'); ?></p>
         </div>
         
