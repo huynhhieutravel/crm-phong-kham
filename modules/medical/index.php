@@ -3,6 +3,7 @@
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
+require_permission('view_medical');
 
 $page_title = __('medical.index.title');
 $current_page = 'medical';

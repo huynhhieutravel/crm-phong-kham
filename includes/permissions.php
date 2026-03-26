@@ -33,8 +33,8 @@ $GLOBALS['_role_permissions'] = [
         'manage_inventory', 'view_inventory',
         'manage_hr', 'view_hr',
         'view_reports', 'export_reports',
+        'manage_users', 'manage_roles',
         'view_audit_logs',
-        'manage_users',
     ],
     'doctor' => [
         'view_patients', 'manage_patients',
@@ -49,14 +49,22 @@ $GLOBALS['_role_permissions'] = [
         'manage_leads', 'view_leads',
         'manage_sales', 'view_sales',
     ],
-    'therapist' => [
+    'technician' => [
         'view_patients',
         'view_appointments',
         'view_medical', 'manage_medical',
     ],
-    'staff' => [
+    'accountant' => [
         'view_patients',
         'view_appointments',
+        'manage_sales', 'view_sales',
+        'view_reports', 'export_reports',
+    ],
+    'cskh' => [
+        'view_patients', 'manage_patients',
+        'manage_appointments', 'view_appointments',
+        'manage_leads', 'view_leads',
+        'view_medical',
     ],
 ];
 

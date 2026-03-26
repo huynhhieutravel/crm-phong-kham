@@ -1,6 +1,9 @@
 <?php
 // modules/hr/index.php
 require_once '../../includes/db.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('view_hr');
 $page_title = 'Nhân sự & Chấm công';
 $current_page = 'hr';
 require_once '../../templates/header.php';

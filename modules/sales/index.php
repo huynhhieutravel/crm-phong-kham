@@ -1,6 +1,9 @@
 <?php
 // modules/sales/index.php
 require_once '../../includes/db.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('view_sales');
 $page_title = 'Gói khách hàng đang sử dụng';
 $current_page = 'sales';
 require_once '../../templates/header.php';

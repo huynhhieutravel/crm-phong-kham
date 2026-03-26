@@ -1,6 +1,8 @@
 <?php
 // modules/reports/index.php — Dashboard Báo cáo Doanh thu
 require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('view_reports');
 $page_title = __('reports') . ' — ' . __('dashboard');
 $current_page = 'reports';
 require_once '../../templates/header.php';

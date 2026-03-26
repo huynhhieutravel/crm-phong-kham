@@ -1,6 +1,9 @@
 <?php
 // modules/inventory/index.php
 require_once '../../includes/db.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('view_inventory');
 $page_title = 'Quản lý Kho vật tư & Hàng hóa';
 $current_page = 'inventory';
 require_once '../../templates/header.php';
