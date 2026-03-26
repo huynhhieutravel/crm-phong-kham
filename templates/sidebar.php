@@ -146,6 +146,10 @@
         </a>
     </nav>
     <div class="sidebar-footer" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+        <a href="<?php echo $base_url; ?>modules/hr/change_password.php" class="nav-item <?php echo $current_page === 'change_password' ? 'active' : ''; ?>" style="color: #94a3b8;">
+            <i class="fas fa-key"></i>
+            <span>Đổi mật khẩu</span>
+        </a>
         <a href="<?php echo $base_url; ?>logout.php" class="nav-item" style="color: #f87171;">
             <i class="fas fa-sign-out-alt"></i>
             <span><?php echo __('menu.logout'); ?></span>

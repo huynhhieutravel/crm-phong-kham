@@ -1,6 +1,9 @@
 <?php
 // modules/sales/config_packages.php
 require_once '../../includes/db.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/auth_middleware.php';
+require_permission('manage_sales');
 $page_title = 'Cấu hình Gói dịch vụ';
 $current_page = 'sales';
 require_once '../../templates/header.php';
