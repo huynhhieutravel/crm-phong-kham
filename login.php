@@ -3,21 +3,51 @@
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 require_once 'includes/functions.php';
-require_once 'includes/i18n.php'; // Add i18n support for login page
+require_once 'includes/i18n.php';
 
 if (is_logged_in()) {
     redirect('/index.php');
 }
 
+// --- Brute-force protection ---
+define('MAX_LOGIN_ATTEMPTS', 5);
+define('LOCKOUT_DURATION', 5 * 60); // 5 phút
+
+if (session_status() === PHP_SESSION_NONE) session_start();
+
 $error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$is_locked = false;
+
+// Kiểm tra lockout
+if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout_until']) {
+    $remaining = $_SESSION['login_lockout_until'] - time();
+    $minutes = ceil($remaining / 60);
+    $is_locked = true;
+    $error = "Tài khoản tạm khóa. Vui lòng thử lại sau {$minutes} phút.";
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     
     if (login($username, $password)) {
+        // Reset đếm khi đăng nhập thành công
+        unset($_SESSION['login_attempts']);
+        unset($_SESSION['login_lockout_until']);
+        $_SESSION['last_activity'] = time();
         redirect('/index.php');
     } else {
-        $error = $auth_login_failed_trans ?? 'Tên đăng nhập hoặc mật khẩu không đúng.';
+        // Tăng đếm thất bại
+        $_SESSION['login_attempts'] = ($_SESSION['login_attempts'] ?? 0) + 1;
+        
+        if ($_SESSION['login_attempts'] >= MAX_LOGIN_ATTEMPTS) {
+            $_SESSION['login_lockout_until'] = time() + LOCKOUT_DURATION;
+            $_SESSION['login_attempts'] = 0;
+            $error = 'Quá nhiều lần đăng nhập thất bại. Tài khoản tạm khóa 5 phút.';
+        } else {
+            $remaining_attempts = MAX_LOGIN_ATTEMPTS - $_SESSION['login_attempts'];
+            $error = "Tên đăng nhập hoặc mật khẩu không đúng. Còn {$remaining_attempts} lần thử.";
+        }
     }
 }
 ?>
@@ -137,14 +167,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST">
             <div class="form-group">
                 <label class="form-label"><?php echo __('auth.username'); ?></label>
-                <input type="text" name="username" class="form-input" required placeholder="admin">
+                <input type="text" name="username" class="form-input" required placeholder="admin" <?php echo $is_locked ? 'disabled' : ''; ?>>
             </div>
             <div class="form-group">
                 <label class="form-label"><?php echo __('auth.password'); ?></label>
-                <input type="password" name="password" class="form-input" required placeholder="••••••••">
+                <input type="password" name="password" class="form-input" required placeholder="••••••••" <?php echo $is_locked ? 'disabled' : ''; ?>>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
-                <?php echo __('auth.login_btn'); ?>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;" <?php echo $is_locked ? 'disabled style="width:100%;justify-content:center;padding:0.8rem;opacity:0.5;cursor:not-allowed;"' : ''; ?>>
+                <?php echo $is_locked ? '<i class="fas fa-lock"></i> Tạm khóa' : __('auth.login_btn'); ?>
             </button>
         </form>
     </div>
