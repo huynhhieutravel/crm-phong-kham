@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $db->prepare("UPDATE medical_history SET history_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->execute([$history_data, $history_id]);
 
-        log_audit($_SESSION['user_id'], 'update', 'medical_history', $history_id, json_decode($old_json, true), $_POST['history'] ?? []);
+        log_audit($_SESSION['user_id'], 'update', 'medical_history', $history_id, json_decode($old_json, true) ?: [], $_POST['history'] ?? []);
     } else {
         $stmt = $db->prepare("
             INSERT INTO medical_history (patient_id, session_id, type, history_data, created_by)
@@ -66,6 +66,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 require_once '../../templates/header.php';
+
+try {
+    $role_cols = $db->query("SHOW COLUMNS FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+    $role_label_col = in_array('display_name', $role_cols) ? 'display_name' : 'name';
+    $tech_staffs = $db->query("
+        SELECT u.id, u.full_name, r.$role_label_col as role_name 
+        FROM users u 
+        JOIN roles r ON u.role_id = r.id 
+        WHERE r.name IN ('technician', 'doctor', 'cskh', 'admin') AND u.status = 'active'
+        ORDER BY r.name = 'technician' DESC, u.full_name ASC
+    ")->fetchAll();
+} catch (Exception $e) {
+    $tech_staffs = [];
+}
+
 
 // Initialize $data for pre-filling
 $data = [];
@@ -326,7 +341,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             <p style="color: var(--text-muted); margin-top: 0.25rem;"><?php echo __('medical.form.patient_label'); ?> <strong style="color: var(--text-main);"><?php echo e($patient_name); ?></strong></p>
         </div>
         <div style="background: rgba(99, 102, 241, 0.1); padding: 0.5rem 1.25rem; border-radius: 50px; color: var(--primary); font-weight: 700; font-size: 0.85rem;">
-            <?php echo __('medical.form.type_' . $type); ?>
+            <?php echo ($type === 'chiropractic') ? 'CHIR-PHYSICAL-EXAM' : __('medical.form.type_' . $type); ?>
         </div>
     </div>
 
@@ -1131,8 +1146,51 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                 </div>
             </div>
 
+            <!-- VII. KỸ THUẬT VIÊN THỰC HIỆN -->
+            <div style="margin-bottom: 3.5rem;">
+                <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-users-cog"></i> <?php echo __('medical.form.tech_info_title'); ?>
+                </h3>
+                <div class="premium-card">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label class="form-label" style="font-weight: 800;"><?php echo __('medical.form.tech_1'); ?></label>
+                            <select name="history[technician_1]" class="form-input" style="height: 48px; border-radius: 12px;">
+                                <option value=""><?php echo __('medical.form.tech_select'); ?></option>
+                                <?php foreach ($tech_staffs as $staff): ?>
+                                    <option value="<?php echo e($staff['id']); ?>" <?php echo ($data['technician_1'] ?? '') == $staff['id'] ? 'selected' : ''; ?>>
+                                        <?php echo e($staff['full_name']); ?> (<?php echo e($staff['role_name']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem; display: block;"><i class="fas fa-info-circle"></i> <?php echo __('medical.form.tech_1_desc'); ?></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-weight: 800;"><?php echo __('medical.form.tech_2'); ?> <span style="font-size: 0.75rem; font-weight: normal; color: #94a3b8;"><?php echo __('medical.form.optional'); ?></span></label>
+                            <select name="history[technician_2]" class="form-input" style="height: 48px; border-radius: 12px;">
+                                <option value=""><?php echo __('medical.form.tech_2_select'); ?></option>
+                                <?php foreach ($tech_staffs as $staff): ?>
+                                    <option value="<?php echo e($staff['id']); ?>" <?php echo ($data['technician_2'] ?? '') == $staff['id'] ? 'selected' : ''; ?>>
+                                        <?php echo e($staff['full_name']); ?> (<?php echo e($staff['role_name']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem; display: block;"><i class="fas fa-info-circle"></i> <?php echo __('medical.form.tech_2_desc'); ?></span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed #e2e8f0;">
+                        <label class="form-label" style="font-weight: 800;"><?php echo __('medical.form.treatment_notes'); ?></label>
+                        <textarea name="history[treatment_notes]" class="form-input" rows="3" placeholder="<?php echo __('medical.form.treatment_notes_ph'); ?>"><?php echo e($data['treatment_notes'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+        <?php elseif ($type === 'chiropractic' || $type === 'initial_exam'): ?>
+            <!-- Chiropractic / V2 Form -->
+            <?php require_once 'forms/chiropractic_v2.php'; ?>
+
         <?php else: ?>
-            <!-- Chiropractic / Generic Sections -->
+            <!-- Fallback Generic Sections -->
             <?php foreach ($questions as $section_key => $options): ?>
                 <div style="margin-bottom: 2.5rem;">
                     <h3 style="font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">

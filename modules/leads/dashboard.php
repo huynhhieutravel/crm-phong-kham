@@ -34,11 +34,11 @@ $stmt->execute($params);
 $status_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $status_map = [
-    'new' => ['label' => 'Tiếp cận mới', 'color' => '#f43f5e'],
-    'contacted' => ['label' => 'Đang chăm sóc', 'color' => '#3b82f6'],
-    'scheduled' => ['label' => 'Đã đặt lịch', 'color' => '#8b5cf6'],
-    'converted' => ['label' => 'Đã chốt xong', 'color' => '#10b981'],
-    'cancelled' => ['label' => 'Tạm ngưng', 'color' => '#94a3b8']
+    'new' => ['label' => __('leads.status.new'), 'color' => '#f43f5e'],
+    'contacted' => ['label' => __('leads.status.contacted'), 'color' => '#3b82f6'],
+    'scheduled' => ['label' => __('leads.status.scheduled'), 'color' => '#8b5cf6'],
+    'converted' => ['label' => __('leads.status.converted'), 'color' => '#10b981'],
+    'cancelled' => ['label' => __('leads.status.cancelled'), 'color' => '#94a3b8']
 ];
 
 // 3. Source Breakdown
@@ -141,7 +141,7 @@ foreach($status_data as $s) if($s['status'] === 'cancelled') $cancelled_count = 
                 <?php if($period === 'month'): ?>
                     <select name="sel_month" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
                         <?php for($m=1; $m<=12; $m++): ?>
-                            <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                            <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>><?php echo __('common.month'); ?> <?php echo $m; ?></option>
                         <?php endfor; ?>
                     </select>
                 <?php endif; ?>
@@ -149,14 +149,14 @@ foreach($status_data as $s) if($s['status'] === 'cancelled') $cancelled_count = 
                 <?php if($period === 'quarter'): ?>
                     <select name="sel_quarter" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
                         <?php for($q=1; $q<=4; $q++): ?>
-                            <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                            <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>><?php echo __('common.quarter'); ?> <?php echo $q; ?></option>
                         <?php endfor; ?>
                     </select>
                 <?php endif; ?>
 
                 <select name="sel_year" class="custom-range-input" style="width: auto; padding: 0.2rem 0.5rem;" onchange="this.form.submit()">
                     <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
-                        <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                        <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>><?php echo __('common.year'); ?> <?php echo $y; ?></option>
                     <?php endfor; ?>
                 </select>
             </div>
@@ -220,7 +220,7 @@ foreach($status_data as $s) if($s['status'] === 'cancelled') $cancelled_count = 
     <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 1.5rem; margin-bottom: 2.5rem;">
         <div style="background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.03);">
             <h3 style="font-size: 1.2rem; font-weight: 800; color: #1e293b; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-chart-line" style="color: #6366f1;"></i> Tăng trưởng Lead Marketing
+                <i class="fas fa-chart-line" style="color: #6366f1;"></i> <?php echo __('leads.dashboard.growth'); ?>
             </h3>
             <div style="height: 380px;">
                 <canvas id="trendChart"></canvas>
@@ -228,7 +228,7 @@ foreach($status_data as $s) if($s['status'] === 'cancelled') $cancelled_count = 
         </div>
         <div style="background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.03);">
             <h3 style="font-size: 1.2rem; font-weight: 800; color: #1e293b; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-chart-pie" style="color: #f43f5e;"></i> Phân loại trạng thái Lead
+                <i class="fas fa-chart-pie" style="color: #f43f5e;"></i> <?php echo __('leads.dashboard.status_distribution'); ?>
             </h3>
             <div style="height: 380px;">
                 <canvas id="statusChart"></canvas>
@@ -239,7 +239,7 @@ foreach($status_data as $s) if($s['status'] === 'cancelled') $cancelled_count = 
     <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
         <div style="background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.03);">
             <h3 style="font-size: 1.2rem; font-weight: 800; color: #1e293b; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-bullhorn" style="color: #a855f7;"></i> Phân bổ theo nguồn thu thập
+                <i class="fas fa-bullhorn" style="color: #a855f7;"></i> <?php echo __('leads.dashboard.chart_source'); ?>
             </h3>
             <div style="height: 300px;">
                 <canvas id="sourceChart"></canvas>
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: [<?php foreach($trend_data as $t) echo "'" . date('d/m', strtotime($t['date'])) . "',"; ?>],
             datasets: [{
-                label: 'Lead mới',
+                label: '<?php echo __('leads.dashboard.new_lead_label'); ?>',
                 data: [<?php foreach($trend_data as $t) echo $t['count'] . ","; ?>],
                 borderColor: '#6366f1',
                 borderWidth: 4,
@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(sourceCtx, {
         type: 'bar',
         data: {
-            labels: [<?php foreach($source_data as $s) echo "'" . ($s['source'] ?: 'Không rõ') . "',"; ?>],
+            labels: [<?php foreach($source_data as $s) echo "'" . ($s['source'] ?: __('leads.dashboard.unknown_source')) . "',"; ?>],
             datasets: [{
                 data: [<?php foreach($source_data as $s) echo $s['count'] . ","; ?>],
                 backgroundColor: '#a855f7',

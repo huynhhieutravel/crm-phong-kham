@@ -36,6 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!empty($data)) {
+        if (in_array('lead_code', $available_cols)) {
+            $data['lead_code'] = generate_lead_code($db);
+        }
         $cols = implode(", ", array_keys($data));
         $placeholders = implode(", ", array_fill(0, count($data), "?"));
         $sql = "INSERT INTO leads ($cols) VALUES ($placeholders)";
@@ -79,11 +82,11 @@ require_once '../../templates/header.php';
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_full_name'); ?> <span style="color: red;">*</span></label>
-                <input type="text" name="full_name" class="form-input" required placeholder="<?php echo __('leads.form.placeholder_name', 'Nguyễn Văn A'); ?>">
+                <input type="text" name="full_name" class="form-input" required placeholder="<?php echo __('leads.form.placeholder_name'); ?>">
             </div>
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_phone'); ?> <span style="color: red;">*</span></label>
-                <input type="text" name="phone" class="form-input" required placeholder="<?php echo __('leads.form.placeholder_phone', '0912345678'); ?>">
+                <input type="text" name="phone" class="form-input" required placeholder="<?php echo __('leads.form.placeholder_phone'); ?>">
             </div>
             <div class="grid grid-2">
                 <div class="form-group">
@@ -101,7 +104,7 @@ require_once '../../templates/header.php';
             </div>
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_email'); ?></label>
-                <input type="email" name="email" class="form-input" placeholder="<?php echo __('leads.form.placeholder_email', 'example@gmail.com'); ?>">
+                <input type="email" name="email" class="form-input" placeholder="<?php echo __('leads.form.placeholder_email'); ?>">
             </div>
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_source'); ?></label>
@@ -114,7 +117,7 @@ require_once '../../templates/header.php';
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_consultant'); ?></label>
                 <select name="consultant_id" class="form-input">
-                    <option value=""><?php echo __('leads.form.label_consultant_placeholder', '-- Chọn tư vấn viên --'); ?></option>
+                    <option value=""><?php echo __('leads.form.label_consultant_placeholder'); ?></option>
                     <?php foreach ($consultants as $con): ?>
                         <option value="<?php echo $con['id']; ?>"><?php echo e($con['full_name']); ?></option>
                     <?php endforeach; ?>
@@ -123,7 +126,7 @@ require_once '../../templates/header.php';
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_medical_group'); ?></label>
                 <select name="medical_group" class="form-input">
-                    <option value=""><?php echo __('leads.form.label_medical_group_placeholder', '-- Chọn nhóm bệnh --'); ?></option>
+                    <option value=""><?php echo __('leads.form.label_medical_group_placeholder'); ?></option>
                     <?php foreach ($medical_groups as $val => $key): ?>
                         <option value="<?php echo $val; ?>"><?php echo __($key); ?></option>
                     <?php endforeach; ?>
@@ -132,25 +135,25 @@ require_once '../../templates/header.php';
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_status'); ?></label>
                 <select name="status" class="form-input">
-                    <option value="new">Mới</option>
-                    <option value="contacted">Đã liên hệ</option>
-                    <option value="scheduled">Đã đặt lịch</option>
-                    <option value="converted">Đã chuyển đổi</option>
-                    <option value="cancelled">Đã hủy</option>
+                    <option value="new"><?php echo __('leads.status.new'); ?></option>
+                    <option value="contacted"><?php echo __('leads.status.contacted'); ?></option>
+                    <option value="scheduled"><?php echo __('leads.status.scheduled'); ?></option>
+                    <option value="converted"><?php echo __('leads.status.converted'); ?></option>
+                    <option value="cancelled"><?php echo __('leads.status.cancelled'); ?></option>
                 </select>
             </div>
         </div>
 
         <div class="form-group" style="margin-top: 1.5rem;">
-            <label class="form-label">Ghi chú</label>
-            <textarea name="notes" class="form-input" rows="3" placeholder="Ghi chú về tình trạng, nhu cầu của khách..."></textarea>
+            <label class="form-label"><?php echo __('leads.form.label_notes'); ?></label>
+            <textarea name="notes" class="form-input" rows="3" placeholder="<?php echo __('leads.form.placeholder_notes'); ?>"></textarea>
         </div>
         
         <div style="margin-top: 2.5rem; display: flex; gap: 1rem;">
             <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem; font-weight: 700;">
-                <i class="fas fa-save"></i> Lưu hồ sơ Lead
+                <i class="fas fa-save"></i> <?php echo __('leads.form.btn_save_profile'); ?>
             </button>
-            <a href="index.php" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 0.8rem 2rem;">Hủy bỏ</a>
+            <a href="index.php" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 0.8rem 2rem;"><?php echo __('leads.form.btn_cancel'); ?></a>
         </div>
     </form>
 </div>

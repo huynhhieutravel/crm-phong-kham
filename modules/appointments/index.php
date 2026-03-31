@@ -124,7 +124,7 @@ try {
         SELECT u.id, u.full_name, r.$role_label_col as role_name 
         FROM users u 
         JOIN roles r ON u.role_id = r.id 
-        WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
+        WHERE r.name IN ('doctor', 'technician', 'cskh', 'admin') AND u.status = 'active'
         ORDER BY r.name = 'doctor' DESC, u.full_name ASC
     ");
     $doctors = $doctors_stmt->fetchAll();

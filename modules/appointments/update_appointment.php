@@ -29,27 +29,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($appt && $appt['type'] === 're_exam') {
                 // If there's a specific rule ID or just use an active one
                 $rule_id = $appt['reexam_rule_id'];
+                $frequency = 0;
+                $frequency_type = 'months';
+                
                 if (!$rule_id) {
-                    $stmt = $db->prepare("SELECT id, frequency FROM reexam_rules WHERE patient_id = ? LIMIT 1");
+                    $stmt = $db->prepare("SELECT id, frequency, frequency_type FROM reexam_rules WHERE patient_id = ? LIMIT 1");
                     $stmt->execute([$appt['patient_id']]);
                     $rule = $stmt->fetch();
                     if ($rule) {
                         $rule_id = $rule['id'];
                         $frequency = $rule['frequency'];
+                        $frequency_type = $rule['frequency_type'];
                     }
                 } else {
-                    $stmt = $db->prepare("SELECT frequency FROM reexam_rules WHERE id = ?");
+                    $stmt = $db->prepare("SELECT frequency, frequency_type FROM reexam_rules WHERE id = ?");
                     $stmt->execute([$rule_id]);
-                    $frequency = $stmt->fetchColumn();
+                    $r_data = $stmt->fetch();
+                    if ($r_data) {
+                        $frequency = $r_data['frequency'];
+                        $frequency_type = $r_data['frequency_type'];
+                    }
                 }
 
                 if ($rule_id) {
                     if ($frequency > 0) {
+                        $interval_map = ['days' => 'DAY', 'weeks' => 'WEEK', 'months' => 'MONTH'];
+                        $interval_unit = isset($interval_map[$frequency_type]) ? $interval_map[$frequency_type] : 'MONTH';
+
                         $db->prepare("
                             UPDATE reexam_rules 
                             SET current_session = current_session + 1,
                                 last_reexam_at = CURDATE(),
-                                next_due_at = DATE_ADD(CURDATE(), INTERVAL ? MONTH)
+                                next_due_at = DATE_ADD(CURDATE(), INTERVAL ? {$interval_unit})
                             WHERE id = ?
                         ")->execute([$frequency, $rule_id]);
                     } else {

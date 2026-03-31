@@ -57,6 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'personal_notes' => $_POST['personal_notes'] ?: ''
     ];
 
+    // Auto-generate Customer ID / Patient Code if not provided
+    if (empty($optionals['customer_id'])) {
+        $optionals['customer_id'] = generate_patient_code();
+    }
+
     // Detect available columns
     $available_cols = $db->query("SHOW COLUMNS FROM patients")->fetchAll(PDO::FETCH_COLUMN);
     $data = [];
@@ -108,7 +113,7 @@ require_once '../../templates/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.customer_id_opt'); ?></label>
-                    <input type="text" name="customer_id" class="form-input" placeholder="<?php echo __('patient.placeholder.customer_id'); ?>">
+                    <input type="text" name="customer_id" class="form-input" placeholder="Để trống hệ thống sẽ tự sinh mã (VD: 2603-0001)">
                 </div>
                 
                 <div class="form-group">

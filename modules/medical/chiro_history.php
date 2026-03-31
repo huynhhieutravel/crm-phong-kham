@@ -17,6 +17,32 @@ if ($record_id) {
     $stmt->execute([$record_id]);
     $json = $stmt->fetchColumn();
     $existing_data = json_decode($json, true) ?: [];
+
+    // MIGRATION: Move old global details into the first selected location
+    if (!isset($existing_data['pathology']['details']) && !empty($existing_data['pathology']['locations'])) {
+        $first_loc = $existing_data['pathology']['locations'][0];
+        $existing_data['pathology']['details'] = [];
+        $existing_data['pathology']['details'][$first_loc] = [
+            'nature' => $existing_data['pathology']['nature'] ?? [],
+            'triggers' => $existing_data['pathology']['triggers'] ?? [],
+            'intensity' => $existing_data['pathology']['intensity'] ?? 5,
+            'duration' => $existing_data['pathology']['duration'] ?? '',
+            'activating_causes' => $existing_data['pathology']['activating_causes'] ?? [],
+            'description' => $existing_data['pathology']['description'] ?? ''
+        ];
+    }
+}
+
+function get_detail_v($loc, $key, $default = '') {
+    global $existing_data;
+    return $existing_data['pathology']['details'][$loc][$key] ?? $default;
+}
+
+function checked_detail_v($loc, $key, $value) {
+    global $existing_data;
+    $val = $existing_data['pathology']['details'][$loc][$key] ?? null;
+    if (is_array($val)) return in_array($value, $val) ? 'checked' : '';
+    return $val === $value ? 'checked' : '';
 }
 
 function get_v($path, $default = '') {
@@ -190,9 +216,11 @@ require_once '../../templates/header.php';
                         'Khớp Cổ chân'                     => __('medical.exam.joint_ankle'),
                         'Khác'                             => __('common.other')
                     ];
-                    foreach ($loc_options as $val => $label): ?>
+                    foreach ($loc_options as $val => $label): 
+                        $target_id = 'detail-' . md5($val);
+                    ?>
                         <label class="checkbox-tag">
-                            <input type="checkbox" name="exam[pathology][locations][]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.locations', $val); ?>>
+                            <input type="checkbox" name="exam[pathology][locations][]" value="<?php echo $val; ?>" class="loc-checkbox" data-target="<?php echo $target_id; ?>" <?php echo checked_v('pathology.locations', $val); ?>>
                             <span><?php echo $label; ?></span>
                         </label>
                     <?php endforeach; ?>
@@ -200,98 +228,110 @@ require_once '../../templates/header.php';
                 </div>
             </div>
 
-            <div id="pain-details-section" style="display: none;">
-                <div class="form-group" style="margin-bottom: 2.5rem;">
-                    <label class="form-label"><?php echo __('medical.history.pain_nature_label'); ?></label>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
-                    <?php 
-                    $nature_options = [
-                        'Đau nhói'          => __('medical.history.pain_nature_sharp'),
-                        'Đau âm ỉ'          => __('medical.history.pain_nature_dull'),
-                        'Tê bì'            => __('medical.history.pain_nature_numb'),
-                        'Yêu cơ'           => __('medical.history.pain_nature_weak'),
-                        'Hạn chế vận động' => __('medical.history.pain_nature_limited')
-                    ];
-                    foreach ($nature_options as $val => $label): ?>
-                        <label class="checkbox-tag">
-                            <input type="checkbox" name="exam[pathology][nature][]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.nature', $val); ?>>
-                            <span><?php echo $label; ?></span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
+            <div id="dynamic-pain-details-container">
+                <?php foreach ($loc_options as $loc_val => $loc_label): 
+                    $target_id = 'detail-' . md5($loc_val);
+                    $rand_id = substr(md5($loc_val), 0, 5); // required for sliders
+                ?>
+                <div id="<?php echo $target_id; ?>" class="location-detail-card" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.5rem; margin-top: 1.5rem; margin-bottom: 2rem;">
+                    <h4 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 2rem; text-transform: uppercase;">
+                        <i class="fas fa-map-pin"></i> CHI TIẾT VỊ TRÍ: <?php echo $loc_label; ?>
+                    </h4>
 
-            <div class="form-group" style="margin-bottom: 2.5rem;">
-                <label class="form-label"><?php echo __('medical.history.pain_triggers_label'); ?></label>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
-                    <?php 
-                    $trigger_options = [
-                        'Đi bộ'          => __('medical.history.trigger_walk'),
-                        'Ngồi lâu'       => __('medical.history.trigger_sit'),
-                        'Đứng lâu'       => __('medical.history.trigger_stand'),
-                        'Lúc ngủ'        => __('medical.history.trigger_sleep'),
-                        'Sau khi ngủ dậy' => __('medical.history.trigger_wake'),
-                        'Vận động mạnh'  => __('medical.history.trigger_active')
-                    ];
-                    foreach ($trigger_options as $val => $label): ?>
-                        <label class="checkbox-tag">
-                            <input type="checkbox" name="exam[pathology][triggers][]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.triggers', $val); ?>>
-                            <span><?php echo $label; ?></span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                <div class="form-group">
-                    <label class="form-label"><?php echo __('medical.history.pain_intensity_label'); ?></label>
-                    <div style="display: flex; align-items: center; gap: 1.5rem; margin-top: 1.5rem;">
-                        <span style="color: #10b981; font-weight: 700;">0</span>
-                        <input type="range" name="exam[pathology][intensity]" min="0" max="10" value="<?php echo get_v('pathology.intensity', 5); ?>" class="slider" style="flex-grow: 1;" oninput="document.getElementById('pain-val').innerText = this.value">
-                        <span style="color: #ef4444; font-weight: 700;">10</span>
-                        <span id="pain-val" style="background: var(--primary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;"><?php echo get_v('pathology.intensity', 5); ?></span>
+                    <div class="form-group" style="margin-bottom: 2.5rem;">
+                        <label class="form-label"><?php echo __('medical.history.pain_nature_label'); ?></label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
+                            <?php 
+                            $nature_options = [
+                                'Đau nhói'          => __('medical.history.pain_nature_sharp'),
+                                'Đau âm ỉ'          => __('medical.history.pain_nature_dull'),
+                                'Tê bì'            => __('medical.history.pain_nature_numb'),
+                                'Yêu cơ'           => __('medical.history.pain_nature_weak'),
+                                'Hạn chế vận động' => __('medical.history.pain_nature_limited')
+                            ];
+                            foreach ($nature_options as $val => $label): ?>
+                                <label class="checkbox-tag">
+                                    <input type="checkbox" name="exam[pathology][details][<?php echo $loc_val; ?>][nature][]" value="<?php echo $val; ?>" <?php echo checked_detail_v($loc_val, 'nature', $val); ?>>
+                                    <span><?php echo $label; ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label"><?php echo __('medical.history.symptom_duration_label'); ?></label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
-                        <?php 
-                        $duration_options = [
-                            'Cấp tính (vài ngày)'      => __('medical.history.duration_acute'),
-                            'Mạn tính (vài tháng/năm)' => __('medical.history.duration_chronic'),
-                            'Tái phát nhiều lần'      => __('medical.history.duration_recurrent')
-                        ];
-                        foreach ($duration_options as $val => $label): ?>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
-                                <input type="radio" name="exam[pathology][duration]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.duration', $val); ?>> <?php echo $label; ?>
-                            </label>
-                        <?php endforeach; ?>
+
+                    <div class="form-group" style="margin-bottom: 2.5rem;">
+                        <label class="form-label"><?php echo __('medical.history.pain_triggers_label'); ?></label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
+                            <?php 
+                            $trigger_options = [
+                                'Đi bộ'          => __('medical.history.trigger_walk'),
+                                'Ngồi lâu'       => __('medical.history.trigger_sit'),
+                                'Đứng lâu'       => __('medical.history.trigger_stand'),
+                                'Lúc ngủ'        => __('medical.history.trigger_sleep'),
+                                'Sau khi ngủ dậy' => __('medical.history.trigger_wake'),
+                                'Vận động mạnh'  => __('medical.history.trigger_active')
+                            ];
+                            foreach ($trigger_options as $val => $label): ?>
+                                <label class="checkbox-tag">
+                                    <input type="checkbox" name="exam[pathology][details][<?php echo $loc_val; ?>][triggers][]" value="<?php echo $val; ?>" <?php echo checked_detail_v($loc_val, 'triggers', $val); ?>>
+                                    <span><?php echo $label; ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="form-group">
-                <label class="form-label"><?php echo __('medical.history.activating_causes_label'); ?></label>
-                <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
-                    <?php 
-                    $cause_options = [
-                        'Ngã/Va chạm' => __('medical.history.cause_fall'),
-                        'Tai nạn xe'  => __('medical.history.cause_accident'),
-                        'Tự nhiên bị' => __('medical.history.cause_natural')
-                    ];
-                    foreach ($cause_options as $val => $label): ?>
-                        <label class="checkbox-tag">
-                            <input type="checkbox" name="exam[pathology][activating_causes][]" value="<?php echo $val; ?>" <?php echo checked_v('pathology.activating_causes', $val); ?>>
-                            <span><?php echo $label; ?></span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
+                        <div class="form-group">
+                            <label class="form-label"><?php echo __('medical.history.pain_intensity_label'); ?></label>
+                            <div style="display: flex; align-items: center; gap: 1.5rem; margin-top: 1.5rem;">
+                                <span style="color: #10b981; font-weight: 700;">0</span>
+                                <input type="range" name="exam[pathology][details][<?php echo $loc_val; ?>][intensity]" min="0" max="10" value="<?php echo get_detail_v($loc_val, 'intensity', 5); ?>" class="slider dynamic-slider" data-val-id="pain-val-<?php echo $rand_id; ?>" style="flex-grow: 1;">
+                                <span style="color: #ef4444; font-weight: 700;">10</span>
+                                <span id="pain-val-<?php echo $rand_id; ?>" style="background: var(--primary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;"><?php echo get_detail_v($loc_val, 'intensity', 5); ?></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><?php echo __('medical.history.symptom_duration_label'); ?></label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
+                                <?php 
+                                $duration_options = [
+                                    'Cấp tính (vài ngày)'      => __('medical.history.duration_acute'),
+                                    'Mạn tính (vài tháng/năm)' => __('medical.history.duration_chronic'),
+                                    'Tái phát nhiều lần'      => __('medical.history.duration_recurrent')
+                                ];
+                                foreach ($duration_options as $val => $label): ?>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+                                        <input type="radio" name="exam[pathology][details][<?php echo $loc_val; ?>][duration]" value="<?php echo $val; ?>" <?php echo checked_detail_v($loc_val, 'duration', $val); ?>> <?php echo $label; ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label"><?php echo __('medical.history.description_label'); ?></label>
-                <textarea name="exam[pathology][description]" class="form-input" rows="4" placeholder="<?php echo __('medical.history.description_placeholder'); ?>"><?php echo get_v('pathology.description'); ?></textarea>
-            </div>
+                    <div class="form-group" style="margin-bottom: 2.5rem;">
+                        <label class="form-label"><?php echo __('medical.history.activating_causes_label'); ?></label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
+                            <?php 
+                            $cause_options = [
+                                'Ngã/Va chạm' => __('medical.history.cause_fall'),
+                                'Tai nạn xe'  => __('medical.history.cause_accident'),
+                                'Tự nhiên bị' => __('medical.history.cause_natural')
+                            ];
+                            foreach ($cause_options as $val => $label): ?>
+                                <label class="checkbox-tag">
+                                    <input type="checkbox" name="exam[pathology][details][<?php echo $loc_val; ?>][activating_causes][]" value="<?php echo $val; ?>" <?php echo checked_detail_v($loc_val, 'activating_causes', $val); ?>>
+                                    <span><?php echo $label; ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><?php echo __('medical.history.description_label'); ?></label>
+                        <textarea name="exam[pathology][details][<?php echo $loc_val; ?>][description]" class="form-input" rows="4" placeholder="<?php echo __('medical.history.description_placeholder'); ?>"><?php echo get_detail_v($loc_val, 'description'); ?></textarea>
+                    </div>
+                </div> <!-- CLOSE location-detail-card -->
+                <?php endforeach; ?>
+            </div> <!-- CLOSE dynamic pain details container -->
 
             <!-- SƠ ĐỒ ĐIỂM ĐAU / CẢNH BÁO -->
             <div style="margin-top: 3rem; margin-bottom: 3rem;">
@@ -343,9 +383,8 @@ require_once '../../templates/header.php';
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- PART 3: TIỀN SỬ Y KHOA & CHẤN THƯƠNG -->
+        <!-- PART 3: TIỀN SỬ Y KHOA & CHẤN THƯƠNG -->
         <div style="margin-bottom: 4rem;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
                 <i class="fas fa-history"></i> <?php echo __('medical.history.part3_title'); ?>
@@ -776,11 +815,28 @@ require_once '../../templates/header.php';
 
 <script src="../../assets/js/medical_marking.js"></script>
 <script>
-function togglePainDetails() {
-    const locations = document.querySelectorAll('input[name="exam[pathology][locations][]"]:checked');
-    const section = document.getElementById('pain-details-section');
+function initPainDetailsLogic() {
+    const locCheckboxes = document.querySelectorAll('.loc-checkbox');
+    locCheckboxes.forEach(input => {
+        // Run once on load
+        toggleSpecificPainDetail(input);
+        
+        // Add event listener for change
+        input.addEventListener('change', function() {
+            toggleSpecificPainDetail(this);
+        });
+    });
+}
+
+function toggleSpecificPainDetail(inputEl) {
+    const targetId = inputEl.getAttribute('data-target');
+    const section = document.getElementById(targetId);
     if (section) {
-        section.style.display = locations.length > 0 ? 'block' : 'none';
+        if (inputEl.checked) {
+            section.style.display = 'block';
+        } else {
+            section.style.display = 'none';
+        }
     }
 }
 
@@ -792,21 +848,19 @@ document.addEventListener('DOMContentLoaded', () => {
         '../../assets/images/anatomy_4_views_clean.png'
     );
 
-    // Visibility logic
-    const locationCheckboxes = document.querySelectorAll('input[name="exam[pathology][locations][]"]');
-    locationCheckboxes.forEach(input => {
-        input.addEventListener('change', togglePainDetails);
+    // Initialize the dynamic sub-forms
+    initPainDetailsLogic();
+    
+    // Sliders
+    const sliders = document.querySelectorAll('.dynamic-slider');
+    sliders.forEach(slider => {
+        slider.addEventListener('input', function() {
+            const targetId = this.getAttribute('data-val-id');
+            const valEl = document.getElementById(targetId);
+            if(valEl) valEl.textContent = this.value;
+        });
     });
-    togglePainDetails();
 });
-
-const slider = document.querySelector('.slider');
-if (slider) {
-    slider.addEventListener('input', function() {
-        const val = document.getElementById('pain-val');
-        if(val) val.textContent = this.value;
-    });
-}
 </script>
 
 <?php require_once '../../templates/footer.php'; ?>

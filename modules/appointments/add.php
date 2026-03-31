@@ -105,7 +105,7 @@ try {
         SELECT u.id, u.full_name, r.$role_label_col as role_name 
         FROM users u 
         JOIN roles r ON u.role_id = r.id 
-        WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
+        WHERE r.name IN ('doctor', 'technician', 'cskh', 'admin') AND u.status = 'active'
         ORDER BY r.name = 'doctor' DESC, u.full_name ASC
     ")->fetchAll();
 } catch (Exception $e) {
@@ -119,7 +119,18 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
 // Add Select2 CSS
 ?>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
+/* Flatpickr Premium Styling */
+.flatpickr-calendar {
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+}
+.flatpickr-day.selected {
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
 /* Select2 Premium Styling */
 .select2-container {
     width: 100% !important;
@@ -286,7 +297,7 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
         <div class="premium-grid" style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
             <div class="form-group">
                 <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase;"><?php echo __('appointment.add.date_label'); ?> <span style="color: #ef4444;">*</span></label>
-                <input type="date" name="appointment_date" id="appointment_date" class="form-premium-input" required value="<?php echo date('Y-m-d'); ?>">
+                <input type="text" name="appointment_date" id="appointment_date" class="form-premium-input" required value="<?php echo date('Y-m-d'); ?>" placeholder="dd/mm/yyyy">
                 
                 <div class="quick-date-btns" style="display: flex; gap: 0.35rem; margin-top: 0.75rem;">
                     <button type="button" class="q-date-btn" onclick="addDays(7)">+7N</button>
@@ -652,6 +663,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 allowClear: true,
                 width: '100%'
             });
+
+            // Initialize Flatpickr
+            flatpickr("#appointment_date", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                locale: "vn",
+                disableMobile: "true",
+                onChange: function(selectedDates, dateStr, instance) {
+                    checkAvailability();
+                }
+            });
         });
     }
 });
@@ -660,6 +683,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Select2 JS and Dependencies -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
 <script>
 // Re-initialize Select2 once scripts are loaded
 $(document).ready(function() {

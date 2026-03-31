@@ -11,16 +11,22 @@ $apt_statuses = [];
 
 if ($start_date && $end_date) {
     try {
-        $new_patients = $db->query("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
-    } catch (Exception $e) {}
+        $stmt_np = $db->prepare("SELECT COUNT(*) FROM patients WHERE DATE(created_at) BETWEEN ? AND ?");
+        $stmt_np->execute([$start_date, $end_date]);
+        $new_patients = $stmt_np->fetchColumn();
+    } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
-        $total_sessions = $db->query("SELECT COUNT(*) FROM medical_sessions WHERE session_date BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
-    } catch (Exception $e) {}
+        $stmt_ts = $db->prepare("SELECT COUNT(*) FROM medical_sessions WHERE DATE(session_date) BETWEEN ? AND ?");
+        $stmt_ts->execute([$start_date, $end_date]);
+        $total_sessions = $stmt_ts->fetchColumn();
+    } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
-        $completed_appointments = $db->query("SELECT COUNT(*) FROM appointments WHERE status = 'completed' AND appointment_date BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
-    } catch (Exception $e) {}
+        $stmt_ca = $db->prepare("SELECT COUNT(*) FROM appointments WHERE status = 'completed' AND DATE(appointment_date) BETWEEN ? AND ?");
+        $stmt_ca->execute([$start_date, $end_date]);
+        $completed_appointments = $stmt_ca->fetchColumn();
+    } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
         // 2. Patient Labels Data
@@ -106,7 +112,7 @@ if ($start_date && $end_date) {
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     // 1. Patient Labels Chart
     new Chart(document.getElementById('labelChart'), {
         type: 'pie',
@@ -124,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('aptStatusChart'), {
         type: 'doughnut',
         data: {
-            labels: <?php echo json_encode(array_map(fn($s) => __('status.' . $s), array_column($apt_statuses, 'status'))); ?>,
+            labels: <?php echo json_encode(array_map(fn($s) => $s ? __('appointment.status.' . $s) : 'Unknown', array_column($apt_statuses, 'status'))); ?>,
             datasets: [{
                 data: <?php echo json_encode(array_column($apt_statuses, 'count')); ?>,
                 backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981', '#ef4444']
@@ -164,5 +170,5 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});
+})();
 </script>

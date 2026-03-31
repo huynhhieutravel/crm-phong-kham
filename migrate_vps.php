@@ -37,6 +37,9 @@ $migrations = [
         'zalo_number' => "ALTER TABLE patients ADD COLUMN zalo_number VARCHAR(20) NULL",
         'source' => "ALTER TABLE patients ADD COLUMN source VARCHAR(50) NULL",
         'personal_notes' => "ALTER TABLE patients ADD COLUMN personal_notes TEXT NULL"
+    ],
+    'users' => [
+        'sort_order' => "ALTER TABLE users ADD COLUMN sort_order INT DEFAULT 0"
     ]
 ];
 

@@ -58,29 +58,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("session_view.php?id=$session_id");
     }
 
-    $assessment = isset($_POST['assessment']) ? $_POST['assessment'] : '';
-    $plan = isset($_POST['treatment_plan']) ? $_POST['treatment_plan'] : '';
-    $status = isset($_POST['complete']) ? 'completed' : $session['status'];
+    $can_edit_summary = (has_role('doctor') || has_role('admin'));
+    $assessment = (isset($_POST['assessment']) && $can_edit_summary) ? $_POST['assessment'] : $session['assessment'];
+    $plan = (isset($_POST['treatment_plan']) && $can_edit_summary) ? $_POST['treatment_plan'] : $session['treatment_plan'];
+    $doctor_id = isset($_POST['doctor_id']) ? (int)$_POST['doctor_id'] : $session['doctor_id'];
+    $status = $session['status'];
+    
+    // Status complete logic
+    if (isset($_POST['complete'])) {
+        if (!$can_edit_summary) {
+            set_flash(__('medical.session.err_complete_doctor_only'), 'error');
+            header("Location: session_view.php?id=$session_id");
+            exit;
+        }
+        $status = 'completed';
+    }
 
     // Audit Logging for Data changes
     $old_data = [
         'assessment' => $session['assessment'],
         'treatment_plan' => $session['treatment_plan'],
-        'status' => $session['status']
+        'status' => $session['status'],
+        'doctor_id' => $session['doctor_id']
     ];
     $new_data = [
         'assessment' => $assessment,
         'treatment_plan' => $plan,
-        'status' => $status
+        'status' => $status,
+        'doctor_id' => $doctor_id
     ];
 
     if ($old_data !== $new_data) {
         $stmt = $db->prepare("
             UPDATE medical_sessions 
-            SET assessment = ?, treatment_plan = ?, status = ?
+            SET assessment = ?, treatment_plan = ?, status = ?, doctor_id = ?
             WHERE id = ?
         ");
-        $stmt->execute([$assessment, $plan, $status, $session_id]);
+        $stmt->execute([$assessment, $plan, $status, $doctor_id, $session_id]);
         
         log_audit($_SESSION['user_id'], 'update', 'medical_sessions', $session_id, $old_data, $new_data);
         set_flash(__('medical.session.msg_updated'));
@@ -105,11 +119,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // 3. Locking Variable
 $is_locked = ($session['status'] === 'completed' && !has_role('admin'));
+$can_edit_summary = (has_role('doctor') || has_role('admin'));
 
 // 4. Fetch component status
 $stmt = $db->prepare("SELECT type, id FROM medical_history WHERE session_id = ?");
 $stmt->execute([$session_id]);
 $history_records = $stmt->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
+
+// Lấy Tiền sử bệnh Chiropractic của bệnh nhân (bất kể buổi khám nào)
+$stmt_chiro_hist = $db->prepare("SELECT id FROM medical_history WHERE patient_id = ? AND type = 'chiro_history' ORDER BY id DESC LIMIT 1");
+$stmt_chiro_hist->execute([$session['patient_id']]);
+$patient_chiro_history_id = $stmt_chiro_hist->fetchColumn();
+if ($patient_chiro_history_id && !isset($history_records['chiro_history'])) {
+    $history_records['chiro_history'] = ['id' => $patient_chiro_history_id];
+}
+
+// Lấy Phiếu Đông Y gần nhất của bệnh nhân
+$stmt_latest_dong_y = $db->prepare("
+    SELECT h.id, h.created_at, u.full_name as doctor_name 
+    FROM medical_history h 
+    LEFT JOIN users u ON h.created_by = u.id 
+    WHERE h.patient_id = ? AND h.type = 'dong_y' 
+    ORDER BY h.id DESC LIMIT 1
+");
+$stmt_latest_dong_y->execute([$session['patient_id']]);
+$latest_dong_y = $stmt_latest_dong_y->fetch(PDO::FETCH_ASSOC);
 
 $stmt = $db->prepare("SELECT id FROM treatments WHERE session_id = ?");
 $stmt->execute([$session_id]);
@@ -178,15 +212,102 @@ require_once '../../templates/header.php';
 
             <?php
                 $components = [
-                    'chiro_exam'    => ['label' => __('medical.type.chiro_exam_full'), 'url' => 'chiro_exam.php', 'icon' => 'fa-stethoscope'],
-                    'chiro_history' => ['label' => __('medical.type.chiro_history_full'), 'url' => 'chiro_history.php', 'icon' => 'fa-hospital-user'],
-                    'chiropractic'  => ['label' => __('medical.type.chiropractic_full'), 'url' => 'follow_up.php', 'icon' => 'fa-notes-medical'],
+                    'chiropractic'  => ['label' => __('medical.type.chiro_exam_full'), 'url' => 'form.php?type=chiropractic', 'icon' => 'fa-notes-medical'],
                     'dong_y'        => ['label' => __('medical.type.dong_y_full'), 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
                     'treatment'     => ['label' => __('medical.type.treatment_full'), 'url' => 'add_treatment.php', 'icon' => 'fa-file-signature']
                 ];
+            ?>
 
-            foreach ($components as $type => $info):
-                $is_done = ($type === 'treatment') ? !empty($treatment_records) : isset($history_records[$type]);
+            <!-- TIỀN SỬ BỆNH CHIROPRACTIC MÀU TÍM RIÊNG BIỆT -->
+            <?php 
+                $has_history = isset($history_records['chiro_history']);
+                $history_id = $has_history ? $history_records['chiro_history']['id'] : null;
+                $history_create_url = "chiro_history.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id;
+                if ($has_history) {
+                    $history_edit_url = "chiro_history.php?patient_id=" . $session['patient_id'] . "&id=" . $history_id;
+                } else {
+                    $history_edit_url = $history_create_url;
+                }
+            ?>
+            <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.05);">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #a855f7; border: 1px solid #e9d5ff; box-shadow: 0 2px 4px rgba(0,0,0,0.02)">
+                        <i class="fas fa-history fa-lg"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 1.1rem; color: #1e293b;"><?php echo __('medical.type.chiro_history_full'); ?></div>
+                        <?php if (!$has_history): ?>
+                            <div style="color: #ea580c; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
+                                <i class="fas fa-exclamation-triangle"></i> Khách hàng chưa khai báo tiền sử bệnh (Chỉ cần tạo 1 lần).
+                            </div>
+                        <?php else: ?>
+                            <div style="color: #10b981; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
+                                <i class="fas fa-check-circle"></i> Đã có tiền sử bệnh lý chung
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <?php if ($has_history): ?>
+                        <a href="print_record.php?type=history&id=<?php echo $history_id; ?>" target="_blank" class="btn btn-sm" style="background: white; border: 1px solid #10b981; color: #10b981; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.6rem;">
+                            <i class="fas fa-print"></i> PDF
+                        </a>
+                        <a href="view_form.php?id=<?php echo $history_id; ?>" target="_blank" class="btn btn-sm btn-outline" style="border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem; color: #64748b; border-color: #cbd5e1;">
+                            <i class="fas fa-eye"></i> Xem
+                        </a>
+                        <a href="<?php echo $history_edit_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem;">
+                            <i class="fas fa-edit"></i> Sửa
+                        </a>
+                    <?php else: ?>
+                        <a href="<?php echo $history_create_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-weight: 600;">
+                            <i class="fas fa-plus-circle"></i> Tạo mới Tiền sử
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- PHIẾU ĐÔNG Y GẦN NHẤT MÀU XANH LÁ -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem; margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.05);">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #22c55e; border: 1px solid #bbf7d0; box-shadow: 0 2px 4px rgba(0,0,0,0.02)">
+                        <i class="fas fa-leaf fa-lg"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 1.1rem; color: #1e293b;">Phiếu khám Đông Y gần nhất</div>
+                        <?php if (!$latest_dong_y): ?>
+                            <div style="color: #ea580c; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
+                                <i class="fas fa-exclamation-triangle"></i> Bệnh nhân chưa từng có Phiếu khám Đông Y nào.
+                            </div>
+                        <?php else: ?>
+                            <div style="color: #10b981; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
+                                <i class="fas fa-clock"></i> Khám ngày: <?php echo date('d/m/Y H:i', strtotime($latest_dong_y['created_at'])); ?> 
+                                <span style="margin: 0 0.5rem; color: #cbd5e1;">|</span> 
+                                <i class="fas fa-user-md"></i> Bác sĩ: <?php echo e($latest_dong_y['doctor_name'] ?? 'Không rõ'); ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <?php if ($latest_dong_y): ?>
+                        <a href="print_record.php?type=dong_y&id=<?php echo $latest_dong_y['id']; ?>" target="_blank" class="btn btn-sm" style="background: white; border: 1px solid #22c55e; color: #22c55e; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.6rem;">
+                            <i class="fas fa-print"></i> PDF
+                        </a>
+                        <a href="view_form.php?id=<?php echo $latest_dong_y['id']; ?>" target="_blank" class="btn btn-sm btn-outline" style="border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem; color: #64748b; border-color: #cbd5e1;">
+                            <i class="fas fa-eye"></i> Xem
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- CHỈ MỤC CÁC THÀNH PHẦN KHÁC -->
+            <h4 style="margin: 0 0 1rem 0; color: #1e293b; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem;">
+                <i class="fas fa-tasks text-primary"></i> Các thành phần buổi khám
+            </h4>
+
+            <?php foreach ($components as $type => $info):
+                $actual_type_record = $type;
+
+                $is_done = ($type === 'treatment') ? !empty($treatment_records) : isset($history_records[$actual_type_record]);
                 
                 // Base parameters
                 $params = [
@@ -194,10 +315,12 @@ require_once '../../templates/header.php';
                     'session_id' => $session_id
                 ];
                 
-                // Add ID if already exists (for editing)
+                // Add ID if already exists (for editing or migrating old to new v2)
                 if ($is_done && $type !== 'treatment') {
-                    $params['id'] = $history_records[$type]['id'];
+                    $params['id'] = $history_records[$actual_type_record]['id'];
                 }
+                
+                $btn_label = $is_done ? __('medical.session.btn_edit') : __('medical.session.btn_start');
                 
                 // Construct URL
                 $url_parts = parse_url($info['url']);
@@ -221,9 +344,19 @@ require_once '../../templates/header.php';
                             </div>
                         </div>
                     </div>
-                    <a href="<?php echo $edit_url; ?>" class="btn btn-sm <?php echo $is_done ? 'btn-outline' : 'btn-primary'; ?>" style="border-radius: 50px;">
-                        <?php echo $is_done ? __('medical.session.btn_edit') : __('medical.session.btn_start'); ?>
-                    </a>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <?php if ($is_done): 
+                            $print_type = ($type === 'treatment') ? 'treatment' : 'history';
+                            $print_id = ($type === 'treatment') ? $treatment_records[0]['id'] : $history_records[$actual_type_record]['id'];
+                        ?>
+                            <a href="print_record.php?type=<?php echo $print_type; ?>&id=<?php echo $print_id; ?>" target="_blank" class="btn btn-sm" style="background: white; border: 1px solid #10b981; color: #10b981; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.7rem;">
+                                <i class="fas fa-print"></i> PDF
+                            </a>
+                        <?php endif; ?>
+                        <a href="<?php echo $edit_url; ?>" class="btn btn-sm <?php echo $is_done ? 'btn-outline' : 'btn-primary'; ?>" style="border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem;">
+                            <?php echo $is_done ? '<i class="fas fa-edit"></i> Sửa' : $btn_label; ?>
+                        </a>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -300,7 +433,31 @@ require_once '../../templates/header.php';
                 <h4 style="margin: 0; color: var(--primary); font-weight: 800;">
                     <i class="fas fa-user-md"></i> <?php echo __('medical.session.clinical_summary'); ?>
                 </h4>
-                <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;"><?php echo __('medical.session.dr_prefix'); ?> <?php echo strtoupper($session['doctor_name']); ?></div>
+                
+                <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <label style="color: #64748b; font-weight: 700; margin: 0;"><?php echo __('medical.session.dr_prefix'); ?></label>
+                    <?php if (!$is_locked): ?>
+                        <select name="doctor_id" class="form-input" style="padding: 0.25rem 0.5rem; width: auto; font-size: 0.85rem; font-weight: 700; border-radius: 6px; cursor: pointer;">
+                            <?php 
+                            $stmt_docs = $db->query("
+                                SELECT u.id, u.full_name as name 
+                                FROM users u 
+                                JOIN roles r ON u.role_id = r.id 
+                                WHERE r.name IN ('doctor', 'technician', 'admin') 
+                                AND u.status = 'active'
+                                ORDER BY name
+                            ");
+                            while ($doc = $stmt_docs->fetch()): 
+                            ?>
+                                <option value="<?php echo $doc['id']; ?>" <?php echo $session['doctor_id'] == $doc['id'] ? 'selected' : ''; ?>>
+                                    <?php echo e($doc['name']); ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    <?php else: ?>
+                        <span style="font-weight: 700; color: #1e293b;"><?php echo strtoupper(e($session['doctor_name'])); ?></span>
+                    <?php endif; ?>
+                </div>
             </div>
             
             <div class="editor-wrapper">
@@ -318,9 +475,9 @@ require_once '../../templates/header.php';
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <?php if (!$is_locked): ?>
                     <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                        <i class="fas fa-save"></i> <?php echo $session['status'] === 'completed' ? __('medical.session.btn_update_admin') : __('medical.session.btn_save_notes'); ?>
+                        <i class="fas fa-save"></i> <?php echo $can_edit_summary ? __('medical.session.btn_update_all') : __('medical.session.btn_update_doc'); ?>
                     </button>
-                    <?php if ($session['status'] !== 'completed'): ?>
+                    <?php if ($session['status'] !== 'completed' && $can_edit_summary): ?>
                         <button type="submit" name="complete" value="1" class="btn" style="width: 100%; justify-content: center; background: #10b981; color: white;">
                             <i class="fas fa-check-double"></i> <?php echo __('medical.session.btn_complete'); ?>
                         </button>
@@ -343,11 +500,12 @@ require_once '../../templates/header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var isSummaryLocked = <?php echo ($is_locked || !$can_edit_summary) ? 'true' : 'false'; ?>;
     var quillOptions = {
         theme: 'snow',
-        readOnly: <?php echo $is_locked ? 'true' : 'false'; ?>,
+        readOnly: isSummaryLocked,
         modules: {
-            toolbar: <?php echo $is_locked ? 'false' : "[['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]" ; ?>
+            toolbar: isSummaryLocked ? false : [['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]
         }
     };
 

@@ -25,7 +25,7 @@ Tạo file `.sql` hoặc file `.php` (như `migrate_vps.php`) chứa lệnh `ALT
 
 ### Bước 3: Triển khai lên VPS (Bắt buộc)
 1. Chạy file deployment: `bash tmp/deploy_vps.sh`.
-2. Truy cập trình duyệt chạy file migration ngay lập tức: `https://crm.thuvienphatgiao.org/migrate_vps.php`.
+2. Truy cập trình duyệt chạy file migration ngay lập tức: `https://crm.simoncenter.vn/migrate_vps.php`.
 
 ## 📌 Ghi chú quan trọng cho module Patients
 Dữ liệu Bệnh nhân thường xuyên thay đổi các trường (Zalo, Facebook, Người giám hộ...). Khi sửa file `add.php` hoặc `edit.php` trong module này, **PHẢI** kiểm tra đếm kỹ số lượng tham số truyền vào hàm `execute()`.

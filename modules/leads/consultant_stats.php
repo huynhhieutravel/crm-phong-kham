@@ -45,8 +45,8 @@ $stmt = $db->prepare("
 ");
 $stmt->execute($params);
 $global_raw = $stmt->fetch(PDO::FETCH_ASSOC);
-$total_assigned_all = $global_raw['total'];
-$total_success_all = $global_raw['total_success'];
+$total_assigned_all = $global_raw['total'] ? (float)$global_raw['total'] : 0;
+$total_success_all = $global_raw['total_success'] ? (float)$global_raw['total_success'] : 0;
 $global_conversion_rate = $total_assigned_all > 0 ? round(($total_success_all / $total_assigned_all) * 100, 1) : 0;
 
 // 3. Unassigned Leads Count
@@ -206,7 +206,7 @@ $status_map = [
                     <?php if($period === 'month'): ?>
                         <select name="sel_month" class="custom-date-input" style="width: auto;" onchange="this.form.submit()">
                             <?php for($m=1; $m<=12; $m++): ?>
-                                <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                                <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>><?php echo __('common.month'); ?> <?php echo $m; ?></option>
                             <?php endfor; ?>
                         </select>
                     <?php endif; ?>
@@ -214,14 +214,14 @@ $status_map = [
                     <?php if($period === 'quarter'): ?>
                         <select name="sel_quarter" class="custom-date-input" style="width: auto;" onchange="this.form.submit()">
                             <?php for($q=1; $q<=4; $q++): ?>
-                                <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                                <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>><?php echo __('common.quarter'); ?> <?php echo $q; ?></option>
                             <?php endfor; ?>
                         </select>
                     <?php endif; ?>
 
                     <select name="sel_year" class="custom-date-input" style="width: auto;" onchange="this.form.submit()">
                         <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
-                            <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                            <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>><?php echo __('common.year'); ?> <?php echo $y; ?></option>
                         <?php endfor; ?>
                     </select>
                 </div>
@@ -240,7 +240,7 @@ $status_map = [
         </div>
         
         <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">
-            <i class="fas fa-info-circle"></i> Tùy chọn xem báo cáo theo thời gian
+            <i class="fas fa-info-circle"></i> <?php echo __('leads.stats.time_filter_desc'); ?>
         </div>
     </form>
 
@@ -336,7 +336,7 @@ $status_map = [
                                     </div>
                                     <div>
                                         <div style="font-weight: 700; color: #1e293b;"><?php echo e($s['full_name']); ?></div>
-                                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Chuyên viên Tư vấn</div>
+                                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;"><?php echo __('leads.stats.consultant'); ?></div>
                                     </div>
                                 </div>
                             </td>
@@ -368,7 +368,7 @@ $status_map = [
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem;">
         <div style="background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.03);">
             <h3 style="font-size: 1.2rem; font-weight: 800; color: #1e293b; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-chart-bar" style="color: #6366f1;"></i> Phân bổ Lead theo nhân sự
+                <i class="fas fa-chart-bar" style="color: #6366f1;"></i> <?php echo __('leads.stats.lead_distribution'); ?>
             </h3>
             <div style="height: 350px;">
                 <canvas id="assignmentChart"></canvas>
@@ -376,7 +376,7 @@ $status_map = [
         </div>
         <div style="background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.03);">
             <h3 style="font-size: 1.2rem; font-weight: 800; color: #1e293b; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-medal" style="color: #fbbf24;"></i> Hiệu suất chốt hợp đồng
+                <i class="fas fa-medal" style="color: #fbbf24;"></i> <?php echo __('leads.stats.conversion_performance'); ?>
             </h3>
             <div style="height: 350px;">
                 <canvas id="performanceChart"></canvas>
@@ -421,13 +421,13 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Tổng Lead Giao',
+                label: '<?php echo __('leads.stats.assigned_leads'); ?>',
                 data: totalData,
                 backgroundColor: '#cbd5e1',
                 borderRadius: 8,
                 barThickness: 20
             }, {
-                label: 'Thành Công',
+                label: '<?php echo __('leads.stats.success'); ?>',
                 data: successData,
                 backgroundColor: '#6366f1',
                 borderRadius: 8,
@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Tỷ lệ Chốt (%)',
+                label: '<?php echo __('leads.stats.conversion_rate'); ?>',
                 data: [<?php foreach ($consultant_stats as $s) { if($s['total_assigned'] > 0) echo round(($s['successful_conversions'] / $s['total_assigned']) * 100, 1) . ","; } ?>],
                 borderColor: '#10b981',
                 borderWidth: 4,

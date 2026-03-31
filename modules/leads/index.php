@@ -29,6 +29,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_add'])) {
                 $data[$col] = $val;
             }
         }
+        
+        if (in_array('lead_code', $available_cols)) {
+            $data['lead_code'] = generate_lead_code($db);
+        }
 
         $cols = implode(", ", array_keys($data));
         $placeholders = implode(", ", array_fill(0, count($data), "?"));
@@ -542,7 +546,12 @@ function setPeriod(p) {
                         <td style="padding: 1rem;">
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <div>
-                                    <div style="font-weight: 700; color: var(--text-main);"><?php echo e($l['full_name']); ?></div>
+                                    <div style="font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
+                                        <?php echo e($l['full_name']); ?>
+                                        <?php if (!empty($l['lead_code'])): ?>
+                                            <span style="font-size: 0.65rem; font-weight: 800; background: #e0e7ff; color: #4338ca; padding: 0.1rem 0.4rem; border-radius: 6px; letter-spacing: 0.05rem;"><?php echo e($l['lead_code']); ?></span>
+                                        <?php endif; ?>
+                                    </div>
                                     <div style="font-size: 0.85rem; color: var(--primary); font-weight: 600;"><?php echo e($l['phone']); ?></div>
                                 </div>
                                 <?php if($l['log_count'] > 0): ?>

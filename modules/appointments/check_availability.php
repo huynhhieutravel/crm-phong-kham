@@ -66,8 +66,10 @@ if (!empty($time) && !empty($doctor_id)) {
     if ($stmt->fetchColumn() > 0) {
         $results['doctor_busy'] = true;
     }
+}
 
-    // 3. Fetch doctor's full schedule for the day
+// 3. Fetch doctor's full schedule for the day (if doctor and date are present)
+if (!empty($doctor_id) && !empty($date)) {
     $stmt = $db->prepare("
         SELECT DATE_FORMAT(appointment_date, '%H:%i') as time, status
         FROM appointments 

@@ -29,11 +29,28 @@ $current_page = 'appointments';
 require_once '../../templates/header.php';
 ?>
 
-<div class="card" style="max-width: 600px; margin: 0 auto; padding: 2rem;">
+<div class="card" style="max-width: 900px; margin: 0 auto; padding: 2.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
-        <div>
-            <h2 style="margin: 0; font-weight: 800;"><?php echo e($a['patient_name'] ?: $a['lead_name']); ?></h2>
-            <p style="color: var(--text-muted);"><?php echo $a['patient_id'] ? __('appointment.contact_type.patient') : __('appointment.contact_type.lead'); ?></p>
+        <div style="flex: 1;">
+            <h2 style="margin: 0; font-weight: 800; margin-bottom: 0.5rem;"><?php echo e($a['patient_name'] ?: $a['lead_name']); ?></h2>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <span style="color: var(--text-muted); font-weight: 600;">
+                    <i class="fas <?php echo $a['patient_id'] ? 'fa-user-injured' : 'fa-user-tag'; ?>" style="margin-right: 4px;"></i>
+                    <?php echo $a['patient_id'] ? __('appointment.contact_type.patient') : __('appointment.contact_type.lead'); ?>
+                </span>
+                <?php if($a['patient_id']): ?>
+                    <a href="../patients/view.php?id=<?php echo $a['patient_id']; ?>" style="font-size: 0.85rem; background: #eef2ff; color: #4f46e5; font-weight: 800; padding: 0.4rem 0.85rem; border-radius: 8px; text-decoration: none; border: 1px solid #c7d2fe; transition: all 0.2s;" onmouseover="this.style.background='#4f46e5'; this.style.color='white';" onmouseout="this.style.background='#eef2ff'; this.style.color='#4f46e5';">
+                        <i class="fas fa-user-circle" style="margin-right: 4px;"></i> Chi tiết bệnh nhân
+                    </a>
+                    <a href="../medical/session_start.php?patient_id=<?php echo $a['patient_id']; ?>" style="font-size: 0.85rem; background: #ecfdf5; color: #10b981; font-weight: 800; padding: 0.4rem 0.85rem; border-radius: 8px; text-decoration: none; border: 1px solid #a7f3d0; transition: all 0.2s;" onmouseover="this.style.background='#10b981'; this.style.color='white';" onmouseout="this.style.background='#ecfdf5'; this.style.color='#10b981';">
+                        <i class="fas fa-notes-medical" style="margin-right: 4px;"></i> Bệnh án
+                    </a>
+                <?php elseif($a['lead_id']): ?>
+                    <a href="../leads/view.php?id=<?php echo $a['lead_id']; ?>" style="font-size: 0.85rem; background: #f8fafc; color: var(--primary); font-weight: 800; padding: 0.4rem 0.85rem; border-radius: 8px; text-decoration: none; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.background='var(--primary)'; this.style.color='white';" onmouseout="this.style.background='#f8fafc'; this.style.color='var(--primary)';">
+                        <i class="fas fa-external-link-alt" style="margin-right: 4px;"></i> Xem hồ sơ Lead
+                    </a>
+                <?php endif; ?>
+            </div>
         </div>
         <span class="badge" style="background: #e0f2fe; color: #0369a1; text-transform: uppercase; font-weight: 800;">
             <?php echo __('appointment.type.' . $a['type']); ?>
@@ -62,7 +79,7 @@ require_once '../../templates/header.php';
         <div>
             <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;"><?php echo __('appointment.status'); ?></label>
             <div style="font-weight: 800; margin-top: 0.25rem; color: var(--primary);">
-                <?php echo strtoupper(__('appointment.status.' . $a['status'])); ?>
+                <?php echo mb_strtoupper(__('appointment.status.' . $a['status']), 'UTF-8'); ?>
             </div>
         </div>
     </div>

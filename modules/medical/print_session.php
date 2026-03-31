@@ -140,9 +140,17 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
     </style>
 </head>
 <body>
-    <div class="no-print" style="text-align: center;">
-        <button onclick="window.print()" class="btn-print"><?php echo __('medical.print.btn_print'); ?></button>
+    <div class="no-print" style="text-align: center; position: fixed; top: 15px; right: 20px; z-index: 100; display: flex; gap: 10px;">
+        <button onclick="window.print()" class="btn-print"><i class="fas fa-print"></i> In Phiếu</button>
+        <button onclick="saveAsPDF()" class="btn-print" style="background: #10b981;"><i class="fas fa-download"></i> Lưu PDF</button>
     </div>
+
+    <script>
+        function saveAsPDF() {
+            alert('Để lưu file PDF gửi khách:\n\n1. Trong hộp thoại sắp hiện ra, tìm mục "Máy in" (Destination).\n2. Chọn "Lưu dưới dạng PDF" (Save as PDF).\n3. Bấm Lưu (Save).');
+            window.print();
+        }
+    </script>
 
     <div class="print-container">
         <div class="header">
@@ -191,7 +199,7 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
 
         <div class="section">
             <div class="section-title"><?php echo __('medical.print.sec3_title'); ?></div>
-            <div style="font-size: 13px; color: #64748b;">
+            <div style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
                 <?php echo __('medical.print.performed_label'); ?>
                 <?php 
                 $done = [];
@@ -205,6 +213,81 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
                 ?>
             </div>
         </div>
+
+        <?php foreach($history_records as $rec): 
+            $data = json_decode($rec['history_data'], true) ?: []; 
+            if(!$data) continue;
+        ?>
+            <div class="section" style="page-break-inside: avoid; margin-top: 25px;">
+                <?php if ($rec['type'] === 'chiro_exam'): ?>
+                    <div class="section-title"><?php echo __('medical.print.chiro_strategy_title'); ?></div>
+                    <div class="rich-content" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc;">
+                        <h4 style="margin:0 0 10px 0; color: #4f46e5; text-transform: uppercase; font-size: 13px;"><?php echo __('medical.print.spine_sublux_label'); ?></h4>
+                        <div style="font-size: 13px; margin-bottom: 15px;">
+                            <?php 
+                            $spine_txt = [];
+                            foreach(($data['spine'] ?? []) as $k => $v) {
+                                if(isset($v['L']) || isset($v['R'])) {
+                                    $spine_txt[] = "<b>$k:</b> " . (isset($v['L']) ? 'LEFT ' : '') . (isset($v['R']) ? 'RIGHT' : '');
+                                }
+                            }
+                            echo !empty($spine_txt) ? implode(' | ', $spine_txt) : __('medical.print.no_deviation');
+                            ?>
+                        </div>
+                        <h4 style="margin:0 0 10px 0; color: #4f46e5; text-transform: uppercase; font-size: 13px;"><?php echo __('medical.print.becken_label'); ?></h4>
+                        <div style="font-size: 13px; margin-bottom: 15px;">
+                            <?php 
+                            $becken_txt = [];
+                            foreach(($data['becken'] ?? []) as $k => $v) {
+                                if(isset($v['L']) || isset($v['R'])) {
+                                    $becken_txt[] = "<b>$k:</b> " . (isset($v['L']) ? 'LEFT ' : '') . (isset($v['R']) ? 'RIGHT' : '');
+                                }
+                            }
+                            echo !empty($becken_txt) ? implode(' | ', $becken_txt) : __('medical.print.normal');
+                            ?>
+                        </div>
+                        <div style="font-size: 13px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+                            <strong><?php echo __('medical.print.clinical_notes'); ?></strong> <?php echo nl2br(e($data['clinical_notes'] ?? __('medical.print.no_notes'))); ?>
+                        </div>
+                    </div>
+                <?php elseif ($rec['type'] === 'chiro_history'): ?>
+                    <div class="section-title"><?php echo __('medical.print.pathology_history'); ?></div>
+                    <div class="rich-content" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc; font-size: 13px; line-height: 1.8;">
+                        <div><strong><?php echo __('medical.print.main_pain_loc'); ?></strong> <?php echo implode(', ', ($data['pathology']['locations'] ?? [])); ?></div>
+                        <div><strong><?php echo __('medical.print.pain_intensity'); ?></strong> <span style="color: #ef4444; font-weight: bold;"><?php echo ($data['pathology']['intensity'] ?? 0); ?>/10</span> &nbsp;|&nbsp; <strong><?php echo __('medical.print.symptom_duration'); ?></strong> <?php echo ($data['pathology']['duration'] ?? 'N/A'); ?></div>
+                        <div style="margin-top: 10px;"><strong><?php echo __('medical.print.detailed_description'); ?></strong> <?php echo nl2br(e($data['pathology']['description'] ?? '')); ?></div>
+                    </div>
+                <?php elseif ($rec['type'] === 'chiropractic' || $rec['type'] === 'soap_note' || $rec['type'] === 'initial_exam'): ?>
+                    <?php if(isset($data['pain_locations']) || isset($data['subluxation'])): ?>
+                        <?php require 'forms/print_chiro_v2.php'; ?>
+                    <?php else: ?>
+                    <div class="section-title"><?php echo __('medical.print.soap_title'); ?></div>
+                    <div class="rich-content" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc; font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div style="color: #3b82f6; font-weight: bold; margin-bottom: 5px;"><?php echo __('medical.print.soap_s'); ?></div>
+                            <div>VAS: <?php echo ($data['s']['vas'] ?? 0); ?>/10</div>
+                            <div><?php echo __('medical.print.progress'); ?> <?php echo ($data['s']['progress'] ?? 'N/A'); ?></div>
+                        </div>
+                        <div>
+                            <div style="color: #10b981; font-weight: bold; margin-bottom: 5px;"><?php echo __('medical.print.soap_o'); ?></div>
+                            <div><?php echo __('medical.print.muscle_spasm'); ?> <?php echo ($data['o']['muscle_tone'] ?? 'N/A'); ?></div>
+                            <div><?php echo __('medical.print.rom_limit'); ?> <?php echo implode(', ', ($data['o']['rom_limit'] ?? [])); ?></div>
+                        </div>
+                        <div style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                            <div style="color: #f59e0b; font-weight: bold; margin-bottom: 5px;"><?php echo __('medical.print.soap_a'); ?></div>
+                            <div><?php echo __('medical.print.adjust_tech'); ?> <?php echo implode(', ', array_keys($data['a']['spine'] ?? [])); ?></div>
+                            <div><?php echo __('medical.print.physio'); ?> <?php echo implode(', ', ($data['a']['physiotherapy'] ?? [])); ?></div>
+                        </div>
+                        <div style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                            <div style="color: #6366f1; font-weight: bold; margin-bottom: 5px;"><?php echo __('medical.print.soap_p'); ?></div>
+                            <div><?php echo __('medical.print.frequency'); ?> <?php echo ($data['p']['frequency'] ?? 'N/A'); ?></div>
+                            <div style="font-style: italic;">"<?php echo ($data['p']['notes'] ?? ''); ?>"</div>
+                        </div>
+                    </div>
+                <?php endif; // End format check ?>
+                <?php endif; // End type check ?>
+            </div>
+        <?php endforeach; ?>
 
         <?php 
         // Load attachments

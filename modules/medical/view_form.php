@@ -22,13 +22,13 @@ if (!$record) {
     die("Hồ sơ không tồn tại.");
 }
 
-$data = json_decode($record['history_data'], true);
+$data = json_decode($record['history_data'], true) ?: [];
 $type_map_list = [
     'chiropractic'  => 'Theo dõi SOAP',
     'soap_note'     => 'Theo dõi SOAP',
     'dong_y'        => 'Phiếu khám Đông Y',
     'initial_exam'  => 'Khám Chiro (Hệ thống cũ)',
-    'chiro_history' => 'Khám tiền sử bệnh Chiropractic',
+    'chiro_history' => 'Tiền sử bệnh Chiropractic',
     'chiro_exam'    => 'Khám bệnh lần đầu Chiropractic'
 ];
 $type_label = $type_map_list[$record['type']] ?? 'Hồ sơ y tế';
@@ -466,8 +466,14 @@ require_once '../../templates/header.php';
             </div>
         </div>
 
-    <?php elseif ($record['type'] === 'chiropractic'): ?>
-        <!-- MIRROR: SOAP Note -->
+    <?php elseif ($record['type'] === 'chiropractic' || $record['type'] === 'soap_note'): ?>
+        <!-- MIRROR: SOAP / Chiro V2 Note -->
+        <?php if(isset($data['pain_locations']) || isset($data['subluxation'])): ?>
+            <div class="printable-content">
+            <?php require 'forms/print_chiro_v2.php'; ?>
+            </div>
+        <?php else: ?>
+        <!-- MIRROR: OLD SOAP Note -->
         <div class="view-section">
             <h3 class="view-header-section" style="border-bottom-color: #dbeafe; color: #3b82f6;">
                 <i class="fas fa-notes-medical"></i> PHIẾU THEO DÕI ĐIỀU TRỊ (SOAP)
@@ -518,6 +524,7 @@ require_once '../../templates/header.php';
             </div>
         </div>
 
+        <?php endif; ?>
     <?php elseif ($record['type'] === 'dong_y'): ?>
         <?php
             $display_birth_year = $record['birthday'] ? date('Y', strtotime($record['birthday'])) : '--';

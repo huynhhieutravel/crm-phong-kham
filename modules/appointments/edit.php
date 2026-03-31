@@ -58,11 +58,23 @@ $doctors = $db->query("
     SELECT u.id, u.full_name, r.display_name as role_name 
     FROM users u 
     JOIN roles r ON u.role_id = r.id 
-    WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
+    WHERE r.name IN ('doctor', 'technician', 'cskh', 'admin') AND u.status = 'active'
     ORDER BY r.name = 'doctor' DESC, u.full_name ASC
 ")->fetchAll();
-$status_options = ['scheduled', 'confirmed', 'arrived', 'treated', 'completed', 'no_show', 'cancelled', 'staff_sick', 'staff_busy'];
 ?>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+/* Flatpickr Premium Styling */
+.flatpickr-calendar {
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+}
+.flatpickr-day.selected {
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+</style>
 
 <div class="card" style="max-width: 600px; margin: 0 auto; padding: 2rem;">
     <form method="POST">
@@ -98,7 +110,7 @@ $status_options = ['scheduled', 'confirmed', 'arrived', 'treated', 'completed', 
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
             <div class="form-group">
                 <label class="form-label"><?php echo __('appointment.add.date_label'); ?></label>
-                <input type="date" name="appointment_date" class="form-input" value="<?php echo date('Y-m-d', strtotime($appointment['appointment_date'])); ?>" required>
+                <input type="text" name="appointment_date" id="appointment_date" class="form-input" value="<?php echo date('Y-m-d', strtotime($appointment['appointment_date'])); ?>" required placeholder="dd/mm/yyyy">
             </div>
             <div class="form-group">
                 <label class="form-label"><?php echo __('appointment.add.time_label'); ?></label>
@@ -168,5 +180,31 @@ window.addMinutes = function(minutes) {
     endTimeInput.value = `${endHours}:${endMins}`;
 };
 </script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr("#appointment_date", {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        locale: "vn",
+        disableMobile: "true"
+    });
+});
+</script>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr("#appointment_date", {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        locale: "vn",
+        disableMobile: "true"
+    });
+});
+</script>
 <?php require_once '../../templates/footer.php'; ?>

@@ -130,7 +130,7 @@ require_once '../../templates/header.php';
                     <div class="form-group">
                         <label class="form-label"><?php echo __('leads.form.label_consultant'); ?></label>
                         <select name="consultant_id" class="form-input">
-                            <option value=""><?php echo __('leads.form.label_consultant_placeholder', '-- Chọn tư vấn viên --'); ?></option>
+                            <option value=""><?php echo __('leads.form.label_consultant_placeholder'); ?></option>
                             <?php foreach ($consultants as $con): ?>
                                 <option value="<?php echo $con['id']; ?>" <?php echo (int)$lead['consultant_id'] === (int)$con['id'] ? 'selected' : ''; ?>><?php echo e($con['full_name']); ?></option>
                             <?php endforeach; ?>
@@ -140,7 +140,7 @@ require_once '../../templates/header.php';
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_medical_group'); ?></label>
                 <select name="medical_group" class="form-input">
-                    <option value=""><?php echo __('leads.form.label_medical_group_placeholder', '-- Chọn nhóm bệnh --'); ?></option>
+                    <option value=""><?php echo __('leads.form.label_medical_group_placeholder'); ?></option>
                     <?php foreach ($medical_groups as $val => $key): ?>
                         <option value="<?php echo $val; ?>" <?php echo $lead['medical_group'] === $val ? 'selected' : ''; ?>><?php echo __($key); ?></option>
                     <?php endforeach; ?>
@@ -164,15 +164,15 @@ require_once '../../templates/header.php';
         </div>
         
         <div class="form-group" style="margin-top: 1.5rem;">
-            <label class="form-label">Ghi chú chi tiết</label>
+            <label class="form-label"><?php echo __('leads.form.label_notes'); ?></label>
             <textarea name="notes" class="form-input" rows="3"><?php echo e($lead['notes']); ?></textarea>
         </div>
         
         <div style="margin-top: 2.5rem; display: flex; gap: 1rem;">
             <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem; font-weight: 700;">
-                <i class="fas fa-save"></i> Cập nhật hồ sơ
+                <i class="fas fa-save"></i> <?php echo __('leads.form.btn_update_profile'); ?>
             </button>
-            <a href="index.php" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 0.8rem 2rem;">Hủy bỏ</a>
+            <a href="index.php" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 0.8rem 2rem;"><?php echo __('leads.form.btn_cancel'); ?></a>
         </div>
     </form>
 
@@ -180,21 +180,21 @@ require_once '../../templates/header.php';
     <hr style="margin: 3rem 0; border: 0; border-top: 1px solid var(--border-color);">
     
     <div style="margin-bottom: 2rem;">
-        <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Lịch sử tư vấn & Chăm sóc</h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">Theo dõi các lần trao đổi và ghi chú tiến trình với khách hàng.</p>
+        <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;"><?php echo __('leads.form.log_title'); ?></h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem;"><?php echo __('leads.form.log_subtitle'); ?></p>
     </div>
 
     <!-- Add Quick Note Form -->
     <div class="card" style="background: #f8fafc; border: 1px dashed #cbd5e1; padding: 1.5rem; margin-bottom: 2rem; border-radius: 12px;">
         <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 1rem;">
-            <i class="fas fa-plus-circle"></i> Thêm ghi chú mới
+            <i class="fas fa-plus-circle"></i> <?php echo __('leads.form.add_note'); ?>
         </h3>
         <form id="addLogForm" onsubmit="submitLog(event)">
             <input type="hidden" name="lead_id" value="<?php echo $id; ?>">
             <div style="display: flex; gap: 1rem;">
-                <textarea name="note" class="form-input" rows="2" placeholder="Nhập nội dung tư vấn..." style="background: white; border-radius: 10px;"></textarea>
+                <textarea name="note" class="form-input" rows="2" placeholder="<?php echo __('leads.form.placeholder_notes'); ?>" style="background: white; border-radius: 10px;"></textarea>
                 <button type="submit" class="btn btn-primary" style="align-self: flex-end; padding: 0.6rem 1.5rem;">
-                    <i class="fas fa-paper-plane"></i> Gửi
+                    <i class="fas fa-paper-plane"></i> <?php echo __('leads.form.btn_send'); ?>
                 </button>
             </div>
         </form>
@@ -230,7 +230,7 @@ require_once '../../templates/header.php';
         <?php endforeach; ?>
 
         <?php if (empty($logs)): ?>
-            <p id="noLogsMsg" style="color: var(--text-muted); font-style: italic; font-size: 0.9rem;">Chưa có lịch sử tư vấn nào.</p>
+            <p id="noLogsMsg" style="color: var(--text-muted); font-style: italic; font-size: 0.9rem;"><?php echo __('leads.form.no_logs'); ?></p>
         <?php endif; ?>
     </div>
 </div>
@@ -255,7 +255,7 @@ function submitLog(e) {
     .then(r => r.json())
     .then(data => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi';
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> <?php echo __('leads.form.btn_send'); ?>';
         
         if (data.success) {
             textarea.value = '';
@@ -292,7 +292,7 @@ function submitLog(e) {
     })
     .catch(err => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi';
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> <?php echo __('leads.form.btn_send'); ?>';
         console.error(err);
         alert('Lỗi kết nối server');
     });

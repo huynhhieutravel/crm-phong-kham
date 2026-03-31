@@ -9,16 +9,20 @@ $sources = [];
 
 if ($start_date && $end_date) {
     try {
-        $total_leads = $db->query("SELECT COUNT(*) FROM leads WHERE created_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
-    } catch (Exception $e) {}
+        $stmt_tl = $db->prepare("SELECT COUNT(*) FROM leads WHERE DATE(created_at) BETWEEN ? AND ?");
+        $stmt_tl->execute([$start_date, $end_date]);
+        $total_leads = $stmt_tl->fetchColumn();
+    } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
-        $converted_leads = $db->query("SELECT COUNT(*) FROM leads WHERE status = 'converted' AND updated_at BETWEEN '$start_date' AND '$end_date'")->fetchColumn();
-        if ($converted_leads === false) $converted_leads = 0;
+        $stmt_cl = $db->prepare("SELECT COUNT(*) FROM leads WHERE status = 'converted' AND DATE(updated_at) BETWEEN ? AND ?");
+        $stmt_cl->execute([$start_date, $end_date]);
+        $converted_leads = $stmt_cl->fetchColumn() ?: 0;
     } catch (Exception $e) {
+        error_log($e->getMessage());
         // Fallback if status or updated_at missing
         try {
-            $converted_leads = $db->query("SELECT COUNT(*) FROM leads WHERE status = 'converted'")->fetchColumn();
+            $converted_leads = $db->query("SELECT COUNT(*) FROM leads WHERE status = 'converted'")->fetchColumn() ?: 0;
         } catch (Exception $e2) {
             $converted_leads = 0;
         }
@@ -105,31 +109,58 @@ try {
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     // 1. Source Chart
+    const sourceLabels = <?php echo json_encode(array_column($sources, 'source')); ?>;
     new Chart(document.getElementById('sourceChart'), {
         type: 'doughnut',
         data: {
-            labels: <?php echo json_encode(array_column($sources, 'source')); ?>,
+            labels: sourceLabels,
             datasets: [{
                 data: <?php echo json_encode(array_column($sources, 'count')); ?>,
                 backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            onHover: (event, chartElement) => {
+                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+            },
+            onClick: (e, activeElements) => {
+                if (activeElements.length > 0) {
+                    const dataIndex = activeElements[0].index;
+                    window.location.href = '/modules/leads/index.php?source=' + encodeURIComponent(sourceLabels[dataIndex]);
+                }
+            }
+        }
     });
 
     // 2. Status Chart
+    const statusLabels = <?php echo json_encode(array_column($statuses, 'status')); ?>;
+    const statusDisplayLabels = <?php echo json_encode(array_map(fn($s) => __('lead.status.' . $s), array_column($statuses, 'status'))); ?>;
     new Chart(document.getElementById('statusChart'), {
         type: 'pie',
         data: {
-            labels: <?php echo json_encode(array_map(fn($s) => __('lead.status.' . $s), array_column($statuses, 'status'))); ?>,
+            labels: statusDisplayLabels,
             datasets: [{
                 data: <?php echo json_encode(array_column($statuses, 'count')); ?>,
                 backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981', '#ef4444']
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            onHover: (event, chartElement) => {
+                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+            },
+            onClick: (e, activeElements) => {
+                if (activeElements.length > 0) {
+                    const dataIndex = activeElements[0].index;
+                    window.location.href = '/modules/leads/index.php?status=' + encodeURIComponent(statusLabels[dataIndex]);
+                }
+            }
+        }
     });
 
     // 3. Consultant Performance Chart
@@ -162,5 +193,5 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});
+})();
 </script>

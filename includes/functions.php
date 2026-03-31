@@ -280,7 +280,8 @@ function get_lead_sources() {
         'Zalo' => 'Zalo',
         'TikTok' => 'TikTok',
         'Google' => 'Google',
-        'Referral' => 'Người giới thiệu',
+        'Referral' => 'KH giới thiệu',
+        'Acquaintance' => 'Người quen',
         'Chương Trình' => 'Chương Trình',
         'Website' => 'Website',
         'Other' => 'Khác'
@@ -338,4 +339,48 @@ function get_sticky_appointment_date() {
     
     // Default to today
     return date('Y-m-d');
+}
+
+/**
+ * Auto-generate Patient Code (Format: YYMM-XXXX)
+ */
+function generate_patient_code() {
+    $db = getDB();
+    $prefix = date('ym'); // e.g., 2603 for March 2026
+    
+    // Lock or basic query for latest code with this prefix
+    $stmt = $db->query("SELECT customer_id FROM patients WHERE customer_id LIKE '{$prefix}-%' ORDER BY id DESC LIMIT 1");
+    $last_code = $stmt->fetchColumn();
+    
+    if ($last_code) {
+        $parts = explode('-', $last_code);
+        $next_seq = intval(end($parts)) + 1;
+    } else {
+        $next_seq = 1;
+    }
+    
+    return sprintf("%s-%04d", $prefix, $next_seq);
+}
+
+/**
+ * Auto-generate Lead Code (Format: L{YYMM}-{XXXX})
+ */
+function generate_lead_code($db = null) {
+    if (!$db) {
+        $db = getDB();
+    }
+    $prefix = 'L' . date('ym'); // e.g., L2603
+    
+    // Query for latest code with this prefix
+    $stmt = $db->query("SELECT lead_code FROM leads WHERE lead_code LIKE '{$prefix}-%' ORDER BY id DESC LIMIT 1");
+    $last_code = $stmt->fetchColumn();
+    
+    if ($last_code) {
+        $parts = explode('-', $last_code);
+        $next_seq = intval(end($parts)) + 1;
+    } else {
+        $next_seq = 1;
+    }
+    
+    return sprintf("%s-%04d", $prefix, $next_seq);
 }

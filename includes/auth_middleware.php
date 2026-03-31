@@ -6,8 +6,8 @@ require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/i18n.php';
 require_once __DIR__ . '/permissions.php';
 
-// Session timeout: 12 giờ (nhân viên dùng cả ngày)
-define('SESSION_TIMEOUT', 12 * 60 * 60); // 43200 giây
+// Session timeout: 30 ngày (cho phép nhân viên duy trì login lâu dài)
+define('SESSION_TIMEOUT', 30 * 24 * 60 * 60); // 2592000 giây
 
 if (is_logged_in()) {
     // Kiểm tra timeout

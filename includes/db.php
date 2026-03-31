@@ -1,6 +1,12 @@
 <?php
 // includes/db.php
 
+// Cấu hình thời gian sống của Session PHP: 30 ngày
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.gc_maxlifetime', 2592000);
+    session_set_cookie_params(2592000);
+}
+
 function getDB() {
     static $db = null;
     if ($db === null) {

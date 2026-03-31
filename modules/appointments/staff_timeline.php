@@ -15,6 +15,16 @@ $db = getDB();
 $date_filter = get_sticky_appointment_date();
 $role_filter = isset($_GET['role']) ? $_GET['role'] : '';
 
+// Fetch ALL active staff for the reorder modal
+$all_staff_stmt = $db->query("
+    SELECT u.id, u.full_name, r.display_name as role_display 
+    FROM users u 
+    JOIN roles r ON u.role_id = r.id 
+    WHERE r.name IN ('doctor', 'technician') AND u.status = 'active' 
+    ORDER BY u.sort_order ASC, u.full_name ASC
+");
+$all_staff = $all_staff_stmt->fetchAll();
+
 // Fetch relevant staff (Doctors & Technicians)
 $staff_query = "
     SELECT u.id, u.full_name, r.name as role_name, r.display_name as role_display
@@ -25,7 +35,7 @@ $staff_query = "
 if ($role_filter) {
     $staff_query .= " AND r.name = :role";
 }
-$staff_query .= " ORDER BY r.name = 'doctor' DESC, u.full_name ASC";
+$staff_query .= " ORDER BY u.sort_order ASC, r.name = 'doctor' DESC, u.full_name ASC";
 
 $staff_stmt = $db->prepare($staff_query);
 if ($role_filter) {
@@ -89,52 +99,68 @@ function get_status_style($status) {
 
 ?>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
+/* Flatpickr Styling */
+.flatpickr-calendar { border-radius: 12px; box-shadow: var(--shadow-lg); border: 1px solid #e2e8f0; }
+.flatpickr-day.selected { background: var(--primary) !important; border-color: var(--primary) !important; }
 :root {
-    --timeline-row-height: 40px; /* Reduced for 15-min slots */
-    --staff-col-width: 200px;
+    --timeline-row-height: 40px; 
+    --staff-col-width: 100px;
 }
 
 .timeline-container {
     background: white;
     border-radius: 12px;
     box-shadow: var(--shadow-lg);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: auto;
     border: 1px solid #cbd5e1;
     display: flex;
     flex-direction: column;
     height: calc(100vh - 250px);
     min-height: 500px;
+    position: relative;
+    /* Force scrollbar visibility on some browsers */
+    -webkit-overflow-scrolling: touch;
 }
 
 .timeline-header {
     display: flex;
     background: #f1f5f9;
     border-bottom: 2px solid #94a3b8;
-    z-index: 10;
+    position: sticky;
+    top: 0;
+    z-index: 30;
 }
 
 .time-col-header {
     width: 60px;
     flex-shrink: 0;
     border-right: 2px solid #94a3b8;
+    background: #f1f5f9;
+    position: sticky;
+    left: 0;
+    top: 0;
+    z-index: 40;
 }
 
 .staff-headers {
     display: flex;
     flex: 1;
-    overflow-x: auto;
 }
 
 .staff-header-cell {
     width: var(--staff-col-width);
     min-width: var(--staff-col-width);
-    padding: 0.75rem;
+    padding: 0.5rem 0.25rem;
     text-align: center;
     border-right: 1px solid #94a3b8;
     font-weight: 800;
+    font-size: 0.8rem;
     color: var(--text-main);
     background: #f8fafc;
+    line-height: 1.2;
 }
 
 .staff-role-badge {
@@ -149,7 +175,6 @@ function get_status_style($status) {
 .timeline-body {
     display: flex;
     flex: 1;
-    overflow-y: auto;
     position: relative;
 }
 
@@ -251,11 +276,19 @@ function get_status_style($status) {
     opacity: 0.7;
 }
 
-/* Scrollbar Styling */
-.timeline-body::-webkit-scrollbar { width: 8px; height: 8px; }
-.timeline-body::-webkit-scrollbar-track { background: #f1f5f9; }
-.timeline-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.timeline-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+/* Scrollbar Styling - Forced Visibility */
+.timeline-container::-webkit-scrollbar { width: 10px; height: 10px; }
+.timeline-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 5px; }
+.timeline-container::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 5px; border: 2px solid #f1f5f9; }
+.timeline-container::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Ensure the body doesn't clip the horizontal scroll of container */
+.timeline-body {
+    display: flex;
+    flex: 1;
+    position: relative;
+    min-width: min-content; /* Force container to respect children width */
+}
 </style>
 
 <div class="card" style="margin-bottom: 0.5rem; padding: 1.25rem !important; border-radius: 16px;">
@@ -263,7 +296,7 @@ function get_status_style($status) {
         <div style="display: flex; align-items: center; gap: 1rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid #e2e8f0;">
                 <i class="fas fa-calendar-alt" style="color: var(--primary);"></i>
-                <input type="date" name="date" class="form-input" value="<?php echo e($date_filter); ?>" style="border: none; background: transparent; padding: 0; outline: none; font-weight: 700; color: var(--text-main);" onchange="this.form.submit()">
+                <input type="text" name="date" id="timeline_date" class="form-input" value="<?php echo e($date_filter); ?>" style="border: none; background: transparent; padding: 0; outline: none; font-weight: 700; color: var(--text-main); width: 100px;" placeholder="dd/mm/yyyy" onchange="this.form.submit()">
             </div>
             
             <div class="btn-group" style="background: #f1f5f9; padding: 0.3rem; border-radius: 12px;">
@@ -291,9 +324,14 @@ function get_status_style($status) {
                 </div>
             <?php endforeach; ?>
         </div>
-        <a href="add.php?date=<?php echo $date_filter; ?>" class="btn btn-primary" style="border-radius: 12px; font-weight: 700;">
-            <i class="fas fa-plus"></i> <?php echo __('appointment.book_btn'); ?>
-        </a>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="button" onclick="openReorderModal()" class="btn" style="background: #f1f5f9; border-radius: 12px; font-weight: 700; color: var(--text-main);">
+                <i class="fas fa-sort-amount-down"></i> Sắp xếp NV
+            </button>
+            <a href="add.php?date=<?php echo $date_filter; ?>" class="btn btn-primary" style="border-radius: 12px; font-weight: 700;">
+                <i class="fas fa-plus"></i> <?php echo __('appointment.book_btn'); ?>
+            </a>
+        </div>
     </div>
 </form>
 
@@ -331,26 +369,31 @@ function get_status_style($status) {
                     if ($h < $start_hour || $h >= $end_hour) continue;
                     
                     $offset_minutes = (($h - $start_hour) * 60) + $m;
-                    $top = ($offset_minutes / 15) * 40; // 40px per 15 mins (matches --timeline-row-height)
+                    $top = ($offset_minutes / 15) * 40; 
                     
                     // Calculate duration
                     $duration = 15; // default
+                    $end_time_str = date('H:i', $st + 15*60);
                     if (!empty($a['appointment_end_time'])) {
                         $et = strtotime(date('Y-m-d', $st) . ' ' . $a['appointment_end_time']);
                         $duration = ($et - $st) / 60;
+                        $end_time_str = date('H:i', $et);
                     }
                     $height = ($duration / 15) * 40 - 4; // -4 for margins
                     
                     $style = get_status_style($a['status']);
                 ?>
-                    <div class="appt-block" 
-                         style="top: <?php echo $top; ?>px; height: <?php echo $height; ?>px; background: <?php echo $style['bg']; ?>; color: <?php echo $style['text']; ?>; border-color: <?php echo $style['border']; ?>; --indicator-color: <?php echo $style['indicator']; ?>;"
-                         onclick="location.href='view.php?id=<?php echo $a['id']; ?>'">
-                        <span class="appt-time">
-                            <i class="far fa-clock"></i>
-                            <?php echo date('H:i', $st); ?>
-                        </span>
-                        <span class="appt-name"><?php echo e($a['contact_name']); ?></span>
+                        <?php 
+                            $target_url = $a['patient_id'] ? "../patients/view.php?id=" . $a['patient_id'] : "../leads/edit.php?id=" . $a['lead_id'];
+                        ?>
+                        <div class="appt-block" 
+                             style="top: <?php echo $top; ?>px; height: <?php echo $height; ?>px; background: <?php echo $style['bg']; ?>; color: <?php echo $style['text']; ?>; border-color: <?php echo $style['border']; ?>; --indicator-color: <?php echo $style['indicator']; ?>;"
+                             onclick="location.href='<?php echo $target_url; ?>'">
+                            <span class="appt-time" style="flex-direction: column; align-items: flex-start; gap: 0;">
+                                <span><?php echo date('H:i', $st); ?></span>
+                                <span style="opacity: 0.6; font-size: 0.65rem;"><?php echo $end_time_str; ?></span>
+                            </span>
+                            <span class="appt-name"><?php echo e($a['contact_name']); ?></span>
                         <?php if($height > 35): ?>
                             <span class="appt-status-text"><?php echo __('appointment.status.' . $a['status']); ?></span>
                         <?php endif; ?>
@@ -361,5 +404,113 @@ function get_status_style($status) {
     </div>
 </div>
 </div>
+
+<!-- Staff Reorder Modal -->
+<div id="reorderModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="card" style="width: 450px; max-height: 85vh; display: flex; flex-direction: column; padding: 2rem; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h3 style="margin: 0; font-weight: 800; font-size: 1.25rem;"><i class="fas fa-sort-amount-down" style="color: var(--primary); margin-right: 0.5rem;"></i> Sắp xếp thứ tự nhân sự</h3>
+            <button type="button" onclick="closeReorderModal()" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.25rem;"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div id="staffSortList" style="flex: 1; overflow-y: auto; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 5px;">
+            <?php foreach ($all_staff as $s): ?>
+                <div class="sort-item" data-id="<?php echo $s['id']; ?>" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; transition: all 0.2s;">
+                    <div style="width: 36px; height: 36px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 800; border: 1px solid #e2e8f0;">
+                        <i class="fas fa-grip-lines"></i>
+                    </div>
+                    <span style="flex: 1; font-weight: 700; font-size: 0.95rem; color: var(--text-main);">
+                        <?php echo e($s['full_name']); ?> 
+                        <span style="display: block; font-weight: 500; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 0.1rem;"><?php echo e($s['role_display']); ?></span>
+                    </span>
+                    <div style="display: flex; gap: 0.4rem;">
+                        <button type="button" onclick="moveStaffItem(this, 'up')" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #64748b; cursor: pointer;"><i class="fas fa-chevron-up"></i></button>
+                        <button type="button" onclick="moveStaffItem(this, 'down')" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #64748b; cursor: pointer;"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="button" onclick="saveStaffOrder()" class="btn btn-primary" id="saveOrderBtn" style="flex: 1; justify-content: center; border-radius: 14px; padding: 1rem;">Lưu thay đổi</button>
+            <button type="button" onclick="closeReorderModal()" class="btn" style="background: #f1f5f9; border-radius: 14px; padding: 1rem; border: 1px solid #e2e8f0;">Hủy</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openReorderModal() {
+    document.getElementById('reorderModal').style.display = 'flex';
+}
+
+function closeReorderModal() {
+    document.getElementById('reorderModal').style.display = 'none';
+}
+
+function moveStaffItem(btn, direction) {
+    const item = btn.closest('.sort-item');
+    const container = document.getElementById('staffSortList');
+    
+    if (direction === 'up') {
+        const prev = item.previousElementSibling;
+        if (prev) container.insertBefore(item, prev);
+    } else {
+        const next = item.nextElementSibling;
+        if (next) container.insertBefore(next, item);
+    }
+}
+
+async function saveStaffOrder() {
+    const btn = document.getElementById('saveOrderBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+    btn.disabled = true;
+
+    const items = document.querySelectorAll('#staffSortList .sort-item');
+    const orders = Array.from(items).map((item, index) => ({
+        id: item.dataset.id,
+        sort_order: index + 1
+    }));
+
+    try {
+        const response = await fetch('update_staff_order.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orders })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('Lỗi: ' + result.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    } catch (err) {
+        alert('Lỗi kết nối mạng');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Initialize Flatpickr for timeline date
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr("#timeline_date", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d/m/Y",
+            locale: "vn",
+            disableMobile: "true",
+            onChange: function(selectedDates, dateStr, instance) {
+                instance.element.form.submit();
+            }
+        });
+    }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
 
 <?php require_once '../../templates/footer.php'; ?>

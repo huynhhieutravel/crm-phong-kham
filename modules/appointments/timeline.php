@@ -116,7 +116,7 @@ $doctors_stmt = $db->query("
     SELECT u.id, u.full_name, r.display_name as role_name 
     FROM users u 
     JOIN roles r ON u.role_id = r.id 
-    WHERE r.name IN ('doctor', 'cskh', 'admin') AND u.status = 'active'
+    WHERE r.name IN ('doctor', 'technician', 'cskh', 'admin') AND u.status = 'active'
     ORDER BY r.name = 'doctor' DESC, u.full_name ASC
 ");
 $doctors = $doctors_stmt->fetchAll();
@@ -279,6 +279,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
     <div style="display: flex; background: #f1f5f9; padding: 0.3rem; border-radius: 14px;">
         <?php 
         $view_btn_params = "search=$search&status=$status_filter&date=$date_filter&doctor_id=$doctor_filter&type=$type_filter";
+        $cell_btn_params = "search=$search&status=$status_filter&doctor_id=$doctor_filter&type=$type_filter";
         ?>
         <a href="?view=timeline&<?php echo $view_btn_params; ?>" class="btn btn-sm <?php echo $view === 'timeline' ? 'btn-white shadow-sm' : ''; ?>" style="border-radius: 10px; padding: 0.5rem 1rem; border: none; font-weight: 700; color: <?php echo $view === 'timeline' ? 'var(--primary)' : 'var(--text-muted)'; ?>; background: <?php echo $view === 'timeline' ? 'white' : 'transparent'; ?>;">
             <i class="fas fa-clock"></i> <?php echo __('appointment.view.day'); ?>
@@ -306,54 +307,60 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
             $day_grouped[$did][] = $a;
         }
         ?>
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <h2 style="margin: 0; font-weight: 800; color: var(--text-main);"><?php echo __('appointment.day_schedule.title'); ?> <?php echo date('d/m/Y', strtotime($target_date)); ?></h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 150px;"></div>
+            <h2 style="margin: 0; font-weight: 800; color: var(--text-main); text-align: center; flex: 2; min-width: 250px;"><?php echo __('appointment.day_schedule.title'); ?> <?php echo date('d/m/Y', strtotime($target_date)); ?></h2>
+            <div style="flex: 1; display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end; min-width: 150px;">
+                <i class="fas fa-search-minus" style="color: var(--text-muted); font-size: 0.85rem;" title="Thu nhỏ (Nhiều cột)"></i>
+                <input type="range" id="zoomSliderDay" min="150" max="450" value="300" style="width: 120px; cursor: pointer; accent-color: var(--primary);" title="Thay đổi kích thước cột">
+                <i class="fas fa-search-plus" style="color: var(--text-muted); font-size: 0.85rem;" title="Phóng to (Ít cột)"></i>
+            </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+        <div id="dayGridContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
             <?php foreach ($doctors_with_unassigned as $doc): ?>
                 <?php 
                 $staff_appts = isset($day_grouped[$doc['id']]) ? $day_grouped[$doc['id']] : [];
                 if (empty($staff_appts) && $doc['id'] !== 0) continue; 
                 ?>
-                <div class="staff-day-column" style="background: #f8fafc; border-radius: 16px; padding: 1.25rem; border: 1px solid var(--border-color);">
-                    <div style="margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 800; color: var(--text-main); font-size: 0.95rem;">
-                            <i class="fas fa-user-md" style="color: var(--primary); margin-right: 0.5rem;"></i>
+                <div class="staff-day-column" style="background: #f8fafc; border-radius: 16px; padding: 0.85rem; border: 1px solid var(--border-color);">
+                    <div style="margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 5px; flex-wrap: wrap;">
+                        <span style="font-weight: 800; color: var(--text-main); font-size: 0.85rem; line-height: 1.3;">
+                            <i class="fas fa-user-md" style="color: var(--primary); margin-right: 0.4rem;"></i>
                             <?php echo e($doc['full_name']); ?>
                         </span>
-                        <span style="font-size: 0.7rem; font-weight: 700; background: #e2e8f0; color: var(--text-muted); padding: 0.2rem 0.5rem; border-radius: 6px;">
+                        <span style="font-size: 0.65rem; font-weight: 700; background: #e2e8f0; color: var(--text-muted); padding: 0.2rem 0.5rem; border-radius: 6px; white-space: nowrap;">
                             <?php echo count($staff_appts); ?> <?php echo __('appointment.session_count'); ?>
                         </span>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
                         <?php if (empty($staff_appts)): ?>
-                            <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
+                            <div style="text-align: center; padding: 1.5rem 0; color: var(--text-muted); font-size: 0.8rem; font-style: italic;">
                                 <?php echo __('appointment.no_appointments'); ?>
                             </div>
                         <?php else: ?>
                             <?php foreach ($staff_appts as $a): 
                                 $status = isset($status_map[$a['status']]) ? $status_map[$a['status']] : ['color' => '#64748b', 'label' => 'Unknown'];
                             ?>
-                                <div class="day-event-card" style="background: white; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-sm); border-left: 4px solid <?php echo $status['color']; ?>; cursor: pointer; transition: transform 0.2s;" onclick="location.href='view.php?id=<?php echo $a['id']; ?>'">
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                        <span style="font-weight: 800; font-size: 1rem; color: var(--text-main);">
+                                <div class="day-event-card" style="background: white; border-radius: 12px; padding: 0.75rem; box-shadow: var(--shadow-sm); border-left: 4px solid <?php echo $status['color']; ?>; cursor: pointer; transition: transform 0.2s;" onclick="location.href='view.php?id=<?php echo $a['id']; ?>'">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 4px;">
+                                        <span style="font-weight: 800; font-size: 0.8rem; color: var(--text-main); line-height: 1.2;">
                                             <?php 
                                                 echo date('H:i', strtotime($a['appointment_date']));
                                                 if (!empty($a['appointment_end_time'])) echo ' – ' . substr($a['appointment_end_time'], 0, 5);
                                             ?>
                                         </span>
-                                        <span style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: <?php echo $status['color']; ?>;"><?php echo $status['label']; ?></span>
+                                        <span style="font-size: 0.6rem; font-weight: 800; text-transform: uppercase; color: <?php echo $status['color']; ?>; text-align: right; line-height: 1.2; word-break: break-word;"><?php echo $status['label']; ?></span>
                                     </div>
-                                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">
-                                        [<?php echo $a['contact_type'] === 'Patient' ? __('appointment.contact_type.patient') : __('appointment.contact_type.lead'); ?>] 
+                                    <div style="font-weight: 700; font-size: 0.8rem; color: var(--text-main); margin-bottom: 0.35rem; line-height: 1.3;">
+                                        <span style="color: var(--text-muted); font-size: 0.7rem;">[<?php echo $a['contact_type'] === 'Patient' ? __('appointment.contact_type.patient') : __('appointment.contact_type.lead'); ?>]</span> 
                                         <?php echo e($a['contact_name']); ?>
                                         <?php if(!empty($a['patient_label'])): ?>
                                             (<?php echo e(get_patient_label_translation($a['patient_label'])); ?>)
                                         <?php endif; ?>
                                     </div>
-                                    <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem;">
                                         <i class="fas fa-phone-alt" style="font-size: 0.6rem;"></i> <?php echo e($a['contact_phone']); ?>
                                     </div>
                                 </div>
@@ -363,6 +370,32 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const zoomSlider = document.getElementById('zoomSliderDay');
+            const dayGrid = document.getElementById('dayGridContainer');
+            
+            if(zoomSlider && dayGrid) {
+                // Apply saved preference if exists
+                const savedZoom = localStorage.getItem('crmTimelineDayZoom');
+                if(savedZoom) {
+                    zoomSlider.value = savedZoom;
+                    dayGrid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${savedZoom}px, 1fr))`;
+                }
+
+                // Smoothly update while dragging
+                zoomSlider.addEventListener('input', function() {
+                    dayGrid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${this.value}px, 1fr))`;
+                });
+
+                // Save to localStorage when released
+                zoomSlider.addEventListener('change', function() {
+                    localStorage.setItem('crmTimelineDayZoom', this.value);
+                });
+            }
+        });
+        </script>
     </div>
 <?php elseif ($view === 'timeline_week'): ?>
     <!-- Week Timeline View -->
@@ -459,7 +492,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
             ?>
                 <div style="min-height: 130px; background: white; border-radius: 16px; border: 1px solid <?php echo $is_today ? 'var(--primary)' : '#eef2f6'; ?>; padding: 0.85rem; cursor: pointer;" 
                      class="calendar-day-cell <?php echo $is_today ? 'today' : ''; ?>"
-                     onclick="location.href='?view=timeline&date=<?php echo $current_date_str; ?>&<?php echo $view_btn_params; ?>'">
+                     onclick="location.href='?view=timeline&date=<?php echo $current_date_str; ?>&<?php echo $cell_btn_params; ?>'">
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
                         <span style="font-weight: 800; font-size: 1.15rem; color: <?php echo $is_today ? 'var(--primary)' : 'var(--text-main)'; ?>;"><?php echo $d; ?></span>

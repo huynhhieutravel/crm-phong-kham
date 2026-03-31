@@ -267,12 +267,17 @@ function setPeriod(p) {
                                     <?php echo e($p['customer_id'] ?: 'BN-' . $p['id']); ?>
                                 </span>
                                 <?php if ($p['label']): ?>
-                                    <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; background: <?php 
-                                        echo strtolower($p['label']) === 'vip' ? '#fef3c7' : '#dcfce7'; 
-                                    ?>; color: <?php 
-                                        echo strtolower($p['label']) === 'vip' ? '#d97706' : '#16a34a'; 
-                                    ?>; padding: 0.1rem 0.5rem; border-radius: 99px;">
-                                        <?php echo e(get_patient_label_translation($p['label'])); ?>
+                                    <?php
+                                        $lbl = mb_strtolower(trim($p['label']), 'UTF-8');
+                                        $bg = '#dcfce7'; $c = '#16a34a'; // default green (Khách mới)
+                                        if (mb_strpos($lbl, 'đang điều trị') !== false) { $bg = '#dbeafe'; $c = '#2563eb'; } // blue
+                                        elseif (mb_strpos($lbl, 'cần chăm sóc') !== false || mb_strpos($lbl, 'khẩn') !== false) { $bg = '#ffedd5'; $c = '#ea580c'; } // orange
+                                        elseif (mb_strpos($lbl, 'vip') !== false) { $bg = '#fef3c7'; $c = '#d97706'; } // gold
+                                        elseif (mb_strpos($lbl, 'khách cũ') !== false) { $bg = '#f1f5f9'; $c = '#475569'; } // slate
+                                        elseif (mb_strpos($lbl, 'duy anh') !== false) { $bg = '#fce7f3'; $c = '#db2777'; } // pink
+                                    ?>
+                                    <span style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; background: <?php echo $bg; ?>; color: <?php echo $c; ?>; padding: 0.15rem 0.6rem; border-radius: 8px; border: 1px solid <?php echo $bg; ?>; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="fas fa-tag"></i> <?php echo e(get_patient_label_translation($p['label'])); ?>
                                     </span>
                                 <?php endif; ?>
                             </div>

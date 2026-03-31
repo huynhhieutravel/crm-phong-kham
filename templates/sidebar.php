@@ -14,10 +14,10 @@
             </a>
             <div class="submenu">
                 <a href="<?php echo $base_url; ?>index.php" class="submenu-item <?php echo ($current_page === 'dashboard' && strpos($_SERVER['PHP_SELF'], 'daily_operations.php') === false) ? 'active' : ''; ?>">
-                    <i class="fas fa-chart-line"></i> Tổng quan
+                    <i class="fas fa-chart-line"></i> <?php echo __('menu.dashboard.overview'); ?>
                 </a>
                 <a href="<?php echo $base_url; ?>modules/dashboard/daily_operations.php" class="submenu-item <?php echo ($current_page === 'dashboard' && strpos($_SERVER['PHP_SELF'], 'daily_operations.php') !== false) ? 'active' : ''; ?>">
-                    <i class="fas fa-calendar-day"></i> Hoạt động trong ngày
+                    <i class="fas fa-calendar-day"></i> <?php echo __('menu.dashboard.daily'); ?>
                 </a>
             </div>
         </div>
@@ -66,17 +66,37 @@
         <?php endif; ?>
 
         <?php if (can('view_patients')): ?>
-        <a href="<?php echo $base_url; ?>modules/patients/index.php" class="nav-item <?php echo $current_page === 'patients' ? 'active' : ''; ?>">
-            <i class="fas fa-users"></i>
-            <span><?php echo __('menu.patients'); ?></span>
-        </a>
+        <div class="nav-item-wrapper">
+            <a href="<?php echo $base_url; ?>modules/patients/dashboard.php" class="nav-item <?php echo $current_page === 'patients' ? 'active' : ''; ?>">
+                <i class="fas fa-users"></i>
+                <span><?php echo __('menu.patients'); ?></span>
+            </a>
+            <div class="submenu">
+                <a href="<?php echo $base_url; ?>modules/patients/dashboard.php" class="submenu-item <?php echo ($current_page === 'patients' && strpos($_SERVER['PHP_SELF'], 'dashboard.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-chart-pie"></i> <?php echo __('menu.patients.dashboard'); ?>
+                </a>
+                <a href="<?php echo $base_url; ?>modules/patients/index.php" class="submenu-item <?php echo ($current_page === 'patients' && strpos($_SERVER['PHP_SELF'], 'index.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-list-ul"></i> <?php echo __('menu.patients.list'); ?>
+                </a>
+            </div>
+        </div>
         <?php endif; ?>
 
         <?php if (can('view_medical')): ?>
-        <a href="<?php echo $base_url; ?>modules/medical/index.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
-            <i class="fas fa-file-medical"></i>
-            <span><?php echo __('menu.medical'); ?></span>
-        </a>
+        <div class="nav-item-wrapper">
+            <a href="<?php echo $base_url; ?>modules/medical/daily.php" class="nav-item <?php echo $current_page === 'medical' ? 'active' : ''; ?>">
+                <i class="fas fa-file-medical"></i>
+                <span><?php echo __('menu.medical'); ?></span>
+            </a>
+            <div class="submenu">
+                <a href="<?php echo $base_url; ?>modules/medical/daily.php" class="submenu-item <?php echo ($current_page === 'medical' && strpos($_SERVER['PHP_SELF'], 'daily.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-calendar-day"></i> <?php echo __('menu.medical.daily'); ?>
+                </a>
+                <a href="<?php echo $base_url; ?>modules/medical/index.php" class="submenu-item <?php echo ($current_page === 'medical' && strpos($_SERVER['PHP_SELF'], 'index.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-archive"></i> <?php echo __('menu.medical.records'); ?>
+                </a>
+            </div>
+        </div>
         <?php endif; ?>
 
         <div class="nav-section-label" style="padding: 1.5rem 1.5rem 0.5rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;"><?php echo __('menu.management_label'); ?></div>
@@ -103,10 +123,20 @@
         <?php endif; ?>
 
         <?php if (can('view_reports')): ?>
-        <a href="<?php echo $base_url; ?>modules/reports/index.php" class="nav-item <?php echo $current_page === 'reports' ? 'active' : ''; ?>">
-            <i class="fas fa-chart-bar"></i>
-            <span><?php echo __('menu.reports'); ?></span>
-        </a>
+        <div class="nav-item-wrapper">
+            <a href="<?php echo $base_url; ?>modules/reports/index.php" class="nav-item <?php echo $current_page === 'reports' ? 'active' : ''; ?>">
+                <i class="fas fa-chart-bar"></i>
+                <span><?php echo __('menu.reports'); ?></span>
+            </a>
+            <div class="submenu">
+                <a href="<?php echo $base_url; ?>modules/reports/index.php" class="submenu-item <?php echo ($current_page == 'reports' && strpos($_SERVER['PHP_SELF'], 'index.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-wallet"></i> <?php echo __('menu.reports.financial'); ?>
+                </a>
+                <a href="<?php echo $base_url; ?>modules/reports/kpi.php" class="submenu-item <?php echo ($current_page == 'reports' && strpos($_SERVER['PHP_SELF'], 'kpi.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-users-cog"></i> <?php echo __('menu.reports.kpi'); ?>
+                </a>
+            </div>
+        </div>
         <?php endif; ?>
         <?php if (can('view_audit_logs')): ?>
         <a href="<?php echo $base_url; ?>modules/admin/audit_logs.php" class="nav-item <?php echo $current_page === 'admin_audit' ? 'active' : ''; ?>">
@@ -148,7 +178,7 @@
     <div class="sidebar-footer" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
         <a href="<?php echo $base_url; ?>modules/hr/change_password.php" class="nav-item <?php echo $current_page === 'change_password' ? 'active' : ''; ?>" style="color: #94a3b8;">
             <i class="fas fa-key"></i>
-            <span>Đổi mật khẩu</span>
+            <span><?php echo __('menu.change_password'); ?></span>
         </a>
         <a href="<?php echo $base_url; ?>logout.php" class="nav-item" style="color: #f87171;">
             <i class="fas fa-sign-out-alt"></i>

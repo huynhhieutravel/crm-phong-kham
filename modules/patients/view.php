@@ -40,6 +40,21 @@ $histories = $stmt->fetchAll();
 $stmt = $db->prepare("SELECT t.*, u.full_name as technician_name FROM treatments t JOIN users u ON t.technician_id = u.id WHERE t.patient_id = ? ORDER BY t.treatment_date DESC");
 $stmt->execute([$id]);
 $treatments = $stmt->fetchAll();
+
+// Fetch package progress
+$stmt = $db->prepare("
+    SELECT pp.*, p.name as package_name 
+    FROM patient_packages pp 
+    JOIN packages p ON pp.package_id = p.id 
+    WHERE pp.patient_id = ? AND pp.status = 'active'
+");
+$stmt->execute([$id]);
+$packages = $stmt->fetchAll();
+
+// Fetch re-examination rules
+$stmt = $db->prepare("SELECT * FROM reexam_rules WHERE patient_id = ? ORDER BY next_due_at ASC");
+$stmt->execute([$id]);
+$rules = $stmt->fetchAll();
 ?>
 
 <div style="display: flex; gap: 1.5rem;">
@@ -148,6 +163,53 @@ $treatments = $stmt->fetchAll();
         .btn-edit-top:hover { background: rgba(255,255,255,0.2) !important; transform: scale(1.1); }
         </style>
 
+    <?php
+    $chiro_history = null;
+    foreach ($histories as $h) {
+        if ($h['type'] === 'chiro_history') {
+            $chiro_history = $h;
+            break;
+        }
+    }
+    ?>
+    <div class="card" style="margin-bottom: 1.5rem; border: none; box-shadow: var(--shadow-sm); padding: 1.5rem; background: #faf5ff; border: 1px solid #e9d5ff;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <div style="width: 48px; height: 48px; background: white; color: #9333ea; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; box-shadow: 0 4px 6px -1px rgba(147, 51, 234, 0.1);">
+                    <i class="fas fa-file-medical-alt"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-weight: 800; color: #1e293b; font-size: 1.15rem; margin-bottom: 0.25rem;"><?php echo __('medical.type.chiro_history'); ?></h3>
+                    <div style="font-size: 0.85rem; color: #64748b; font-weight: 500;">
+                        <?php if ($chiro_history): ?>
+                            <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #16a34a; font-weight: 700; background: #dcfce7; padding: 0.15rem 0.5rem; border-radius: 50px; font-size: 0.75rem;"><i class="fas fa-check-circle"></i> <?php echo __('patient.history.has_data'); ?></span>
+                            <?php echo __('patient.history.updated_at'); ?> <?php echo date('d/m/Y H:i', strtotime($chiro_history['updated_at'] ?: $chiro_history['created_at'])); ?> 
+                            <?php echo __('patient.history.by'); ?> <strong style="color: #475569;"><?php echo e($chiro_history['doctor_name'] ?? 'Hệ thống'); ?></strong>
+                        <?php else: ?>
+                            <span style="color: #ea580c; font-weight: 600;"><i class="fas fa-exclamation-triangle" style="margin-right: 2px;"></i> <?php echo __('patient.history.no_history_yet'); ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <?php if ($chiro_history): ?>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="../medical/print_record.php?type=history&id=<?php echo $chiro_history['id']; ?>" target="_blank" class="btn" style="background: white; border: 1px solid #d8b4fe; color: #9333ea; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; transition: all 0.2s;" onmouseover="this.style.background='#9333ea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#9333ea';">
+                            <i class="fas fa-print"></i> In PDF
+                        </a>
+                        <a href="../medical/chiro_history.php?patient_id=<?php echo $patient['id']; ?>&id=<?php echo $chiro_history['id']; ?>" class="btn" style="background: white; border: 1px solid #d8b4fe; color: #9333ea; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; transition: all 0.2s;" onmouseover="this.style.background='#9333ea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#9333ea';">
+                            <i class="fas fa-edit"></i> <?php echo __('patient.history.view_update'); ?>
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <a href="../medical/chiro_history.php?patient_id=<?php echo $patient['id']; ?>" class="btn btn-primary" style="background: #9333ea; border: none; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);">
+                        <i class="fas fa-plus-circle"></i> <?php echo __('patient.history.create_new'); ?>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
         <!-- Left: Medical Timeline -->
         <div class="card" style="border: none; box-shadow: var(--shadow-sm);">
@@ -170,6 +232,7 @@ $treatments = $stmt->fetchAll();
                     $session_parts = [];
                     // Find all history records for THIS session
                     foreach ($histories as $h) {
+                        if ($h['type'] === 'chiro_history') continue;
                         if ($h['session_id'] == $session['id']) {
                             $session_parts[] = $h;
                         }
@@ -192,6 +255,7 @@ $treatments = $stmt->fetchAll();
                 // 2. Add Orphan Histories (or those belonging to non-existent/wrong sessions)
                 $session_ids = array_column($sessions, 'id');
                 foreach ($histories as $h) {
+                    if ($h['type'] === 'chiro_history') continue;
                     if (!$h['session_id'] || !in_array($h['session_id'], $session_ids)) {
                         $timeline_items[] = [
                             'type' => 'history',
@@ -334,7 +398,16 @@ $treatments = $stmt->fetchAll();
                                 <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;"><?php echo date('d/m/Y', strtotime($item['date'])); ?></div>
                                 <div style="font-weight: 700; color: #1e293b;"><?php echo $type_label; ?></div>
                                 <div style="font-size: 0.85rem; color: var(--text-muted);"><?php echo $is_tr ? __('medical.record.treatment') : __('medical.record.medical'); ?></div>
-                                <a href="<?php echo $is_tr ? '#' : '../medical/view_form.php?id='.$i['id']; ?>" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 700;"><?php echo __('medical.record.review'); ?></a>
+                                <div style="display: flex; gap: 0.75rem; margin-top: 0.25rem;">
+                                    <?php if (!$is_tr): ?>
+                                    <a href="../medical/view_form.php?id=<?php echo $i['id']; ?>" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 700;">
+                                        <i class="fas fa-eye"></i> <?php echo __('medical.record.review'); ?>
+                                    </a>
+                                    <?php endif; ?>
+                                    <a href="../medical/print_record.php?type=<?php echo $is_tr ? 'treatment' : 'history'; ?>&id=<?php echo $i['id']; ?>" target="_blank" style="font-size: 0.75rem; color: #10b981; text-decoration: none; font-weight: 700;">
+                                        <i class="fas fa-print"></i> In PDF
+                                    </a>
+                                </div>
                             </div>
                         <?php endif; ?>
 
@@ -406,13 +479,14 @@ $treatments = $stmt->fetchAll();
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.frequency'); ?></label>
-                                <select name="frequency" class="form-input" style="padding: 0.5rem; font-size: 0.85rem;">
-                                    <option value="1"><?php echo __('patient.reexam.freq_1'); ?></option>
-                                    <option value="3" selected><?php echo __('patient.reexam.freq_3'); ?></option>
-                                    <option value="6"><?php echo __('patient.reexam.freq_6'); ?></option>
-                                    <option value="12"><?php echo __('patient.reexam.freq_12'); ?></option>
-                                    <option value="0"><?php echo __('patient.reexam.freq_0'); ?></option>
-                                </select>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="number" name="frequency" class="form-input" min="1" value="3" style="padding: 0.5rem; font-size: 0.85rem; flex: 1;" required>
+                                    <select name="frequency_type" class="form-input" style="padding: 0.5rem; font-size: 0.85rem; flex: 1;">
+                                        <option value="days"><?php echo __('common.day'); ?></option>
+                                        <option value="weeks"><?php echo __('common.week'); ?></option>
+                                        <option value="months" selected><?php echo __('common.month'); ?></option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.start_date'); ?></label>
@@ -432,7 +506,11 @@ $treatments = $stmt->fetchAll();
                     <?php foreach ($rules as $rule): ?>
                         <div style="background: white; padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1;">
-                                <div style="font-weight: 800; color: var(--text-main); font-size: 0.9rem;"><?php echo e($rule['service_name']); ?></div>
+                                <?php
+                                $f_type = ($rule['frequency_type'] === 'days') ? __('common.day') : (($rule['frequency_type'] === 'weeks') ? __('common.week') : __('common.month'));
+                                $freq_str = $rule['frequency'] . ' ' . $f_type;
+                                ?>
+                                <div style="font-weight: 800; color: var(--text-main); font-size: 0.9rem;"><?php echo e($rule['service_name']); ?> <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; background: #e2e8f0; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.4rem; white-space: nowrap;"><?php echo __('common.every'); ?> <?php echo $freq_str; ?></span></div>
                                 <div style="font-size: 0.85rem; font-weight: 700; color: <?php echo strtotime($rule['next_due_at']) <= time() ? '#dc2626' : '#ea580c'; ?>; margin-top: 0.25rem;">
                                     <?php echo __('patient.reexam.appointment'); ?> <?php echo date('d/m/Y', strtotime($rule['next_due_at'])); ?>
                                 </div>

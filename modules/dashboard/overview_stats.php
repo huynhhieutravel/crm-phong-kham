@@ -11,22 +11,22 @@ $stats = [
 
 if ($start_date && $end_date) {
     try {
-        $stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN ? AND ?");
+        $stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE DATE(created_at) BETWEEN ? AND ?");
         $stmt->execute([$start_date, $end_date]);
         $stats['patients'] = (int)$stmt->fetchColumn();
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
-        $stmt = $db->prepare("SELECT COUNT(*) FROM appointments WHERE appointment_date BETWEEN ? AND ?");
+        $stmt = $db->prepare("SELECT COUNT(*) FROM appointments WHERE DATE(appointment_date) BETWEEN ? AND ?");
         $stmt->execute([$start_date, $end_date]);
         $stats['appointments'] = (int)$stmt->fetchColumn();
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
-        $stmt = $db->prepare("SELECT SUM(amount) FROM transactions WHERE type = 'income' AND transaction_date BETWEEN ? AND ?");
+        $stmt = $db->prepare("SELECT SUM(amount) FROM transactions WHERE type = 'income' AND DATE(transaction_date) BETWEEN ? AND ?");
         $stmt->execute([$start_date, $end_date]);
         $stats['revenue'] = (float)($stmt->fetchColumn() ?: 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log($e->getMessage()); }
 }
 ?>
 
@@ -63,16 +63,18 @@ if ($start_date && $end_date) {
         <?php
         $recent_appointments = [];
         try {
-            $recent_stmt = $db->query("
+            $recent_stmt = $db->prepare("
                 SELECT a.*, p.full_name as patient_name, u.full_name as doctor_name 
                 FROM appointments a 
                 JOIN patients p ON a.patient_id = p.id 
                 LEFT JOIN users u ON a.doctor_id = u.id 
-                WHERE a.appointment_date BETWEEN '$start_date' AND '$end_date'
+                WHERE DATE(a.appointment_date) BETWEEN ? AND ?
                 ORDER BY a.appointment_date DESC LIMIT 10
             ");
-            if ($recent_stmt) $recent_appointments = $recent_stmt->fetchAll();
+            $recent_stmt->execute([$start_date, $end_date]);
+            $recent_appointments = $recent_stmt->fetchAll();
         } catch (Exception $e) {
+            error_log("Failed to fetch recent appointments: " . $e->getMessage());
             // Simplified fallback if JOIN fails (maybe missing doctor_id or something)
             try {
                 $recent_appointments = $db->query("SELECT *, 'System' as patient_name, '' as doctor_name FROM appointments ORDER BY appointment_date DESC LIMIT 5")->fetchAll();
@@ -92,7 +94,19 @@ if ($start_date && $end_date) {
                 <tbody>
                     <?php foreach ($recent_appointments as $a): ?>
                     <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 1rem 0;"><strong><?php echo e($a['patient_name']); ?></strong></td>
+                        <td style="padding: 1rem 0;">
+                            <?php if(!empty($a['patient_id'])): ?>
+                                <a href="/modules/patients/view.php?id=<?php echo $a['patient_id']; ?>" style="color: var(--text-main); font-weight: 800; text-decoration: none; transition: color 0.15s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-main)'">
+                                    <?php echo e($a['patient_name']); ?>
+                                </a>
+                                <div style="margin-top: 6px; display: flex; gap: 10px; align-items: center;">
+                                    <a href="/modules/patients/view.php?id=<?php echo $a['patient_id']; ?>" style="font-size: 0.7rem; color: #6366f1; font-weight: 700; text-decoration: none; background: #eef2ff; padding: 0.2rem 0.5rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#6366f1'; this.style.color='white';" onmouseout="this.style.background='#eef2ff'; this.style.color='#6366f1';"><i class="fas fa-user-circle"></i> Chi tiết BN</a>
+                                    <a href="/modules/medical/session_start.php?patient_id=<?php echo $a['patient_id']; ?>" style="font-size: 0.7rem; color: #10b981; font-weight: 700; text-decoration: none; background: #ecfdf5; padding: 0.2rem 0.5rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#10b981'; this.style.color='white';" onmouseout="this.style.background='#ecfdf5'; this.style.color='#10b981';"><i class="fas fa-notes-medical"></i> Bệnh án</a>
+                                </div>
+                            <?php else: ?>
+                                <strong><?php echo e($a['patient_name']); ?></strong>
+                            <?php endif; ?>
+                        </td>
                         <td style="padding: 1rem 0;"><?php echo e($a['doctor_name'] ?? '---'); ?></td>
                         <td style="padding: 1rem 0; font-size: 0.9rem; color: var(--text-muted);"><?php echo date('H:i d/m', strtotime($a['appointment_date'])); ?></td>
                         <td style="padding: 1rem 0;">
@@ -121,12 +135,13 @@ if ($start_date && $end_date) {
                     SELECT r.*, p.full_name as patient_name, p.phone
                     FROM reexam_rules r
                     JOIN patients p ON r.patient_id = p.id
-                    WHERE r.status = 'active' AND r.next_due_at <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+                    WHERE r.next_due_at <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
                     ORDER BY r.next_due_at ASC
                     LIMIT 5
                 ");
                 if ($pend_stmt) $pending_reexams = $pend_stmt->fetchAll();
             } catch (Exception $e) {
+                error_log("Re-exam logic error: " . $e->getMessage());
                 // If table doesn't exist, just keep empty
             }
             ?>
@@ -135,8 +150,8 @@ if ($start_date && $end_date) {
                     <div style="padding: 0.75rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 10px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                             <div>
-                                <strong style="display: block; font-size: 0.9rem;"><?php echo e($rx['patient_name']); ?></strong>
-                                <small style="color: var(--text-muted);"><?php echo e($rx['service_name']); ?></small>
+                                <a href="/modules/patients/view.php?id=<?php echo $rx['patient_id']; ?>" style="display: block; font-size: 0.95rem; font-weight: 800; color: #d97706; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#b45309'" onmouseout="this.style.color='#d97706'"><?php echo e($rx['patient_name']); ?></a>
+                                <div style="font-size: 0.8rem; color: #92400e; margin-top: 2px;"><i class="fas fa-phone-alt" style="font-size: 0.7rem;"></i> <?php echo e($rx['phone']); ?></div>
                             </div>
                             <span style="font-size: 0.75rem; font-weight: 700; color: <?php echo strtotime($rx['next_due_at']) <= time() ? '#dc2626' : '#d97706'; ?>;">
                                 <?php echo date('d/m', strtotime($rx['next_due_at'])); ?>
