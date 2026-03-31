@@ -212,7 +212,8 @@ require_once '../../templates/header.php';
 
             <?php
                 $components = [
-                    'chiropractic'  => ['label' => __('medical.type.chiro_exam_full'), 'url' => 'form.php?type=chiropractic', 'icon' => 'fa-notes-medical'],
+                    // 'chiropractic_v1' => ['label' => 'Phiếu khám Chiropractic (V1 Cũ)', 'url' => 'form.php?type=chiropractic_v1', 'icon' => 'fa-history'],
+                    'chiropractic' => ['label' => 'Phiếu khám Chiropractic (V2)', 'url' => 'form.php?type=chiropractic', 'icon' => 'fa-notes-medical'],
                     'dong_y'        => ['label' => __('medical.type.dong_y_full'), 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
                     'treatment'     => ['label' => __('medical.type.treatment_full'), 'url' => 'add_treatment.php', 'icon' => 'fa-file-signature']
                 ];

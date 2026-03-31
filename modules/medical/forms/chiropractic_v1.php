@@ -534,307 +534,143 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
 
 <!-- PHẦN 3: ĐÁNH GIÁ & VỊ TRÍ ĐIỀU TRỊ -->
 <div style="margin-bottom: 3rem;">
-    <h3 style="font-size: 1.1rem; font-weight: bold; color: black; margin-bottom: 1rem;">
-        <?php echo __('medical.v3.ass_adj_title'); ?>
+    <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <i class="fas fa-project-diagram"></i> <?php echo __('medical.v2.ass_title'); ?>
     </h3>
-    <div style="font-weight: bold; margin-bottom: 0.5rem; color: black;"><?php echo __('medical.v3.adjustment'); ?></div>
-    <div style="font-style: italic; margin-bottom: 1.5rem; color: black;"><?php echo __('medical.v3.mark_x'); ?></div>
-
-    <style>
-        .v2-table {
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 650px;
-            margin-bottom: 2rem;
-            color: black;
-            font-size: 0.95rem;
-        }
-        .v2-table th, .v2-table td {
-            border: 1px solid black;
-            padding: 6px 10px;
-            vertical-align: middle;
-        }
-        .v2-table th {
-            font-weight: bold;
-            text-align: center;
-        }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .v2-title { font-weight: bold; margin-bottom: 10px; color: black; margin-top: 1.5rem; font-size: 1.05rem; }
-        .v2-checkbox-list label { display: block; margin-bottom: 8px; color: black; cursor: pointer; }
-    </style>
-
-    <?php 
-    // Helper to render checkbox inside table
-    function renderV2Cb($name, $val, $arr, $bone = '') {
-        $checked = (is_array($arr) && in_array($val, $arr)) ? 'checked' : '';
-        $dataBone = $bone ? ' class="sub-cb" data-bone="'.htmlspecialchars($bone).'"' : '';
-        return '<input type="checkbox" name="history['.$name.'][]" value="'.$val.'" '.$checked.' style="width:16px; height:16px; cursor:pointer;"'.$dataBone.'>';
-    }
-    ?>
-
-    <div class="v2-title"><?php echo __('medical.v3.cervical'); ?></div>
-    <label style="display:block; margin-bottom: 15px; color: black; cursor: pointer;">
-        <input type="checkbox" name="history[subluxation][cervical][Occiput_general]" value="1" <?php echo isset($data['subluxation']['cervical']['Occiput_general']) ? 'checked' : ''; ?> style="width:16px; height:16px;" class="sub-cb" data-bone="Occiput"> Occiput
-    </label>
-
-    <table class="v2-table">
-        <thead>
-            <tr>
-                <th style="width:60px;">L</th>
-                <th style="width:60px;">R</th>
-                <th></th>
-                <th style="width:40px;"></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php 
-            $c_items = [
-                ['name' => 'Khớp thái dương hàm (TMJ)', 'key' => 'TMJ', 'suffix' => ''],
-                ['name' => 'Atlas', 'key' => 'Atlas (C1)', 'suffix' => ''],
-                ['name' => 'Axis 2', 'key' => 'Axis (C2)', 'suffix' => 'C'],
-                ['name' => '3', 'key' => 'C3', 'suffix' => ''],
-                ['name' => '4', 'key' => 'C4', 'suffix' => ''],
-                ['name' => '5', 'key' => 'C5', 'suffix' => ''],
-                ['name' => '6', 'key' => 'C6', 'suffix' => ''],
-                ['name' => '7', 'key' => 'C7', 'suffix' => ''],
-            ];
-            foreach($c_items as $item):
-                $arr = $data['subluxation']['cervical'][$item['key']] ?? [];
-            ?>
-            <tr>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][cervical]['.$item['key'].']', 'L', $arr, $item['key']); ?></td>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][cervical]['.$item['key'].']', 'R', $arr, $item['key']); ?></td>
-                <td style="padding-left:15px;"><?php echo $item['name']; ?></td>
-                <td class="text-center"><?php echo $item['suffix']; ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-
-    <div class="v2-title"><?php echo __('medical.v3.thoracic'); ?></div>
-    <table class="v2-table">
-        <thead>
-            <tr>
-                <th style="width:60px;">L</th>
-                <th style="width:60px;">R</th>
-                <th></th>
-                <th style="width:100px;">Interior</th>
-                <th style="width:100px;">Posterior</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php 
-            for($i = 1; $i <= 12; $i++):
-                $arr = $data['subluxation']['thoracic']['T'.$i] ?? [];
-                $name = ($i == 1) ? 'T1' : $i;
-            ?>
-            <tr>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][thoracic][T'.$i.']', 'L', $arr, 'T'.$i); ?></td>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][thoracic][T'.$i.']', 'R', $arr, 'T'.$i); ?></td>
-                <td class="text-right" style="padding-right: 15px;"><?php echo $name; ?></td>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][thoracic][T'.$i.']', 'Interior', $arr, 'T'.$i); ?></td>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][thoracic][T'.$i.']', 'Posterior', $arr, 'T'.$i); ?></td>
-            </tr>
-            <?php endfor; ?>
-        </tbody>
-    </table>
-
-    <table class="v2-table">
-        <thead>
-            <tr>
-                <th style="width:60px;">L</th>
-                <th style="width:60px;">R</th>
-                <th></th>
-                <th style="width:100px;">Interior</th>
-                <th style="width:100px;">Posterior</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php 
-            for($i = 1; $i <= 12; $i++):
-                $arr = $data['subluxation']['ribs']['Rib'.$i] ?? [];
-                $name = ($i == 1) ? 'Xương sườn số 1' : $i;
-            ?>
-            <tr>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][ribs][Rib'.$i.']', 'L', $arr, 'Rib'.$i); ?></td>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][ribs][Rib'.$i.']', 'R', $arr, 'Rib'.$i); ?></td>
-                <td class="text-right" style="padding-right: 15px;"><?php echo $name; ?></td>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][ribs][Rib'.$i.']', 'Interior', $arr, 'Rib'.$i); ?></td>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][ribs][Rib'.$i.']', 'Posterior', $arr, 'Rib'.$i); ?></td>
-            </tr>
-            <?php endfor; ?>
-        </tbody>
-    </table>
-
-    <table class="v2-table">
-        <tbody>
-            <?php 
-            $arm_items = [
-                'Xương quai xanh' => 'Xương quai xanh', 
-                'Khớp cùng đòn (ACG)' => 'ACG', 
-                'Cơ nhị đầu' => 'Cơ nhị đầu', 
-                'Golferarm' => 'Golferarm', 
-                'Tennisarm' => 'Tennisarm', 
-                'Cổ tay' => 'Cổ tay', 
-                'Bàn tay' => 'Bàn tay'
-            ];
-            foreach($arm_items as $key => $name):
-                $arr = $data['subluxation']['peripheral'][$key] ?? [];
-            ?>
-            <tr>
-                <td style="width:60px;" class="text-center"><?php echo renderV2Cb('subluxation][peripheral]['.$key.']', 'L', $arr, $key); ?></td>
-                <td style="width:60px;" class="text-center"><?php echo renderV2Cb('subluxation][peripheral]['.$key.']', 'R', $arr, $key); ?></td>
-                <td class="text-right" style="padding-right: 15px;"><?php echo $name; ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-
-    <table class="v2-table">
-        <tbody>
-            <?php 
-            $lumbar_items = [
-                ['name' => '1', 'key' => 'L1', 'suffix' => 'L'],
-                ['name' => '2', 'key' => 'L2', 'suffix' => ''],
-                ['name' => '3', 'key' => 'L3', 'suffix' => ''],
-                ['name' => '4', 'key' => 'L4', 'suffix' => ''],
-                ['name' => '5', 'key' => 'L5', 'suffix' => ''],
-                ['name' => 'Sac', 'key' => 'S1', 'suffix' => ''],
-                ['name' => 'Coc', 'key' => 'Coc', 'suffix' => '']
-            ];
-            foreach($lumbar_items as $item):
-                $arr = $data['subluxation']['lumbar'][$item['key']] ?? [];
-            ?>
-            <tr>
-                <td style="width:60px;" class="text-center"><?php echo renderV2Cb('subluxation][lumbar]['.$item['key'].']', 'L', $arr, $item['key']); ?></td>
-                <td style="width:60px;" class="text-center"><?php echo renderV2Cb('subluxation][lumbar]['.$item['key'].']', 'R', $arr, $item['key']); ?></td>
-                <td class="text-right" style="padding-right: 15px;"><?php echo $item['name']; ?></td>
-                <td style="width:40px;" class="text-center"><?php echo $item['suffix']; ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-
-    <div class="v2-checkbox-list" style="margin-top: 2rem;">
-        <?php 
-        $sacral_opts = [
-            'sacral_nutation' => 'medical.v3.sacral_nutation',
-            'sacral_counternutation' => 'medical.v3.sacral_counternutation',
-            'forward_torsion' => 'medical.v3.forward_torsion',
-            'backward_torsion' => 'medical.v3.backward_torsion',
-            'posterior_sacrum' => 'medical.v3.posterior_sacrum',
-            'anterior_flexion' => 'medical.v3.anterior_flexion'
-        ];
-        foreach($sacral_opts as $key => $name): ?>
-            <label style="display: flex; align-items: flex-start; gap: 10px;">
-                <input type="checkbox" name="history[subluxation][sacrum_general][]" value="<?php echo $key; ?>" <?php echo (in_array($key, $data['subluxation']['sacrum_general'] ?? [])) ? 'checked' : ''; ?> style="margin-top:2px;">
-                <?php echo __($name); ?>
-            </label>
-        <?php endforeach; ?>
-        
-        <label style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-            <input type="checkbox" name="history[subluxation][sacrococcygeal_lateral][L]" value="L" <?php echo isset($data['subluxation']['sacrococcygeal_lateral']['L']) ? 'checked' : ''; ?>> L 
-            <input type="checkbox" name="history[subluxation][sacrococcygeal_lateral][R]" value="R" <?php echo isset($data['subluxation']['sacrococcygeal_lateral']['R']) ? 'checked' : ''; ?>> R 
-            <?php echo __('medical.v3.lateral_deviation'); ?>
-        </label>
-    </div>
-
-    <table class="v2-table" style="margin-top: 2rem; max-width: 800px;">
-        <thead>
-            <tr>
-                <th style="width: 100px; text-align: left; padding-left: 15px;">Becken</th>
-                <th>AS</th>
-                <th>PI</th>
-                <th>IN-Ilium</th>
-                <th>EX-Ilium</th>
-                <th>Up-Slip</th>
-                <th>Down-Slip</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php 
-            $becken_sides = ['links' => 'L', 'rechts' => 'R'];
-            $becken_cols = ['AS', 'PI', 'IN-Ilium', 'EX-Ilium', 'Up-Slip', 'Down-Slip'];
-            foreach($becken_sides as $label => $val): ?>
-            <tr>
-                <td style="padding-left: 15px;"><?php echo $label; ?></td>
-                <?php foreach($becken_cols as $col): 
-                    $arr = $data['subluxation']['becken'][$val] ?? [];
-                ?>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][becken]['.$val.']', $col, $arr); ?></td>
-                <?php endforeach; ?>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-
-    <label style="display:flex; align-items:center; gap: 10px; margin-bottom: 20px; color: black; margin-top: 2rem;">
-        <input type="checkbox" name="history[subluxation][symphysis_pubica]" value="1" <?php echo isset($data['subluxation']['symphysis_pubica']) ? 'checked' : ''; ?> style="width:16px; height:16px;"> <?php echo __('medical.v3.symphysis'); ?>
-    </label>
-
-    <table class="v2-table">
-        <thead>
-            <tr>
-                <th style="width:60px;">L</th>
-                <th style="width:60px;">R</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php 
-            $leg_items = [
-                'Khớp háng' => 'Khớp háng / Hüfgelenk',
-                'Hông' => 'Hông',
-                'Gối (Knee)' => 'Khớp gối',
-                'Cổ chân (Ankle)' => 'Khớp cổ chân',
-                'Bàn chân' => 'Bàn chân'
-            ];
-            foreach($leg_items as $key => $name):
-                $arr = $data['subluxation']['peripheral'][$key] ?? [];
-            ?>
-            <tr>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][peripheral]['.$key.']', 'L', $arr, $key); ?></td>
-                <td class="text-center"><?php echo renderV2Cb('subluxation][peripheral]['.$key.']', 'R', $arr, $key); ?></td>
-                <td style="padding-left: 15px;"><?php echo $name; ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-
-    <div style="margin-top: 2rem; margin-bottom: 3rem;">
-        <label style="display: block; margin-bottom: 10px; color: black;"><?php echo __('medical.v3.extra_notes'); ?></label>
-        <textarea name="history[assessment_notes]" class="form-input" rows="4" style="border: 1px solid black; border-radius: 0; background: transparent; color: black; resize: vertical;"><?php echo e($data['assessment_notes'] ?? ''); ?></textarea>
-    </div>
-
-    <!-- VẬT LÝ TRỊ LIỆU -->
-    <h3 style="font-size: 1.1rem; font-weight: bold; color: black; margin-bottom: 1rem;">
-        <?php echo __('medical.v3.pt_title'); ?>
-    </h3>
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 1rem; align-items: center;">
-        <?php 
-        $pt_items = [
-            'Nhiệt/Lạnh (Heat/Cryo)' => 'medical.v3.pt_heat',
-            'Điện xung (DEMS)' => 'medical.v3.pt_stim',
-            'Siêu âm (Ultrasound)' => 'medical.v3.pt_us',
-            'Giải cơ (Trigger Point)' => 'medical.v3.pt_trigger',
-            'Massage trị liệu' => 'medical.v3.pt_massage',
-            'Kéo giãn (Traction)' => 'medical.v3.pt_traction',
-            'Trị liệu bằng tay (Manual Therapy)' => 'medical.v3.pt_manual',
-            'Bài tập chức năng' => 'medical.v3.pt_exercise'
-        ];
-        foreach($pt_items as $pt => $lang_key): 
-            $checked = in_array($pt, $data['physiotherapy'] ?? []) ? 'checked' : '';
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <?php foreach ($spine_groups as $group_label => $group_data): 
+            $group_key = $group_data[0];
+            $nodes = $group_data[1];
+            $is_thoracic = ($group_key === 'thoracic');
         ?>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: black;">
-                <input type="checkbox" name="history[physiotherapy][]" value="<?php echo $pt; ?>" <?php echo $checked; ?> style="width: 16px; height: 16px;"> 
-                <?php echo __($lang_key); ?>
-            </label>
+            <div class="matrix-info-box">
+                <h4 style="font-size: 0.85rem; text-align: center; color: #64748b; margin-top: 0; text-transform: uppercase; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;"><?php echo $group_label; ?></h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="font-size: 0.65rem; color: #94a3b8; text-align: center;">
+                            <th style="width: <?php echo $is_thoracic ? '20%' : '30%'; ?>;">L</th>
+                            <?php if($is_thoracic): ?><th style="width: 20%;">A</th><?php endif; ?>
+                            <th style="width: <?php echo $is_thoracic ? '20%' : '40%'; ?>;">ĐỐT</th>
+                            <?php if($is_thoracic): ?><th style="width: 20%;">P</th><?php endif; ?>
+                            <th style="width: <?php echo $is_thoracic ? '20%' : '30%'; ?>;">R</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($nodes as $key => $label): ?>
+                            <tr>
+                                <td style="text-align: center; padding: 4px;">
+                                    <?php echoMatrixDot($subluxation, $group_key, $key, 'L', 'L'); ?>
+                                </td>
+                                <?php if($is_thoracic): ?>
+                                <td style="text-align: center; padding: 4px;">
+                                    <?php echoMatrixDot($subluxation, $group_key, $key, 'Interior', 'A'); ?>
+                                </td>
+                                <?php endif; ?>
+                                
+                                <td style="text-align: center; font-weight: 800; font-size: 0.9rem; color: #1e293b;"><?php echo $label; ?></td>
+                                
+                                <?php if($is_thoracic): ?>
+                                <td style="text-align: center; padding: 4px;">
+                                    <?php echoMatrixDot($subluxation, $group_key, $key, 'Posterior', 'P'); ?>
+                                </td>
+                                <?php endif; ?>
+                                <td style="text-align: center; padding: 4px;">
+                                    <?php echoMatrixDot($subluxation, $group_key, $key, 'R', 'R'); ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php endforeach; ?>
     </div>
 
-</div>
-<!-- HẾT PHẦN 3 -->
+    <!-- Khung Chậu & Khớp Ngoại Vi -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        
+        <!-- Khung chậu & Xương cùng -->
+        <div class="matrix-info-box">
+            <h4 style="font-size: 0.85rem; text-align: center; color: #64748b; margin-top: 0; text-transform: uppercase; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">Khung chậu & Xương cùng (Pelvis)</h4>
+            <table style="width: 100%;">
+                <?php 
+                $sacrums = ['S1', 'S2', 'S3', 'S4', 'S5'];
+                foreach ($sacrums as $s): ?>
+                    <tr>
+                        <td style="text-align: center; padding: 6px;">
+                            <?php echoMatrixDot($subluxation, 'sacrum', $s, 'L', 'L'); ?>
+                        </td>
+                        <td style="text-align: center; font-weight: 700; font-size: 0.85rem; color: #334155;"><?php echo $s; ?></td>
+                        <td style="text-align: center; padding: 6px;">
+                            <?php echoMatrixDot($subluxation, 'sacrum', $s, 'R', 'R'); ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                <tr>
+                    <td colspan="3" style="padding-top: 1rem;">
+                        <div style="font-size:0.8rem; font-weight:700; margin-bottom:0.5rem;">Xương Cùng (Sacrum):</div>
+                        <label style="display:inline-block; margin-right:1rem;"><input type="checkbox" name="history[subluxation][sacrum][general][]" value="Gật đầu" <?php echo in_array("Gật đầu", $subluxation['sacrum']['general'] ?? []) ? 'checked' : ''; ?>> Gật đầu</label>
+                        <label style="display:inline-block; margin-right:1rem;"><input type="checkbox" name="history[subluxation][sacrum][general][]" value="Ngửa đầu" <?php echo in_array("Ngửa đầu", $subluxation['sacrum']['general'] ?? []) ? 'checked' : ''; ?>> Ngửa đầu</label>
+                        <label style="display:inline-block; margin-right:1rem;"><input type="checkbox" name="history[subluxation][sacrum][general][]" value="Xoay cùng chiều" <?php echo in_array("Xoay cùng chiều", $subluxation['sacrum']['general'] ?? []) ? 'checked' : ''; ?>> Xoay cùng chiều</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="padding-top: 1rem;">
+                        <div style="font-size:0.8rem; font-weight:700; margin-bottom:0.5rem;">Becken (Khung chậu):</div>
+                        <?php 
+                        $becken_opts = ['AS', 'PI', 'IN-Ilium', 'EX-Ilium', 'Up-Slip', 'Down-Slip'];
+                        foreach($becken_opts as $b){
+                            echo '<label style="display:inline-block; margin-right:0.75rem;"><input type="checkbox" name="history[subluxation][becken][]" value="'.$b.'" '.(in_array($b, $subluxation['becken'] ?? []) ? 'checked' : '').'> '.$b.'</label>';
+                        }
+                        ?>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Khớp ngoại vi -->
+        <div class="matrix-info-box">
+            <h4 style="font-size: 0.85rem; text-align: center; color: #64748b; margin-top: 0; text-transform: uppercase; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">Khớp Ngoại vi (Peripheral)</h4>
+            <table style="width: 100%;">
+                <?php 
+                $peripherals = ['Xương quai xanh', 'Khớp cùng đòn (ACG)', 'Tennisarm', 'Khớp háng (Hip)', 'Gối (Knee)', 'Cổ chân (Ankle)'];
+                foreach ($peripherals as $p): ?>
+                    <tr>
+                        <td style="text-align: center; padding: 6px;">
+                            <?php echoMatrixDot($subluxation, 'peripheral', $p, 'L', 'L'); ?>
+                        </td>
+                        <td style="text-align: center; font-weight: 700; font-size: 0.85rem; color: #334155;"><?php echo $p; ?></td>
+                        <td style="text-align: center; padding: 6px;">
+                            <?php echoMatrixDot($subluxation, 'peripheral', $p, 'R', 'R'); ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- 3.3 Vật lý trị liệu / Ghi chú -->
+    <div class="premium-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 2.5rem;">
+        <label class="section-label-premium" style="margin-bottom: 1rem;"><i class="fas fa-user-md"></i> Vật lý trị liệu / Phục hồi chức năng</label>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <?php 
+            $pt_items = ['Nhiệt/Lạnh (Heat/Cryo)', 'Điện xung (DEMS)', 'Siêu âm (Ultrasound)', 'Giải cơ (Trigger Point)', 'Massage trị liệu', 'Kéo giãn (Traction)', 'Trị liệu bằng tay (Manual Therapy)', 'Bài tập chức năng'];
+            foreach($pt_items as $pt): 
+                $checked = in_array($pt, $physiotherapy) ? 'checked' : '';
+            ?>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: #f8fafc; padding: 0.5rem 1rem; border-radius: 50px; border: 1px solid #e2e8f0; font-size: 0.85rem;">
+                    <input type="checkbox" name="history[physiotherapy][]" value="<?php echo $pt; ?>" <?php echo $checked; ?> style="accent-color: var(--primary);"> 
+                    <?php echo $pt; ?>
+                </label>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 0.85rem; opacity: 0.8;">Ghi chú thêm (Vị trí khác/Chú thích)</label>
+            <textarea name="history[assessment_notes]" class="form-input" rows="2" placeholder="..."><?php echo e($assessment_notes); ?></textarea>
+        </div>
+    </div>
 
     <!-- PHẦN 4: PLAN -->
     <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">

@@ -12,6 +12,7 @@ $session_id = $_GET['session_id'] ?? null;
 
 $page_title = ($type === 'dong_y' ? __('medical.form.dong_y_title') : __('medical.form.chiro_title'));
 if ($type === 'initial_exam') $page_title = __('medical.form.initial_exam_title');
+if ($type === 'chiropractic_v1') $page_title = 'Phiếu Khám Chiropractic (V1 Cũ)';
 $current_page = 'medical';
 $db = getDB();
 $history_id = $_GET['id'] ?? 0;
@@ -1186,8 +1187,12 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             </div>
 
         <?php elseif ($type === 'chiropractic' || $type === 'initial_exam'): ?>
-            <!-- Chiropractic / V2 Form -->
+            <!-- Chiropractic / V2 Form (New Table design) -->
             <?php require_once 'forms/chiropractic_v2.php'; ?>
+
+        <?php elseif ($type === 'chiropractic_v1'): ?>
+            <!-- Chiropractic / V1 Form (Old Flex Layout Backup) -->
+            <?php require_once 'forms/chiropractic_v1.php'; ?>
 
         <?php else: ?>
             <!-- Fallback Generic Sections -->
