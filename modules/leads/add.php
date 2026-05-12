@@ -12,6 +12,8 @@ $lead_sources = get_lead_sources();
 
 // Handle form submission before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // H3 FIX: Verify CSRF
+    verify_csrf('add.php');
     $optionals = [
         'full_name' => $_POST['full_name'],
         'phone' => $_POST['phone'],
@@ -79,6 +81,7 @@ require_once '../../templates/header.php';
     </div>
 
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
             <div class="form-group">
                 <label class="form-label"><?php echo __('leads.form.label_full_name'); ?> <span style="color: red;">*</span></label>
@@ -99,7 +102,7 @@ require_once '../../templates/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label"><?php echo __('leads.form.label_birthday'); ?></label>
-                    <input type="date" name="birthday" class="form-input">
+                    <input type="date" name="birthday" min="1900-01-01" max="<?php echo date('Y-m-d'); ?>" class="form-input">
                 </div>
             </div>
             <div class="form-group">

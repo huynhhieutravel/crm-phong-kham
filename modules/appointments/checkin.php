@@ -1,13 +1,30 @@
 <?php
 // modules/appointments/checkin.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_appointments');
 
-$id = isset($_GET['id']) ? $_GET['id'] : 0;
+// C2 FIX: Chỉ xử lý POST request, không chấp nhận GET
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    set_flash('Yêu cầu không hợp lệ.', 'error');
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
+}
+
+// C1 FIX: Verify CSRF token
+verify_csrf('index.php');
+
+// C2 FIX: Đọc từ POST thay vì GET
+$id = (int)($_POST['appointment_id'] ?? 0);
 $db = getDB();
+
+if (!$id) {
+    set_flash(__('appointment.msg.checkin_invalid'), 'error');
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
+}
 
 try {
     $db->beginTransaction();
@@ -33,10 +50,16 @@ try {
 
     if ($existing_patient) {
         $patient_id = $existing_patient['id'];
-        // Update patient info from lead to ensure it's up to date
+        // C3 FIX: Chỉ cập nhật các trường rỗng/NULL, không ghi đè dữ liệu đã có
         $stmt = $db->prepare("
             UPDATE patients 
-            SET full_name = ?, gender = ?, birthday = ?, email = ?, address = ?, source = ?, lead_id = ?
+            SET full_name = COALESCE(NULLIF(full_name, ''), ?),
+                gender = COALESCE(gender, ?),
+                birthday = COALESCE(birthday, ?),
+                email = COALESCE(NULLIF(email, ''), ?),
+                address = COALESCE(NULLIF(address, ''), ?),
+                source = COALESCE(NULLIF(source, ''), ?),
+                lead_id = COALESCE(lead_id, ?)
             WHERE id = ?
         ");
         $stmt->execute([
@@ -79,5 +102,6 @@ try {
 } catch (Exception $e) {
     if ($db->inTransaction()) $db->rollBack();
     set_flash($e->getMessage(), 'error');
-    redirect("index.php");
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
 }

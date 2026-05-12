@@ -4,7 +4,7 @@
  * API endpoint: POST /includes/upload_handler.php
  * Returns JSON: { success: true, files: [ { name, path, size } ] }
  */
-session_start();
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/functions.php';
 
@@ -22,6 +22,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $patient_id = isset($_POST['patient_id']) ? $_POST['patient_id'] : 0;
 $record_id = isset($_POST['record_id']) ? $_POST['record_id'] : 0;
+$session_id = isset($_POST['session_id']) ? (int)$_POST['session_id'] : 0;
 
 if (!$patient_id) {
     echo json_encode(['success' => false, 'error' => 'Missing patient_id']);
@@ -86,8 +87,8 @@ if (!empty($_FILES['images'])) {
 }
 
 // Update attachments in medical_history if record_id provided
+$db = getDB();
 if ($record_id && !empty($uploaded)) {
-    $db = getDB();
     $stmt = $db->prepare("SELECT attachments FROM medical_history WHERE id = ?");
     $stmt->execute([$record_id]);
     $existing = json_decode($stmt->fetchColumn() ?: '[]', true);
@@ -95,6 +96,29 @@ if ($record_id && !empty($uploaded)) {
     $merged = array_merge($existing, $uploaded);
     $stmt = $db->prepare("UPDATE medical_history SET attachments = ? WHERE id = ?");
     $stmt->execute([json_encode($merged, JSON_UNESCAPED_UNICODE), $record_id]);
+} else if ($session_id && !empty($uploaded)) {
+    $stmt = $db->prepare("SELECT id, attachments FROM medical_history WHERE session_id = ? AND type = 'general_attachments'");
+    $stmt->execute([$session_id]);
+    $record = $stmt->fetch();
+    
+    if ($record) {
+        $existing = json_decode($record['attachments'] ?: '[]', true);
+        $merged = array_merge($existing, $uploaded);
+        $stmt = $db->prepare("UPDATE medical_history SET attachments = ? WHERE id = ?");
+        $stmt->execute([json_encode($merged, JSON_UNESCAPED_UNICODE), $record['id']]);
+    } else {
+        $stmt = $db->prepare("INSERT INTO medical_history (patient_id, session_id, type, history_data, attachments, created_by) VALUES (?, ?, 'general_attachments', '{}', ?, ?)");
+        $stmt->execute([$patient_id, $session_id, json_encode($uploaded, JSON_UNESCAPED_UNICODE), $_SESSION['user_id']]);
+    }
+}
+
+// FIX: If no files were saved but some were submitted, it's a server error (likely permissions)
+if (empty($uploaded) && !empty($_FILES['images']) && !empty($errors)) {
+    echo json_encode([
+        'success' => false,
+        'error' => implode(', ', $errors)
+    ]);
+    exit;
 }
 
 echo json_encode([

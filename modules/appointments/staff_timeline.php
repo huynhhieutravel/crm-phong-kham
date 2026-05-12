@@ -12,12 +12,15 @@ require_once '../../templates/header.php';
 
 $db = getDB();
 
+// Save the current URL with filters so that edit/delete actions can redirect back here
+$_SESSION['appointment_list_url'] = $_SERVER['REQUEST_URI'];
+
 $date_filter = get_sticky_appointment_date();
 $role_filter = isset($_GET['role']) ? $_GET['role'] : '';
 
 // Fetch ALL active staff for the reorder modal
 $all_staff_stmt = $db->query("
-    SELECT u.id, u.full_name, r.display_name as role_display 
+    SELECT u.id, u.full_name, r.name as role_name, r.display_name as role_display 
     FROM users u 
     JOIN roles r ON u.role_id = r.id 
     WHERE r.name IN ('doctor', 'technician') AND u.status = 'active' 
@@ -326,7 +329,7 @@ function get_status_style($status) {
         </div>
         <div style="display: flex; gap: 0.5rem;">
             <button type="button" onclick="openReorderModal()" class="btn" style="background: #f1f5f9; border-radius: 12px; font-weight: 700; color: var(--text-main);">
-                <i class="fas fa-sort-amount-down"></i> Sắp xếp NV
+                <i class="fas fa-sort-amount-down"></i> <?php echo __('appointment.reorder_staff'); ?>
             </button>
             <a href="add.php?date=<?php echo $date_filter; ?>" class="btn btn-primary" style="border-radius: 12px; font-weight: 700;">
                 <i class="fas fa-plus"></i> <?php echo __('appointment.book_btn'); ?>
@@ -342,7 +345,7 @@ function get_status_style($status) {
         <?php foreach ($staff_members as $staff): ?>
             <div class="staff-header-cell">
                 <?php echo e($staff['full_name']); ?>
-                <span class="staff-role-badge"><?php echo e($staff['role_display']); ?></span>
+                <span class="staff-role-badge"><?php echo __('role.' . strtolower($staff['role_name'])); ?></span>
             </div>
         <?php endforeach; ?>
     </div>
@@ -409,7 +412,7 @@ function get_status_style($status) {
 <div id="reorderModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
     <div class="card" style="width: 450px; max-height: 85vh; display: flex; flex-direction: column; padding: 2rem; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h3 style="margin: 0; font-weight: 800; font-size: 1.25rem;"><i class="fas fa-sort-amount-down" style="color: var(--primary); margin-right: 0.5rem;"></i> Sắp xếp thứ tự nhân sự</h3>
+            <h3 style="margin: 0; font-weight: 800; font-size: 1.25rem;"><i class="fas fa-sort-amount-down" style="color: var(--primary); margin-right: 0.5rem;"></i> <?php echo __('appointment.reorder_staff_title'); ?></h3>
             <button type="button" onclick="closeReorderModal()" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.25rem;"><i class="fas fa-times"></i></button>
         </div>
         
@@ -421,7 +424,7 @@ function get_status_style($status) {
                     </div>
                     <span style="flex: 1; font-weight: 700; font-size: 0.95rem; color: var(--text-main);">
                         <?php echo e($s['full_name']); ?> 
-                        <span style="display: block; font-weight: 500; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 0.1rem;"><?php echo e($s['role_display']); ?></span>
+                        <span style="display: block; font-weight: 500; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 0.1rem;"><?php echo __('role.' . strtolower($s['role_name'])); ?></span>
                     </span>
                     <div style="display: flex; gap: 0.4rem;">
                         <button type="button" onclick="moveStaffItem(this, 'up')" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #64748b; cursor: pointer;"><i class="fas fa-chevron-up"></i></button>
@@ -432,8 +435,8 @@ function get_status_style($status) {
         </div>
         
         <div style="display: flex; gap: 1rem;">
-            <button type="button" onclick="saveStaffOrder()" class="btn btn-primary" id="saveOrderBtn" style="flex: 1; justify-content: center; border-radius: 14px; padding: 1rem;">Lưu thay đổi</button>
-            <button type="button" onclick="closeReorderModal()" class="btn" style="background: #f1f5f9; border-radius: 14px; padding: 1rem; border: 1px solid #e2e8f0;">Hủy</button>
+            <button type="button" onclick="saveStaffOrder()" class="btn btn-primary" id="saveOrderBtn" style="flex: 1; justify-content: center; border-radius: 14px; padding: 1rem;"><?php echo __('common.save_changes'); ?></button>
+            <button type="button" onclick="closeReorderModal()" class="btn" style="background: #f1f5f9; border-radius: 14px; padding: 1rem; border: 1px solid #e2e8f0;"><?php echo __('common.cancel'); ?></button>
         </div>
     </div>
 </div>
@@ -463,7 +466,7 @@ function moveStaffItem(btn, direction) {
 async function saveStaffOrder() {
     const btn = document.getElementById('saveOrderBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo __('common.saving'); ?>';
     btn.disabled = true;
 
     const items = document.querySelectorAll('#staffSortList .sort-item');
@@ -483,12 +486,12 @@ async function saveStaffOrder() {
         if (result.success) {
             location.reload();
         } else {
-            alert('Lỗi: ' + result.message);
+            alert('<?php echo __('common.error'); ?>: ' + result.message);
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
     } catch (err) {
-        alert('Lỗi kết nối mạng');
+        alert('<?php echo __('common.network_error'); ?>');
         btn.innerHTML = originalText;
         btn.disabled = false;
     }

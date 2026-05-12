@@ -56,6 +56,10 @@ $type_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $type_map = [
     'consultation' => __('appointment.type.consultation'),
+    'dong_y_60'    => __('appointment.type.dong_y_60'),
+    'dong_y_90'    => __('appointment.type.dong_y_90'),
+    'chiro'        => __('appointment.type.chiro'),
+    'support_other'=> __('appointment.type.support_other'),
     'treatment'    => __('appointment.type.treatment'),
     're_exam'      => __('appointment.type.re_exam'),
     'adjustment'   => __('appointment.type.adjustment')
@@ -89,18 +93,82 @@ $trend_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Calculate Rates
 $completed_count = 0;
 $noshow_count = 0;
+$cancelled_count = 0;
 foreach($status_data as $s) {
     if($s['status'] === 'completed') $completed_count = $s['count'];
     if($s['status'] === 'no_show') $noshow_count = $s['count'];
+    if($s['status'] === 'cancelled') $cancelled_count = $s['count'];
 }
 $completion_rate = $total_apts > 0 ? round(($completed_count / $total_apts) * 100, 1) : 0;
 $noshow_rate = $total_apts > 0 ? round(($noshow_count / $total_apts) * 100, 1) : 0;
+$cancel_rate = $total_apts > 0 ? round(($cancelled_count / $total_apts) * 100, 1) : 0;
+
+// 6. Peak Hours
+$stmt = $db->prepare("
+    SELECT HOUR(appointment_date) as hour, COUNT(*) as count 
+    FROM appointments 
+    WHERE appointment_date BETWEEN ? AND ?
+    GROUP BY HOUR(appointment_date)
+    ORDER BY count DESC
+    LIMIT 5
+");
+$stmt->execute($params);
+$peak_hours = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// 7. Peak Days
+$stmt = $db->prepare("
+    SELECT DAYNAME(appointment_date) as day, COUNT(*) as count 
+    FROM appointments 
+    WHERE appointment_date BETWEEN ? AND ?
+    GROUP BY DAYNAME(appointment_date)
+    ORDER BY count DESC
+    LIMIT 7
+");
+$stmt->execute($params);
+$peak_days = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$days_map = [
+    'Monday' => 'Thứ 2',
+    'Tuesday' => 'Thứ 3',
+    'Wednesday' => 'Thứ 4',
+    'Thursday' => 'Thứ 5',
+    'Friday' => 'Thứ 6',
+    'Saturday' => 'Thứ 7',
+    'Sunday' => 'Chủ nhật'
+];
+
+// 8. Cancellation History
+$stmt = $db->prepare("
+    SELECT a.appointment_date, p.full_name as patient_name, u.full_name as doctor_name
+    FROM appointments a
+    LEFT JOIN patients p ON a.patient_id = p.id
+    LEFT JOIN users u ON a.doctor_id = u.id
+    WHERE a.appointment_date BETWEEN ? AND ?
+      AND a.status = 'cancelled'
+    ORDER BY a.appointment_date DESC
+    LIMIT 20
+");
+$stmt->execute($params);
+$cancel_history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// 9. Top Services Breakdown
+$stmt = $db->prepare("
+    SELECT s.name as service_name, COUNT(*) as count 
+    FROM treatments t
+    JOIN services s ON t.service_id = s.id
+    WHERE t.treatment_date BETWEEN ? AND ?
+    GROUP BY s.id
+    ORDER BY count DESC
+    LIMIT 15
+");
+$stmt->execute($params);
+$top_services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <style>
 .apt-dashboard-outer { width: 100%; max-width: 1400px; }
-.apt-grid-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
-@media (max-width: 1024px) { .apt-grid-stats { grid-template-columns: repeat(2, 1fr); } }
+.apt-grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+@media (max-width: 1200px) { .apt-grid-stats { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .apt-grid-stats { grid-template-columns: 1fr; } }
 
 .filter-bar-apt {
@@ -123,6 +191,7 @@ $noshow_rate = $total_apts > 0 ? round(($noshow_count / $total_apts) * 100, 1) :
 .stat-card-apt.indigo { background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%); }
 .stat-card-apt.emerald { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
 .stat-card-apt.amber { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+.stat-card-apt.rose { background: linear-gradient(135deg, #e11d48 0%, #fb7185 100%); }
 
 .stat-card-apt i { position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-10deg); }
 .stat-card-apt .stat-tag { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; opacity: 0.85; margin-bottom: 0.5rem; display: block; }
@@ -178,7 +247,7 @@ $noshow_rate = $total_apts > 0 ? round(($noshow_count / $total_apts) * 100, 1) :
                         <?php if($period === 'month'): ?>
                             <select name="sel_month" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none; width: auto;" onchange="this.form.submit()">
                                 <?php for($m=1; $m<=12; $m++): ?>
-                                    <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                                    <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>><?php echo __('common.month_prefix'); ?><?php echo $m; ?></option>
                                 <?php endfor; ?>
                             </select>
                         <?php endif; ?>
@@ -186,7 +255,7 @@ $noshow_rate = $total_apts > 0 ? round(($noshow_count / $total_apts) * 100, 1) :
                         <?php if($period === 'quarter'): ?>
                             <select name="sel_quarter" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none; width: auto;" onchange="this.form.submit()">
                                 <?php for($q=1; $q<=4; $q++): ?>
-                                    <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>>Quý <?php echo $q; ?></option>
+                                    <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>><?php echo __('common.quarter_prefix'); ?><?php echo $q; ?></option>
                                 <?php endfor; ?>
                             </select>
                         <?php endif; ?>
@@ -194,7 +263,7 @@ $noshow_rate = $total_apts > 0 ? round(($noshow_count / $total_apts) * 100, 1) :
                         <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
                             <select name="sel_year" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none; width: auto;" onchange="this.form.submit()">
                                 <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
-                                    <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                                    <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>><?php echo __('common.year_prefix'); ?><?php echo $y; ?></option>
                                 <?php endfor; ?>
                             </select>
                         <?php endif; ?>
@@ -253,6 +322,13 @@ function setPeriod(event, p) {
                 <span class="stat-tag"><?php echo __('appointment.dashboard.noshow_rate'); ?></span>
                 <span class="stat-val"><?php echo $noshow_rate; ?>%</span>
                 <span class="stat-desc"><?php echo number_format($noshow_count); ?> <?php echo __('appointment.dashboard.noshow_desc'); ?></span>
+            </div>
+
+            <div class="stat-card-apt rose">
+                <i class="fas fa-calendar-times"></i>
+                <span class="stat-tag">Tỉ Lệ Hủy (Cancel Rate)</span>
+                <span class="stat-val"><?php echo $cancel_rate; ?>%</span>
+                <span class="stat-desc"><?php echo number_format($cancelled_count); ?> ca đã bị hủy bỏ</span>
             </div>
         </div>
 
@@ -315,7 +391,61 @@ function setPeriod(event, p) {
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Layer 3: Advanced Analytics -->
+        <div class="dashboard-grid-apt" style="grid-template-columns: repeat(3, 1fr);">
+            <!-- Top Giờ Đông -->
+            <div class="card-apt">
+                <h3 class="card-title-apt"><i class="far fa-clock"></i> Top 5 Giờ Đông</h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="aptPeakHoursChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Ngày Đông -->
+            <div class="card-apt">
+                <h3 class="card-title-apt"><i class="far fa-calendar-check"></i> Top Ngày Khách Mật Độ Cao</h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="aptPeakDaysChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Services -->
+            <div class="card-apt">
+                <h3 class="card-title-apt"><i class="fas fa-hand-holding-medical"></i> Tỉ Lệ Dịch Vụ Khám</h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="aptServicesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Cancellation History -->
+            <div class="card-apt" style="grid-column: 1 / -1;">
+                <h3 class="card-title-apt"><i class="fas fa-history"></i> Lịch Sử Hủy (<?php echo count($cancel_history); ?> ca gần nhất)</h3>
+                <div class="perf-list-apt" style="max-height: 350px; overflow-y: auto;">
+                    <table class="perf-table-apt">
+                        <thead>
+                            <tr>
+                                <th>Thời gian hẹn</th>
+                                <th>Bệnh nhân</th>
+                                <th>Phụ trách</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($cancel_history as $ch): ?>
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 700; color: #ef4444;"><?php echo date('H:i d/m/y', strtotime($ch['appointment_date'])); ?></div>
+                                    </td>
+                                    <td><div style="font-weight: 600; color: #334155;"><?php echo e($ch['patient_name'] ?: 'Khách ẩn danh/Leads'); ?></div></td>
+                                    <td><div style="font-size: 0.8rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;"><?php echo e($ch['doctor_name'] ?: 'Chưa CĐ'); ?></div></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if(empty($cancel_history)) echo "<tr><td colspan='3' style='text-align:center;'>Không có lịch hủy</td></tr>"; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -388,6 +518,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 x: { beginAtZero: true, grid: { display: false } },
                 y: { grid: { display: false }, ticks: { font: { weight: '600' } } }
             }
+        }
+    });
+
+    // 4. Peak Hours Chart
+    new Chart(document.getElementById('aptPeakHoursChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: [<?php foreach($peak_hours as $ph) echo "'" . str_pad($ph['hour'], 2, '0', STR_PAD_LEFT) . ":00',"; ?>],
+            datasets: [{
+                data: [<?php foreach($peak_hours as $ph) echo $ph['count'] . ","; ?>],
+                backgroundColor: '#f59e0b', borderRadius: 6, barThickness: 15
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { borderDash: [2, 2], color: '#f1f5f9' }, ticks: { stepSize: 1, font: {size: 10} } },
+                x: { grid: { display: false }, ticks: { font: {size: 10, weight: '700'} } }
+            }
+        }
+    });
+
+    // 5. Peak Days Chart
+    new Chart(document.getElementById('aptPeakDaysChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: [<?php foreach($peak_days as $pd) echo "'" . (isset($days_map[$pd['day']]) ? $days_map[$pd['day']] : $pd['day']) . "',"; ?>],
+            datasets: [{
+                data: [<?php foreach($peak_days as $pd) echo $pd['count'] . ","; ?>],
+                backgroundColor: '#3b82f6', borderRadius: 6, barThickness: 15
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { borderDash: [2, 2], color: '#f1f5f9' }, ticks: { stepSize: 1, font: {size: 10} } },
+                x: { grid: { display: false }, ticks: { font: {size: 10, weight: '700'} } }
+            }
+        }
+    });
+
+    // 6. Top Services Doughnut Chart
+    new Chart(document.getElementById('aptServicesChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: [<?php foreach($top_services as $ts) echo "'" . addslashes((string)$ts['service_name']) . "',"; ?>],
+            datasets: [{
+                data: [<?php foreach($top_services as $ts) echo $ts['count'] . ","; ?>],
+                backgroundColor: ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#64748b', '#0ea5e9', '#14b8a6', '#f43f5e', '#84cc16'],
+                borderWidth: 4,
+                borderColor: '#ffffff',
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            cutout: '65%', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { usePointStyle: true, padding: 15, font: { weight: '600', size: 11 } } } }
         }
     });
 });

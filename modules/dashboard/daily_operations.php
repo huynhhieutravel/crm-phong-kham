@@ -176,6 +176,7 @@ $staff_utilization = $staff_stmt->fetchAll();
                                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
                                     <?php if($a['status'] == 'scheduled'): ?>
                                         <form action="/modules/appointments/checkin.php" method="POST" style="margin: 0;">
+                                            <?php echo csrf_field(); ?>
                                             <input type="hidden" name="appointment_id" value="<?php echo $a['id']; ?>">
                                             <button type="submit" class="btn btn-sm" style="background: #10b981; color: white; border-radius: 6px; padding: 0.35rem 0.6rem; border: none; cursor: pointer; display: flex; align-items: center;" title="<?php echo e(__('daily_ops.action_checkin')); ?>">
                                                 <i class="fas fa-sign-in-alt"></i>

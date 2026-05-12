@@ -1,13 +1,13 @@
 <?php
 // modules/medical/session_start.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_medical');
 
 $db = getDB();
-$patient_id = isset($_GET['patient_id']) ? $_GET['patient_id'] : 0;
+$patient_id = isset($_GET['patient_id']) ? (int)$_GET['patient_id'] : 0;
 $now = date('Y-m-d');
 
 if (!$patient_id) {

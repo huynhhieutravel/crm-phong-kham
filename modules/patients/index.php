@@ -13,22 +13,24 @@ $db = getDB();
 $search = $_GET['search'] ?? '';
 $label = $_GET['label'] ?? '';
 $gender_filter = $_GET['gender'] ?? '';
-$gender = $_GET['gender'] ?? '';
+$gender = $gender_filter; // M4 FIX: Remove duplicate, use alias
 $period = $_GET['period'] ?? '';
 $start_date_filter = $_GET['start_date'] ?? '';
 $end_date_filter = $_GET['end_date'] ?? '';
 
-$sql = "SELECT p.*, COUNT(ms.id) as record_count 
+$sql = "SELECT p.*, COUNT(ms.id) as record_count, MAX(ms.session_date) as last_visit 
         FROM patients p 
         LEFT JOIN medical_sessions ms ON p.id = ms.patient_id";
 $where = [];
 $params = [];
 
 if ($search) {
+    // H3 FIX: Escape LIKE wildcards
+    $safe_search = addcslashes($search, '%_');
     $where[] = "(p.full_name LIKE ? OR p.phone LIKE ? OR p.customer_id LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
 }
 
 if ($label) {
@@ -219,14 +221,14 @@ $is_filtered = $search || $label || $gender || $period;
                 <i class="fas fa-plus"></i> <?php echo __('common.add_new'); ?>
             </a>
             <div style="display: flex; gap: 0.4rem;">
-                <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Xuất CSV">
-                    <i class="fas fa-file-export"></i> Xuất
+                <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('patient.index.export_title'); ?>">
+                    <i class="fas fa-file-export"></i> <?php echo __('common.export'); ?>
                 </a>
-                <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Nhập CSV">
-                    <i class="fas fa-file-import"></i> Nhập
+                <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('patient.index.import_title'); ?>">
+                    <i class="fas fa-file-import"></i> <?php echo __('common.import'); ?>
                 </a>
-                <a href="../medical/backup.php" class="btn btn-outline-danger" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Sao lưu bệnh án (SQL)">
-                    <i class="fas fa-database"></i> Backup
+                <a href="../medical/backup.php" class="btn btn-outline-danger" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('patient.index.backup_title'); ?>">
+                    <i class="fas fa-database"></i> <?php echo __('common.backup'); ?>
                 </a>
             </div>
         </div>
@@ -246,20 +248,23 @@ function setPeriod(p) {
 }
 </script>
 
-<div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-color);">
+<div class="card" style="padding: 0; overflow: hidden; border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
     <table class="table" style="width: 100%; border-collapse: collapse;">
         <thead>
-            <tr style="background: #f8fafc; text-align: left;">
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('patient.table.id_name'); ?></th>
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('patient.table.contact'); ?></th>
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color);"><?php echo __('patient.table.dob_gender'); ?></th>
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color); text-align: center;"><?php echo __('patient.table.record_count'); ?></th>
-                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: var(--text-muted); font-weight: 700; border-bottom: 2px solid var(--border-color); text-align: center;"><?php echo __('common.action'); ?></th>
+            <tr style="background: transparent; text-align: left;">
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: #94a3b8; font-weight: 700; border-bottom: 2px solid #f1f5f9; width: 12%;"><?php echo __('appointment.table.created_at'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: #94a3b8; font-weight: 700; border-bottom: 2px solid #f1f5f9; width: 28%;"><?php echo __('patient.table.patient_info'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: #94a3b8; font-weight: 700; border-bottom: 2px solid #f1f5f9; width: 20%;"><?php echo __('patient.table.contact'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: #94a3b8; font-weight: 700; border-bottom: 2px solid #f1f5f9; width: 25%;"><?php echo __('patient.table.clinical_history'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; color: #94a3b8; font-weight: 700; border-bottom: 2px solid #f1f5f9; text-align: right; width: 15%;"><?php echo __('common.actions'); ?></th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($patients as $p): ?>
-                <tr class="patient-row" style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
+                <tr class="patient-row" style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='transparent';">
+                    <td style="padding: 1.25rem 1.5rem; color: #64748b; font-size: 0.85rem;">
+                        <?php echo date('d/m/Y', strtotime($p['created_at'])); ?>
+                    </td>
                     <td style="padding: 1.25rem 1.5rem;">
                         <div style="display: flex; flex-direction: column;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
@@ -269,47 +274,50 @@ function setPeriod(p) {
                                 <?php if ($p['label']): ?>
                                     <?php
                                         $lbl = mb_strtolower(trim($p['label']), 'UTF-8');
-                                        $bg = '#dcfce7'; $c = '#16a34a'; // default green (Khách mới)
-                                        if (mb_strpos($lbl, 'đang điều trị') !== false) { $bg = '#dbeafe'; $c = '#2563eb'; } // blue
-                                        elseif (mb_strpos($lbl, 'cần chăm sóc') !== false || mb_strpos($lbl, 'khẩn') !== false) { $bg = '#ffedd5'; $c = '#ea580c'; } // orange
-                                        elseif (mb_strpos($lbl, 'vip') !== false) { $bg = '#fef3c7'; $c = '#d97706'; } // gold
-                                        elseif (mb_strpos($lbl, 'khách cũ') !== false) { $bg = '#f1f5f9'; $c = '#475569'; } // slate
-                                        elseif (mb_strpos($lbl, 'duy anh') !== false) { $bg = '#fce7f3'; $c = '#db2777'; } // pink
+                                        $bg = '#dcfce7'; $c = '#16a34a'; // default green
+                                        if (mb_strpos($lbl, 'đang điều trị') !== false) { $bg = '#dbeafe'; $c = '#2563eb'; } 
+                                        elseif (mb_strpos($lbl, 'cần chăm sóc') !== false || mb_strpos($lbl, 'khẩn') !== false) { $bg = '#ffedd5'; $c = '#ea580c'; } 
+                                        elseif (mb_strpos($lbl, 'vip') !== false) { $bg = '#fef3c7'; $c = '#d97706'; } 
+                                        elseif (mb_strpos($lbl, 'khách cũ') !== false) { $bg = '#f1f5f9'; $c = '#475569'; } 
+                                        elseif (mb_strpos($lbl, 'duy anh') !== false) { $bg = '#fce7f3'; $c = '#db2777'; } 
                                     ?>
-                                    <span style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; background: <?php echo $bg; ?>; color: <?php echo $c; ?>; padding: 0.15rem 0.6rem; border-radius: 8px; border: 1px solid <?php echo $bg; ?>; display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; background: <?php echo $bg; ?>; color: <?php echo $c; ?>; padding: 0.15rem 0.6rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
                                         <i class="fas fa-tag"></i> <?php echo e(get_patient_label_translation($p['label'])); ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
-                            <div style="font-weight: 700; color: var(--text-main); font-size: 1.05rem;"><?php echo e($p['full_name']); ?></div>
+                            <a href="view.php?id=<?php echo $p['id']; ?>" style="font-weight: 700; color: var(--primary); font-size: 0.95rem; text-decoration: none; display: inline-block; transition: color 0.2s;" onmouseover="this.style.color='#1d4ed8';" onmouseout="this.style.color='var(--primary)';">
+                                <?php echo e($p['full_name']); ?>
+                            </a>
                         </div>
                     </td>
                     <td style="padding: 1.25rem 1.5rem;">
-                        <div style="font-weight: 600; color: var(--primary);"><i class="fas fa-phone-alt" style="font-size: 0.8rem;"></i> <?php echo e($p['phone']); ?></div>
-                        <div style="font-size: 0.85rem; color: var(--text-muted);"><?php echo e($p['email'] ?: '—'); ?></div>
+                        <div style="font-weight: 600; color: #475569; font-size: 0.85rem;"><i class="fas fa-phone-alt" style="color: #94a3b8; font-size: 0.75rem; width: 14px;"></i> <?php echo e($p['phone']); ?></div>
+                        <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.2rem;"><i class="fas fa-envelope" style="font-size: 0.75rem; width: 14px;"></i> <?php echo e($p['email'] ?: '—'); ?></div>
                     </td>
                     <td style="padding: 1.25rem 1.5rem;">
-                        <div style="font-weight: 500;"><?php echo $p['birthday'] ? date('d/m/Y', strtotime($p['birthday'])) : '—'; ?></div>
-                        <div style="font-size: 0.85rem; color: var(--text-muted);">
-                            <?php echo $p['gender'] === 'male' ? '<i class="fas fa-mars" style="color: #2563eb;"></i> ' . __('patient.gender.male') : ($p['gender'] === 'female' ? '<i class="fas fa-venus" style="color: #e4405f;"></i> ' . __('patient.gender.female') : __('patient.gender.other')); ?>
+                        <div style="font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 0.2rem;">
+                            <i class="fas fa-notes-medical" style="color: #94a3b8; width: 16px;"></i> <?php echo $p['record_count']; ?> <?php echo __('patient.table.treatment_sessions'); ?>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #64748b;">
+                            <i class="fas fa-clock" style="color: #cbd5e1; width: 16px;"></i> <?php echo __('patient.table.last_visit'); ?> <?php echo $p['last_visit'] ? date('d/m/Y', strtotime($p['last_visit'])) : __('common.none'); ?>
                         </div>
                     </td>
-                    <td style="padding: 1.25rem 1.5rem; text-align: center;">
-                        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; background: <?php echo $p['record_count'] > 0 ? '#eff6ff' : '#f8fafc'; ?>; color: <?php echo $p['record_count'] > 0 ? '#2563eb' : '#94a3b8'; ?>; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid <?php echo $p['record_count'] > 0 ? '#dbeafe' : '#e2e8f0'; ?>;">
-                            <?php echo $p['record_count']; ?>
-                        </span>
-                    </td>
-                    <td style="padding: 1.25rem 1.5rem;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                            <a href="../appointments/add.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-sm" title="<?php echo __('appointment.book_title'); ?>" style="background: #fdf2f8; color: #db2777; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
-                                <i class="fas fa-calendar-plus"></i>
+                    <td style="padding: 1.25rem 1.5rem; text-align: right;">
+                        <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                            <a href="../appointments/add.php?patient_id=<?php echo $p['id']; ?>" style="background: #6366f1; color: white; padding: 0.4rem 0.8rem; font-weight: 600; font-size: 0.8rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap; transition: background 0.2s;" onmouseover="this.style.background='#4f46e5';" onmouseout="this.style.background='#6366f1';">
+                                <i class="fas fa-calendar-plus"></i> <?php echo __('leads.table.btn_book'); ?>
                             </a>
-                            <a href="view.php?id=<?php echo $p['id']; ?>" class="btn btn-sm" title="<?php echo __('common.view_details'); ?>" style="background: #eff6ff; color: #2563eb; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
-                                <i class="fas fa-eye"></i>
+                            <a href="view.php?id=<?php echo $p['id']; ?>" title="<?php echo __('common.view_details'); ?>" style="background: #f1f5f9; color: #64748b; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0';" onmouseout="this.style.background='#f1f5f9';">
+                                <i class="fas fa-user-edit"></i>
                             </a>
-                            <a href="edit.php?id=<?php echo $p['id']; ?>" class="btn btn-sm" title="<?php echo __('common.edit'); ?>" style="background: #f1f5f9; color: var(--text-muted); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 10px;">
-                                <i class="fas fa-edit"></i>
-                            </a>
+                            <form action="delete.php" method="POST" style="display:inline" id="delPat<?php echo $p['id']; ?>">
+                                <?php echo csrf_field(); ?>
+                                <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
+                                <button type="button" onclick="confirmAndSubmit(document.getElementById('delPat<?php echo $p['id']; ?>'), '<?php echo __('patient.confirm_delete'); ?>')" title="<?php echo __('common.delete'); ?>" style="background: #fef2f2; color: #ef4444; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: none; cursor:pointer; transition: background 0.2s;" onmouseover="this.style.background='#fee2e2';" onmouseout="this.style.background='#fef2f2';">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>

@@ -1,11 +1,13 @@
 <?php
 // modules/guide/index.php
+require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/permissions.php';
+require_once __DIR__ . '/../../includes/auth_middleware.php';
 
 if (!is_logged_in()) {
-    redirect($base_url . 'login.php');
+    redirect('/login.php');
 }
 
 $section = isset($_GET['section']) ? $_GET['section'] : 'overview';
@@ -333,6 +335,124 @@ $all_permissions = get_all_permissions();
                 
                 <h3>Nhật ký hệ thống (Audit Logs):</h3>
                 <p>Mọi hành động Sửa hoặc Xóa các thông tin quan trọng đều được hệ thống ghi lại (Ai sửa, Sửa lúc nào, Sửa cái gì từ cũ sang mới). Điều này để đảm bảo tính minh bạch trong quản lý.</p>
+            </div>
+        </section>
+        <?php endif; ?>
+        
+        <!-- Section: Payment & Packages -->
+        <?php if ($section === 'payment'): ?>
+        <section id="payment" class="guide-section active">
+            <h2><i class="fas fa-file-invoice-dollar text-primary"></i> 7. Cẩm Nang Thanh Toán & Hóa Đơn</h2>
+            <div class="card" style="margin-bottom: 2rem;">
+                <p style="font-size: 1.1rem; color: #475569; line-height: 1.6;">Quy trình Vận hành Tài chính được thiết kế liên kết chặt chẽ từ khâu lập Danh mục Sản phẩm đến lúc khách quẹt thẻ thanh toán và trừ số buổi.</p>
+                
+                <div class="alert alert-danger mt-3 mb-4">
+                    <i class="fas fa-shield-alt"></i> <strong>Cơ chế Chống sai lệch Tài chính:</strong> 
+                    Phần mềm áp dụng thuật toán <i>Smart Number Formatting</i> (tự thêm hàng nghìn 000 vào đuôi) và khóa cứng tổng tiền. Chống hoàn toàn lỗi kĩ thuật nhập lố số tiền (ví dụ khách nợ 1 triệu nhưng gõ nhầm thu 10 triệu).
+                </div>
+
+                <!-- BƯỚC 1 -->
+                <h3 style="margin-top: 1.5rem; color: var(--primary);"><i class="fas fa-boxes"></i> Bước 1: Khởi tạo Sản phẩm & Mã Gói (Dành cho Quản lý)</h3>
+                <p>Trước khi kinh doanh, bộ phận Quản lý cần thiết lập Bảng giá Sản phẩm (Dịch vụ lẻ) và Gói Điều Trị (Packages). Truy cập <strong>Tài chính & Báo cáo -> Quản lý Gói/Sản phẩm</strong>.</p>
+                
+                <div class="guide-steps" style="margin-left: 1rem; border-left: 2px solid #e2e8f0; padding-left: 1.5rem;">
+                    <div class="step-item" style="margin-bottom: 1.5rem;">
+                        <div class="step-num" style="background:#8b5cf6;">A</div>
+                        <div class="step-text">
+                            <strong>1. Tạo Khung Sản Phẩm/Dịch vụ lẻ</strong>
+                            <p>Đây là danh sách hàng hóa có thể mang ra Bán trực tiếp (Thuốc, Nẹp, Phiếu khám lẻ, Dịch vụ ngâm chân...). Khai báo tên, Giá bán gốc vào đây.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num" style="background:#8b5cf6;">B</div>
+                        <div class="step-text">
+                            <strong>2. Tạo Khung Gói Điều Trị (Packages) & Liên kết</strong>
+                            <p>Gói điều trị là một dạng đặc biệt (ví dụ: <i>Gói 10 Buổi Chiropractic</i>). Khi tạo Khung Gói, bạn <strong>bắt buộc phải CHỌN LIÊN KẾT</strong> với "Sản Phẩm" (đã tạo ở bước A).</p>
+                            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-top: 0.5rem; font-size: 0.85rem; border: 1px dashed #cbd5e1;">
+                                <i class="fas fa-link text-primary"></i> <strong>Tại sao phải liên kết?</strong> Vì Gói (Package) dùng để đếm số buổi khám, còn Sản phẩm (Products) dùng để xuất Hóa đơn ghi nhận doanh thu. Kẹp 2 thứ lại, khi bán Gói phần mềm sẽ biết cần thu bao nhiêu tiền.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BƯỚC 2 -->
+                <h3 style="margin-top: 2.5rem; color: #10b981;"><i class="fas fa-shopping-cart"></i> Bước 2: Bán Gói Khám / Tạo Hóa Đơn (Cho Bệnh Nhân)</h3>
+                <p>Khi bệnh nhân mới đến chốt mua Gói hoặc mua lẻ Sản phẩm, Thu ngân thao tác siêu nhanh qua <strong>Giỏ Hàng Thông Minh</strong>:</p>
+                
+                <ul class="guide-list" style="margin-top: 1rem;">
+                    <li><strong>Mở Giỏ Hàng:</strong> Bấm <kbd>+ Tạo Phiếu Mới</kbd> trên cùng bên phải giao diện Billing, hoặc bấm từ màn hình Hồ Sơ Bệnh Nhân.</li>
+                    <li><strong>Quy trình 3 Giây:</strong>
+                        <ol style="margin-top: 0.5rem; line-height: 1.7;">
+                            <li><strong>Chọn Người mua:</strong> Nhập số điện thoại hoặc tên bệnh nhân vào thanh tìm kiếm tự động thả xuống (Select2).</li>
+                            <li><strong>Thêm món vào Giỏ:</strong> Click vào các thẻ Sản Phẩm / Gói hiển thị trên màn hình. Món hàng sẽ bay sang Giỏ bên phải. Chỉnh số lượng tuỳ ý (Ví dụ: Khách mua 2 Gói 10 buổi).</li>
+                            <li><strong>Thu tiền linh hoạt:</strong> Hệ thống hiện sẵn Tổng tiền. Khách đưa bao nhiêu nhập bấy nhiêu (Ví dụ tổng 10 triệu, khách đưa trước 5 triệu -> Hệ thống báo <span style="color:#ef4444; font-weight:600;">Còn nợ 5,000,000</span> đ). Bấm <kbd>Tạo hoá đơn</kbd>.</li>
+                        </ol>
+                    </li>
+                </ul>
+
+                <!-- BƯỚC 3 -->
+                <h3 style="margin-top: 2.5rem; color: #f59e0b;"><i class="fas fa-calendar-check"></i> Bước 3: Thu Tiền Lịch Hẹn / Trừ Buổi Tự Động</h3>
+                <p>Hàng ngày khách đến trị liệu, Lễ Tân chỉ cần thao tác trên Lịch Hẹn, không cần vào Hồ Sơ bệnh nhân!</p>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div style="background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 12px; padding: 1.5rem; height: 100%;">
+                            <h4 style="color: #be185d; margin-top:0; font-size: 1.1rem;"><i class="fas fa-magic"></i> Với Khách ĐÃ CÓ GÓI</h4>
+                            <p style="margin-bottom: 0;"><strong>Không cần làm gì cả!</strong> Lễ Tân / Bác sĩ chỉ cần <kbd>Thêm Buổi khám</kbd> cho lịch hẹn đó. Hệ thống sẽ tự động quét thấy khách này đang còn "Gói điều trị" (chưa hết buổi) và <strong>TỰ ĐỘNG TRỪ LÙI 1 BUỔI</strong> vào gói đó. Mọi thứ tự động hóa hoàn toàn.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 1.5rem; height: 100%;">
+                            <h4 style="color: #1d4ed8; margin-top:0; font-size: 1.1rem;"><i class="fas fa-hand-holding-usd"></i> Với Khách KHÁM LẺ</h4>
+                            <p style="margin-bottom: 0;">Khách đến làm dịch vụ nhỏ giọt (Khám 1 buổi trả 1 buổi). Lễ tân bấm nút <strong><i class="fas fa-file-invoice-dollar"></i> Thanh toán</strong> ngay trên ô Lịch Hẹn / Phác Đồ. Modal Giỏ Hàng sẽ bật lên với thông tin bệnh nhân có sẵn, chỉ cần nhấp "Phiếu khám lẻ", nhập số tiền khách quẹt thẻ và Done!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-note mt-4">
+                    <i class="fas fa-lightbulb"></i> <strong>Mẹo Quản Lý Công Nợ (Debt):</strong> Bạn có thể theo dõi khách hàng nào đang nợ tiền ngay tại Tổng quan Danh sách Bệnh Nhân. Để thu tiền nợ, vào thẻ <code>Phiếu tính tiền</code> của khách đó và bấm vào dòng hoá đơn bị Đỏ (Chưa thanh toán đủ) để <strong>Thêm Lượt Thu</strong>.
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <!-- Section: CSKH -->
+        <?php if ($section === 'cskh'): ?>
+        <section id="cskh" class="guide-section active">
+            <h2><i class="fas fa-headset text-primary"></i> 8. Chăm sóc Khách hàng (CSKH / Call Center)</h2>
+            <div class="card">
+                <p>Màn hình Inbox Action Board giúp nhân viên Call Center không bao giờ bỏ sót bệnh nhân.</p>
+                
+                <h3>Bảng Màu SLA (Mức độ ưu tiên):</h3>
+                <div class="color-legend-simple">
+                    <div class="legend-item"><span class="color-box" style="background:#ef4444"></span> 🔴 Cần xử lý ngay (Trễ sẽ mất khách)</div>
+                    <div class="legend-item"><span class="color-box" style="background:#f59e0b"></span> 🟡 Đang chờ chốt (Khách dời cuộc hẹn)</div>
+                    <div class="legend-item"><span class="color-box" style="background:#10b981"></span> 🟢 Đã ổn định (Hoàn tất êm đẹp)</div>
+                    <div class="legend-item"><span class="color-box" style="background:#9ca3af"></span> ⚪ Bỏ qua / Từ chối (Lưu kho)</div>
+                </div>
+
+                <h3 class="mt-4">Quy tắc sinh Task (Cron Rules):</h3>
+                <ul class="guide-list">
+                    <li><strong>T-1 (Nhắc lịch):</strong> Tự sinh ra trước Lịch hẹn 1 ngày. Tránh khách quên lịch.</li>
+                    <li><strong>T+3 (Hỏi thăm):</strong> Tự sinh ra 3 ngày sau buổi khám để hỏi thăm sức khoẻ / xin Review. <i>Tự huỷ nếu khách đã có lịch hẹn tiếp.</i></li>
+                    <li><strong>Gói sắp hết:</strong> Sinh ra khi Gói (Package) chỉ còn &lt;= 2 buổi. Khuyên khách mua thêm báo sớm.</li>
+                </ul>
+
+                <h3 class="mt-4">Thao tác Gọi điện:</h3>
+                <div class="guide-steps">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-text"><strong>Chọn trạng thái máy:</strong> Bệnh nhân Nghe máy, Bận hay Số sai. (Hệ thống tự đếm số lần gọi bận để nhả Task).</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-text"><strong>Chốt Kết quả:</strong> Đã chốt hẹn (Xong) hay Khách suy nghĩ thêm (Giữ lại).</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-text"><strong>Nảy trang rảnh tay:</strong> Bấm "Lưu & Gọi Người tiếp theo", hệ thống tự cuộn sang trang mới không cần ấn Back lại list.</div>
+                    </div>
+                </div>
             </div>
         </section>
         <?php endif; ?>

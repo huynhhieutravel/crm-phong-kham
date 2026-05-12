@@ -5,7 +5,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('open');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('open');
+            } else {
+                document.querySelector('.app-container').classList.toggle('sidebar-collapsed');
+            }
         });
     }
     

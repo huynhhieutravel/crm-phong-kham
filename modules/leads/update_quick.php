@@ -1,6 +1,6 @@
 <?php
 // modules/leads/update_quick.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
@@ -8,8 +8,34 @@ require_permission('manage_leads');
 require_once '../../includes/i18n.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = isset($_POST['id']) ? $_POST['id'] : 0;
+    // H2 FIX: Cast ID to int
+    $id = (int)($_POST['id'] ?? 0);
+    
+    if (!$id) {
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid ID']);
+            exit;
+        }
+        set_flash('ID không hợp lệ.', 'error');
+        redirect('index.php');
+    }
+
     $db = getDB();
+
+    // C2 FIX: Verify CSRF for non-AJAX requests. For AJAX, verify via token in POST data
+    $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+    if (!$is_ajax) {
+        verify_csrf('index.php');
+    } else {
+        // For AJAX: verify CSRF token from POST
+        $token = $_POST['_csrf_token'] ?? '';
+        if (empty($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+            exit;
+        }
+    }
 
     $available_cols = $db->query("SHOW COLUMNS FROM leads")->fetchAll(PDO::FETCH_COLUMN);
 
@@ -50,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Handle AJAX Request for quick updates
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+    if ($is_ajax) {
         header('Content-Type: application/json');
         echo json_encode(['success' => true]);
         exit;

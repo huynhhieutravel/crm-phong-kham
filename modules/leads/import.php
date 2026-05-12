@@ -12,9 +12,21 @@ $db = getDB();
 $import_results = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
-    $file = $_FILES['csv_file']['tmp_name'];
+    // C4 FIX: Verify CSRF
+    verify_csrf('import.php');
+
+    $file = $_FILES['csv_file'];
     
-    if (($handle = fopen($file, "r")) !== FALSE) {
+    // C4 FIX: Validate file
+    $allowed_ext = ['csv', 'txt'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $max_size = 5 * 1024 * 1024; // 5MB
+    
+    if (!in_array($ext, $allowed_ext)) {
+        $import_results = ['success' => 0, 'error' => 1, 'details' => ['Chỉ chấp nhận file CSV (.csv, .txt)']];
+    } elseif ($file['size'] > $max_size) {
+        $import_results = ['success' => 0, 'error' => 1, 'details' => ['File quá lớn (tối đa 5MB)']];
+    } elseif (($handle = fopen($file['tmp_name'], "r")) !== FALSE) {
         // Skip BOM if exists
         $bom = fread($handle, 3);
         if ($bom !== "\xEF\xBB\xBF") {
@@ -31,8 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
             try {
                 // Map CSV fields to DB columns
-                // Expected format: ID, Full Name, Phone, Source, Group, Consultant Name, etc.
-                // We mainly care about Name, Phone, Source, Group
                 $name = trim($data[1]);
                 $phone = trim($data[2]);
                 $source = trim($data[3] ?? '');
@@ -44,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                 $success_count++;
             } catch (Exception $e) {
                 $error_count++;
-                $errors[] = "Dòng với SĐT $phone lỗi: " . $e->getMessage();
+                $errors[] = "Dòng với SĐT " . e($phone) . " lỗi: " . e($e->getMessage());
             }
         }
         fclose($handle);
@@ -72,12 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             </div>
             <?php if (!empty($import_results['details'])): ?>
                 <div style="max-height: 200px; overflow-y: auto; font-size: 0.8rem; background: #fff1f2; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <?php foreach ($import_results['details'] as $err) echo "<div>$err</div>"; ?>
+                    <?php foreach ($import_results['details'] as $err) echo "<div>" . e($err) . "</div>"; ?>
                 </div>
             <?php endif; ?>
         <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data">
+            <?php echo csrf_field(); ?>
             <div class="mb-4">
                 <label class="form-label" style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Chọn file CSV</label>
                 <input type="file" name="csv_file" class="form-control" accept=".csv" required style="border-radius: 12px; padding: 0.6rem;">

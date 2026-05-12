@@ -1,6 +1,9 @@
 <?php
 // includes/i18n.php — Comprehensive UI Internationalization System
 
+// Force clear cache locally so the translations apply immediately
+if (function_exists('opcache_reset')) { @opcache_reset(); }
+
 $GLOBALS['_lang_config'] = [
     'vi' => ['flag' => '🇻🇳', 'name' => 'Tiếng Việt'],
     'en' => ['flag' => '🇬🇧', 'name' => 'English'],
@@ -13,8 +16,7 @@ function get_available_langs() {
 }
 
 function get_current_lang() {
-    if (session_status() === PHP_SESSION_NONE) session_start();
-    
+
     if (isset($_GET['lang'])) {
         $lang = $_GET['lang'];
         $allowed = array_keys($GLOBALS['_lang_config']);
@@ -27,7 +29,7 @@ function get_current_lang() {
 }
 
 function set_lang($lang) {
-    if (session_status() === PHP_SESSION_NONE) session_start();
+
     $allowed = array_keys($GLOBALS['_lang_config']);
     if (in_array($lang, $allowed)) {
         $_SESSION['lang'] = $lang;
@@ -78,7 +80,19 @@ function __($key, $params = null) {
     }
     
     // Resolve key
-    $translated = $dict[$key] ?? $dict_fallback[$key] ?? $default;
+    $translated = $dict[$key] ?? $dict_fallback[$key] ?? null;
+    
+    // Reverse lookup magic: If the DB stores raw Vietnamese strings instead of translation keys,
+    // we can search the fallback dictionary (vi.php) to find its translation key,
+    // and then lookup that key in the target language.
+    if ($translated === null) {
+        $translation_key = array_search($key, $dict_fallback);
+        if ($translation_key !== false && isset($dict[$translation_key])) {
+            $translated = $dict[$translation_key];
+        } else {
+            $translated = $default;
+        }
+    }
     
     // Replace params like {name}
     if (!empty($params) && is_array($params)) {

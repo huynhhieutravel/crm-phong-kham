@@ -216,10 +216,10 @@ $has_ketluan_dieutri = !empty($data['diagnosis_syndrome']) || !empty($data['trea
 
     <?php if ($has_ketluan_dieutri): ?>
     <div class="dy-section">
-        <h4 style="margin:0 0 10px 0; color: #e11d48; font-size: 14px; text-transform: uppercase;">VI. Chẩn đoán & Điều trị</h4>
+        <h4 style="margin:0 0 10px 0; color: #e11d48; font-size: 14px; text-transform: uppercase;"><?php echo __('VI. Chẩn đoán & Điều trị'); ?></h4>
         
         <?php if (!empty($data['diagnosis_syndrome'])): ?>
-        <div class="dy-box"><span class="dy-label">Chẩn đoán Bát cương:</span><span class="dy-value" style="color: #be123c; font-weight: 700;"><?php echo e($data['diagnosis_syndrome']); ?></span></div>
+        <div class="dy-box"><span class="dy-label"><?php echo __('Chẩn đoán Bát cương:'); ?></span><span class="dy-value" style="color: #be123c; font-weight: 700;"><?php echo e($data['diagnosis_syndrome']); ?></span></div>
         <?php endif; ?>
 
         <?php if (!empty($data['treatment_principle'])): ?>

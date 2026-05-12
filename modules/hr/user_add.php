@@ -8,13 +8,14 @@ require_permission('manage_users');
 $db = getDB();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $full_name = $_POST['full_name'];
     $username = $_POST['username'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $role_id = $_POST['role_id'];
-    $branch_id = $_POST['branch_id'] ?: null;
-    $status = $_POST['status'] ?? 'active';
-    $role_id = $_POST['role_id'];
+    $raw_password = $_POST['password'] ?? '';
+    $role_id = (int)$_POST['role_id'];
+    $branch_id = $_POST['branch_id'] ? (int)$_POST['branch_id'] : null;
+    $allowed_statuses = ['active', 'inactive'];
+    $status = in_array($_POST['status'] ?? '', $allowed_statuses) ? $_POST['status'] : 'active';
 
     // Security: Non-admin cannot create an Admin account
     if ($role_id == 1 && $_SESSION['role'] !== 'admin') {
@@ -22,19 +23,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('users.php');
     }
 
-    // Check if username exists
-    $check = $db->prepare("SELECT id FROM users WHERE username = ?");
-    $check->execute([$username]);
-    if ($check->fetch()) {
-        set_flash('Tên đăng nhập đã tồn tại!', 'danger');
+    // Password validation
+    if (strlen($raw_password) < 6) {
+        set_flash('Mật khẩu phải có ít nhất 6 ký tự!', 'danger');
     } else {
-        $stmt = $db->prepare("
-            INSERT INTO users (full_name, username, password, role_id, branch_id, status)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([$full_name, $username, $password, $role_id, $branch_id, $status]);
-        set_flash('Thêm nhân viên mới thành công!');
-        redirect('users.php');
+        $password = password_hash($raw_password, PASSWORD_DEFAULT);
+
+        // Check if username exists
+        $check = $db->prepare("SELECT id FROM users WHERE username = ?");
+        $check->execute([$username]);
+        if ($check->fetch()) {
+            set_flash('Tên đăng nhập đã tồn tại!', 'danger');
+        } else {
+            $stmt = $db->prepare("
+                INSERT INTO users (full_name, username, password, role_id, branch_id, status)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([$full_name, $username, $password, $role_id, $branch_id, $status]);
+            set_flash('Thêm nhân viên mới thành công!');
+            redirect('users.php');
+        }
     }
 }
 
@@ -53,6 +61,7 @@ $branches = $db->query("SELECT * FROM branches ORDER BY name ASC")->fetchAll();
     </div>
 
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <div class="form-group">
             <label class="form-label">Họ và Tên <span style="color: red;">*</span></label>
             <input type="text" name="full_name" class="form-input" placeholder="Nguyễn Văn A" required>

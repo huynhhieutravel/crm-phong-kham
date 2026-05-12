@@ -28,7 +28,7 @@ CREATE TABLE `appointments` (
   `patient_id` int(11) DEFAULT NULL,
   `lead_id` int(11) DEFAULT NULL,
   `doctor_id` int(11) DEFAULT NULL,
-  `type` enum('consultation','treatment','re_exam','adjustment') DEFAULT 'consultation',
+  `type` enum('consultation','treatment','re_exam','adjustment','dong_y_60','dong_y_90','chiro','support_other') DEFAULT 'consultation',
   `reexam_rule_id` int(11) DEFAULT NULL,
   `branch_id` int(11) NOT NULL,
   `appointment_date` datetime NOT NULL,

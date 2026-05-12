@@ -9,13 +9,13 @@ $sources = [];
 
 if ($start_date && $end_date) {
     try {
-        $stmt_tl = $db->prepare("SELECT COUNT(*) FROM leads WHERE DATE(created_at) BETWEEN ? AND ?");
+        $stmt_tl = $db->prepare("SELECT COUNT(*) FROM leads WHERE created_at >= ? AND created_at <= ?");
         $stmt_tl->execute([$start_date, $end_date]);
         $total_leads = $stmt_tl->fetchColumn();
     } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
-        $stmt_cl = $db->prepare("SELECT COUNT(*) FROM leads WHERE status = 'converted' AND DATE(updated_at) BETWEEN ? AND ?");
+        $stmt_cl = $db->prepare("SELECT COUNT(*) FROM leads WHERE status = 'converted' AND updated_at >= ? AND updated_at <= ?");
         $stmt_cl->execute([$start_date, $end_date]);
         $converted_leads = $stmt_cl->fetchColumn() ?: 0;
     } catch (Exception $e) {
@@ -30,7 +30,7 @@ if ($start_date && $end_date) {
     
     try {
         // 2. Lead Sources Data
-        $source_stmt = $db->prepare("SELECT source, COUNT(*) as count FROM leads WHERE created_at BETWEEN ? AND ? GROUP BY source ORDER BY count DESC");
+        $source_stmt = $db->prepare("SELECT source, COUNT(*) as count FROM leads WHERE created_at >= ? AND created_at <= ? GROUP BY source ORDER BY count DESC");
         if ($source_stmt) {
             $source_stmt->execute([$start_date, $end_date]);
             $sources = $source_stmt->fetchAll();
@@ -62,7 +62,7 @@ try {
 
 try {
     // 4. Status Breakdown Data
-    $status_stmt = $db->prepare("SELECT status, COUNT(*) as count FROM leads WHERE created_at BETWEEN ? AND ? GROUP BY status");
+    $status_stmt = $db->prepare("SELECT status, COUNT(*) as count FROM leads WHERE created_at >= ? AND created_at <= ? GROUP BY status");
     $status_stmt->execute([$start_date, $end_date]);
     $statuses = $status_stmt->fetchAll();
 } catch (Exception $e) {}

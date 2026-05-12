@@ -1,18 +1,28 @@
 <?php
 // modules/appointments/revert_checkin.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_appointments');
 
-// Ensure ID is passed and is a valid integer
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+// C3 FIX: POST-only, no GET mutations
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    set_flash('Yêu cầu không hợp lệ.', 'error');
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
+}
+
+// C3 FIX: Verify CSRF
+verify_csrf('index.php');
+
+$id = (int)($_POST['id'] ?? 0);
 $db = getDB();
 
 if ($id <= 0) {
     set_flash('Mã lịch hẹn không hợp lệ.', 'error');
-    redirect("index.php");
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
 }
 
 try {
@@ -36,13 +46,10 @@ try {
     }
 
     // 2. Revert Appointment
-    // Set status back to 'scheduled' and remove patient_id link for this specific appointment
-    // Note: We DO NOT delete the patient record, just unlink it from this appointment's check-in state
     $stmt = $db->prepare("UPDATE appointments SET status = 'scheduled', patient_id = NULL WHERE id = ?");
     $stmt->execute([$id]);
 
     // 3. Revert Lead status
-    // 'scheduled' is the standard status for a lead with an active appointment
     $stmt = $db->prepare("UPDATE leads SET status = 'scheduled' WHERE id = ?");
     $stmt->execute([$appt['lead_id']]);
 
@@ -53,10 +60,12 @@ try {
 
     $db->commit();
     set_flash(__('appointment.msg.revert_success'));
-    redirect("index.php");
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
 
 } catch (Exception $e) {
     if ($db->inTransaction()) $db->rollBack();
     set_flash($e->getMessage(), 'error');
-    redirect("index.php");
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
 }

@@ -11,26 +11,26 @@ $apt_statuses = [];
 
 if ($start_date && $end_date) {
     try {
-        $stmt_np = $db->prepare("SELECT COUNT(*) FROM patients WHERE DATE(created_at) BETWEEN ? AND ?");
+        $stmt_np = $db->prepare("SELECT COUNT(*) FROM patients WHERE created_at >= ? AND created_at <= ?");
         $stmt_np->execute([$start_date, $end_date]);
         $new_patients = $stmt_np->fetchColumn();
     } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
-        $stmt_ts = $db->prepare("SELECT COUNT(*) FROM medical_sessions WHERE DATE(session_date) BETWEEN ? AND ?");
+        $stmt_ts = $db->prepare("SELECT COUNT(*) FROM medical_sessions WHERE session_date >= ? AND session_date <= ?");
         $stmt_ts->execute([$start_date, $end_date]);
         $total_sessions = $stmt_ts->fetchColumn();
     } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
-        $stmt_ca = $db->prepare("SELECT COUNT(*) FROM appointments WHERE status = 'completed' AND DATE(appointment_date) BETWEEN ? AND ?");
+        $stmt_ca = $db->prepare("SELECT COUNT(*) FROM appointments WHERE status = 'completed' AND appointment_date >= ? AND appointment_date <= ?");
         $stmt_ca->execute([$start_date, $end_date]);
         $completed_appointments = $stmt_ca->fetchColumn();
     } catch (Exception $e) { error_log($e->getMessage()); }
 
     try {
         // 2. Patient Labels Data
-        $label_stmt = $db->prepare("SELECT label, COUNT(*) as count FROM patients WHERE created_at BETWEEN ? AND ? GROUP BY label ORDER BY count DESC");
+        $label_stmt = $db->prepare("SELECT label, COUNT(*) as count FROM patients WHERE created_at >= ? AND created_at <= ? GROUP BY label ORDER BY count DESC");
         $label_stmt->execute([$start_date, $end_date]);
         $labels = $label_stmt->fetchAll();
     } catch (Exception $e) {}
@@ -62,7 +62,7 @@ if ($start_date && $end_date) {
 
     try {
         // 4. Appointment Status Distribution
-        $apt_status_stmt = $db->prepare("SELECT status, COUNT(*) as count FROM appointments WHERE appointment_date BETWEEN ? AND ? GROUP BY status");
+        $apt_status_stmt = $db->prepare("SELECT status, COUNT(*) as count FROM appointments WHERE appointment_date >= ? AND appointment_date <= ? GROUP BY status");
         $apt_status_stmt->execute([$start_date, $end_date]);
         $apt_statuses = $apt_status_stmt->fetchAll();
     } catch (Exception $e) {}

@@ -4,7 +4,7 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('view_inventory');
-$page_title = 'Quản lý Kho vật tư & Hàng hóa';
+$page_title = __('inventory.index.page_title');
 $current_page = 'inventory';
 require_once '../../templates/header.php';
 
@@ -14,20 +14,20 @@ $items = $db->query("SELECT * FROM inventory_items ORDER BY name ASC")->fetchAll
 
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h3 style="margin: 0;">Danh mục Vật tư / Hàng hóa</h3>
+        <h3 style="margin: 0;"><?php echo __('inventory.index.list_title'); ?></h3>
         <a href="add_item.php" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Thêm vật tư mới
+            <i class="fas fa-plus"></i> <?php echo __('inventory.index.add_new'); ?>
         </a>
     </div>
 
     <table class="table" style="width: 100%;">
         <thead>
-            <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
-                <th style="padding: 1rem;">Tên mặt hàng</th>
-                <th style="padding: 1rem;">Đơn vị</th>
-                <th style="padding: 1rem;">Tồn kho</th>
-                <th style="padding: 1rem;">Giá nhập</th>
-                <th style="padding: 1rem;">Giá bán</th>
+            <tr style="text-align: left; border-bottom: 2px solid var(--border-color); text-transform: uppercase;">
+                <th style="padding: 1rem;"><?php echo __('inventory.index.item_name'); ?></th>
+                <th style="padding: 1rem;"><?php echo __('inventory.index.unit'); ?></th>
+                <th style="padding: 1rem;"><?php echo __('inventory.index.stock'); ?></th>
+                <th style="padding: 1rem;"><?php echo __('inventory.index.import_price'); ?></th>
+                <th style="padding: 1rem;"><?php echo __('inventory.index.sell_price'); ?></th>
                 <th style="padding: 1rem;">Action</th>
             </tr>
         </thead>
@@ -44,14 +44,14 @@ $items = $db->query("SELECT * FROM inventory_items ORDER BY name ASC")->fetchAll
                     <td style="padding: 1rem;"><?php echo format_money($i['base_price']); ?></td>
                     <td style="padding: 1rem;"><?php echo format_money($i['sell_price']); ?></td>
                     <td style="padding: 1rem;">
-                        <a href="restock.php?id=<?php echo $i['id']; ?>" class="btn btn-sm" title="Nhập hàng" style="background: #f1f5f9;"><i class="fas fa-plus-circle"></i></a>
-                        <a href="sell.php?id=<?php echo $i['id']; ?>" class="btn btn-sm" title="Bán lẻ" style="background: #f1f5f9;"><i class="fas fa-shopping-bag"></i></a>
+                        <a href="restock.php?id=<?php echo $i['id']; ?>" class="btn btn-sm" title="<?php echo __('inventory.index.restock'); ?>" style="background: #f1f5f9;"><i class="fas fa-plus-circle"></i></a>
+                        <a href="sell.php?id=<?php echo $i['id']; ?>" class="btn btn-sm" title="<?php echo __('inventory.index.sell_retail'); ?>" style="background: #f1f5f9;"><i class="fas fa-shopping-bag"></i></a>
                     </td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">Chưa có sản phẩm nào trong kho.</td>
+                    <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);"><?php echo __('inventory.index.no_data'); ?></td>
                 </tr>
             <?php endif; ?>
         </tbody>

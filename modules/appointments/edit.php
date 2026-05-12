@@ -6,7 +6,7 @@ require_once '../../includes/auth_middleware.php';
 require_permission('manage_appointments');
 
 $db = getDB();
-$id = isset($_GET['id']) ? $_GET['id'] : 0;
+$id = (int)($_GET['id'] ?? 0);
 
 $stmt = $db->prepare("SELECT * FROM appointments WHERE id = ?");
 $stmt->execute([$id]);
@@ -14,10 +14,13 @@ $appointment = $stmt->fetch();
 
 if (!$appointment) {
     set_flash(__('appointment.msg.not_found'), 'danger');
-    redirect('index.php');
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // H2 FIX: Verify CSRF
+    verify_csrf("edit.php?id=$id");
     $optionals = [
         'doctor_id' => $_POST['doctor_id'] ?: null,
         'appointment_date' => $_POST['appointment_date'] . ' ' . $_POST['appointment_time'],
@@ -37,6 +40,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!empty($data)) {
+        // Check if doctor is on approved leave
+        if (!empty($data['doctor_id'])) {
+            $check_leave = $db->prepare("SELECT COUNT(*) FROM leave_requests WHERE user_id = ? AND status = 'approved' AND ? >= DATE(start_date) AND ? <= DATE(end_date)");
+            $check_leave->execute([$data['doctor_id'], $_POST['appointment_date'], $_POST['appointment_date']]);
+            if ($check_leave->fetchColumn() > 0) {
+                set_flash('Nhân sự đang có lịch nghỉ được duyệt vào ngày này. Không thể thay đổi lịch.', 'danger');
+                redirect("edit.php?id=$id");
+                exit;
+            }
+        }
+
         $set_parts = [];
         foreach (array_keys($data) as $col) {
             $set_parts[] = "$col = ?";
@@ -47,12 +61,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     set_flash(__('appointment.msg.update_success'));
-    redirect('index.php');
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
 }
 
 $page_title = __('appointment.edit.title');
 $current_page = 'appointments';
 require_once '../../templates/header.php';
+
+// M4 FIX: Define $status_options
+$status_options = ['scheduled', 'confirmed', 'arrived', 'treated', 'completed', 'no_show', 'cancelled', 'staff_sick', 'staff_busy'];
 
 $doctors = $db->query("
     SELECT u.id, u.full_name, r.display_name as role_name 
@@ -78,13 +96,18 @@ $doctors = $db->query("
 
 <div class="card" style="max-width: 600px; margin: 0 auto; padding: 2rem;">
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <div class="form-group">
             <label class="form-label"><?php echo __('appointment.add.type_label'); ?></label>
             <select name="type" class="form-input">
                 <option value="consultation" <?php echo $appointment['type'] === 'consultation' ? 'selected' : ''; ?>><?php echo __('appointment.type.consultation'); ?></option>
-                <option value="treatment" <?php echo $appointment['type'] === 'treatment' ? 'selected' : ''; ?>><?php echo __('appointment.type.treatment'); ?></option>
-                <option value="re_exam" <?php echo $appointment['type'] === 're_exam' ? 'selected' : ''; ?>><?php echo __('appointment.type.re_exam'); ?></option>
-                <option value="adjustment" <?php echo $appointment['type'] === 'adjustment' ? 'selected' : ''; ?>><?php echo __('appointment.type.adjustment'); ?></option>
+                <option value="dong_y_60" <?php echo $appointment['type'] === 'dong_y_60' ? 'selected' : ''; ?>><?php echo __('appointment.type.dong_y_60'); ?></option>
+                <option value="dong_y_90" <?php echo $appointment['type'] === 'dong_y_90' ? 'selected' : ''; ?>><?php echo __('appointment.type.dong_y_90'); ?></option>
+                <option value="chiro" <?php echo $appointment['type'] === 'chiro' ? 'selected' : ''; ?>><?php echo __('appointment.type.chiro'); ?></option>
+                <option value="support_other" <?php echo $appointment['type'] === 'support_other' ? 'selected' : ''; ?>><?php echo __('appointment.type.support_other'); ?></option>
+                <option value="treatment" <?php echo $appointment['type'] === 'treatment' ? 'selected' : ''; ?> style="display:none;"><?php echo __('appointment.type.treatment'); ?></option>
+                <option value="re_exam" <?php echo $appointment['type'] === 're_exam' ? 'selected' : ''; ?> style="display:none;"><?php echo __('appointment.type.re_exam'); ?></option>
+                <option value="adjustment" <?php echo $appointment['type'] === 'adjustment' ? 'selected' : ''; ?> style="display:none;"><?php echo __('appointment.type.adjustment'); ?></option>
             </select>
         </div>
 
@@ -194,17 +217,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    flatpickr("#appointment_date", {
-        dateFormat: "Y-m-d",
-        altInput: true,
-        altFormat: "d/m/Y",
-        locale: "vn",
-        disableMobile: "true"
-    });
-});
-</script>
 <?php require_once '../../templates/footer.php'; ?>

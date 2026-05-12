@@ -9,6 +9,9 @@ $db = getDB();
 
 // Handle Quick Add
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_add'])) {
+    // C2 FIX: Verify CSRF
+    verify_csrf('index.php');
+
     $data = [
         'full_name' => $_POST['full_name'],
         'phone' => $_POST['phone']
@@ -52,7 +55,6 @@ $page_title = __('lead.title');
 $current_page = 'leads';
 require_once '../../templates/header.php';
 
-$db = getDB();
 
 // Medical Groups from central function
 $medical_groups = get_medical_groups();
@@ -74,9 +76,11 @@ $params = [];
 $conditions = [];
 
 if ($search) {
+    // H1 FIX: Escape LIKE wildcards to prevent wildcard injection
+    $safe_search = addcslashes($search, '%_');
     $conditions[] = "(full_name LIKE ? OR phone LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
 }
 
 if ($status_filter) {
@@ -133,13 +137,9 @@ try {
     $stmt->execute($params);
     $leads = $stmt->fetchAll();
 } catch (Exception $e) {
-    // Fallback: simpler query if complex one failed (maybe lead_logs missing)
-    try {
-        $simple_sql = "SELECT * FROM leads ORDER BY created_at DESC " . get_sql_limit($limit, $page);
-        $leads = $db->query($simple_sql)->fetchAll();
-    } catch (Exception $e2) {
-        $leads = [];
-    }
+    // M3 FIX: Log error instead of fallback that ignores all filters
+    error_log("Leads query failed: " . $e->getMessage());
+    $leads = [];
 }
 
 
@@ -439,11 +439,11 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
                     <i class="fas fa-plus"></i> <?php echo __('leads.index.btn_add'); ?>
                 </a>
                 <div style="display: flex; gap: 0.4rem;">
-                    <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Xuất CSV">
-                        <i class="fas fa-file-export"></i> Xuất
+                    <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('leads.index.export_csv'); ?>">
+                        <i class="fas fa-file-export"></i> <?php echo __('common.export'); ?>
                     </a>
-                    <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Nhập CSV">
-                        <i class="fas fa-file-import"></i> Nhập
+                    <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('leads.index.import_csv'); ?>">
+                        <i class="fas fa-file-import"></i> <?php echo __('common.import'); ?>
                     </a>
                 </div>
                 <p style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; background: #f1f5f9; padding: 0.25rem 0.5rem; border-radius: 6px; text-align: center;">
@@ -454,20 +454,21 @@ $is_filtered = $search || $status_filter || $group_filter || $consultant_filter 
 </div>
 
 <script>
-function setPeriod(p) {
+function setPeriod(evt, p) {
+    if (evt && evt.preventDefault) evt.preventDefault();
     document.getElementById('periodInput').value = p;
     // Clear custom dates when selecting a period
     if (p !== 'custom') {
-        const s = document.querySelector('input[name="start_date"]');
-        const e = document.querySelector('input[name="end_date"]');
-        if (s) s.value = '';
-        if (e) e.value = '';
+        const startEl = document.querySelector('input[name="start_date"]');
+        const endEl = document.querySelector('input[name="end_date"]');
+        if (startEl) startEl.value = '';
+        if (endEl) endEl.value = '';
         document.getElementById('filterForm').submit();
     } else {
         document.getElementById('customDates').style.display = 'flex';
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-        if (event && event.target) {
-            event.target.classList.add('active');
+        if (evt && evt.target) {
+            evt.target.classList.add('active');
         }
     }
 }
@@ -529,6 +530,7 @@ function setPeriod(p) {
                     </td>
                     <td style="position: sticky; top: 48px; z-index: 9; padding: 0.75rem 1rem; background: #f1f5f9;">
                         <form id="quick-add-form" method="POST">
+                            <?php echo csrf_field(); ?>
                             <input type="hidden" name="quick_add" value="1">
                             <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; border-radius: 8px; width: 100%; white-space: nowrap;">
                                 <i class="fas fa-plus"></i> <?php echo __('leads.index.btn_save_quick'); ?>
@@ -576,6 +578,7 @@ function setPeriod(p) {
                             <div style="display: flex; flex-direction: column; gap: 0.3rem;">
                                 <!-- Inline Source Selection -->
                                 <form action="update_quick.php" method="POST" class="quick-status-form">
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                     <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #64748b;">
                                         <i class="fas fa-share-alt"></i>
@@ -589,6 +592,7 @@ function setPeriod(p) {
 
                                 <!-- Inline Group Selection -->
                                 <form action="update_quick.php" method="POST" class="quick-status-form">
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                     <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #4f46e5; font-weight: 600;">
                                         <i class="fas fa-stethoscope"></i>
@@ -604,6 +608,7 @@ function setPeriod(p) {
                         </td>
                         <td style="padding: 1rem;">
                             <form action="update_quick.php" method="POST" class="quick-status-form">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                 <select name="consultant_id" class="form-input" style="padding: 0.3rem; font-size: 0.8rem; border: none; background: transparent;" onchange="updateLead(this)">
                                     <option value=""><?php echo __('leads.table.unassigned'); ?></option>
@@ -615,6 +620,7 @@ function setPeriod(p) {
                         </td>
                         <td style="padding: 1rem;">
                             <form action="update_quick.php" method="POST" class="quick-status-form">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
                                 <select name="consultation_status" class="form-input" style="padding: 0.4rem; font-size: 0.8rem; border-radius: 8px; font-weight: 600; border: 1px solid #e2e8f0;" onchange="updateLead(this)">
                                     <option value=""><?php echo __('leads.index.filter_status_placeholder'); ?></option>
@@ -648,9 +654,10 @@ function setPeriod(p) {
                                 <a href="edit.php?id=<?php echo $l['id']; ?>" class="btn btn-sm" style="background: #f1f5f9; color: var(--text-main); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px;">
                                     <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
                                 </a>
-                                <form action="delete.php" method="POST" style="display:inline" onsubmit="return confirm('<?php echo __('lead.confirm_delete'); ?>')">
+                                <form action="delete.php" method="POST" style="display:inline" id="delLead<?php echo $l['id']; ?>">
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="id" value="<?php echo $l['id']; ?>">
-                                    <button type="submit" class="btn btn-sm" style="background: #fff1f2; color: #e11d48; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px; border: none; cursor: pointer;">
+                                    <button type="button" onclick="confirmAndSubmit(document.getElementById('delLead<?php echo $l['id']; ?>'), '<?php echo __('lead.confirm_delete'); ?>')" class="btn btn-sm" style="background: #fff1f2; color: #e11d48; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px; border: none; cursor: pointer;">
                                         <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
                                     </button>
                                 </form>
@@ -707,6 +714,7 @@ function updateLead(select) {
     // Optional: add loading style
     select.style.opacity = '0.5';
 
+    // C2 FIX: Include CSRF token in AJAX request
     fetch('update_quick.php', {
         method: 'POST',
         body: formData,

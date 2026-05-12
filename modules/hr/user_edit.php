@@ -6,7 +6,7 @@ require_once '../../includes/auth_middleware.php';
 require_permission('manage_users');
 
 $db = getDB();
-$id = $_GET['id'] ?? 0;
+$id = (int)($_GET['id'] ?? 0);
 
 $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$id]);
@@ -24,21 +24,24 @@ if ($user['role_id'] == 1 && $_SESSION['role'] !== 'admin') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $full_name = $_POST['full_name'];
     $username = $_POST['username'];
-    $role_id = $_POST['role_id'];
-    $branch_id = $_POST['branch_id'] ?: null;
+    $role_id = (int)$_POST['role_id'];
+    $branch_id = $_POST['branch_id'] ? (int)$_POST['branch_id'] : null;
 
     // Security: Non-admin cannot promote someone to Admin
     if ($role_id == 1 && $_SESSION['role'] !== 'admin') {
         set_flash('Bạn không có quyền gán vai trò Administrator!', 'danger');
         redirect('users.php');
     }
-    $status = $_POST['status'];
+    $allowed_statuses = ['active', 'inactive'];
+    $status = in_array($_POST['status'] ?? '', $allowed_statuses) ? $_POST['status'] : 'active';
+    $salary = isset($_POST['salary_per_patient']) ? (float)$_POST['salary_per_patient'] : 0.00;
 
     // Update basic info
-    $update_sql = "UPDATE users SET full_name = ?, username = ?, role_id = ?, branch_id = ?, status = ? WHERE id = ?";
-    $update_params = [$full_name, $username, $role_id, $branch_id, $status, $id];
+    $update_sql = "UPDATE users SET full_name = ?, username = ?, role_id = ?, branch_id = ?, status = ?, salary_per_patient = ? WHERE id = ?";
+    $update_params = [$full_name, $username, $role_id, $branch_id, $status, $salary, $id];
     
     $stmt = $db->prepare($update_sql);
     $stmt->execute($update_params);
@@ -68,6 +71,7 @@ $branches = $db->query("SELECT * FROM branches ORDER BY name ASC")->fetchAll();
     </div>
 
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <div class="form-group">
             <label class="form-label">Họ và Tên <span style="color: red;">*</span></label>
             <input type="text" name="full_name" class="form-input" value="<?php echo e($user['full_name']); ?>" required>
@@ -117,6 +121,14 @@ $branches = $db->query("SELECT * FROM branches ORDER BY name ASC")->fetchAll();
                     <input type="radio" name="status" value="inactive" <?php echo $user['status'] === 'inactive' ? 'checked' : ''; ?>>
                     <span style="font-weight: 600; color: #94a3b8;">Ngừng hoạt động</span>
                 </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Chi phí theo Bệnh nhân (VNĐ) <span style="color: #64748b; font-weight: normal; font-size: 0.8rem;">- Setup khoản cố định/ca cho KPI</span></label>
+            <div style="position: relative;">
+                <input type="number" name="salary_per_patient" class="form-input" value="<?php echo e(isset($user['salary_per_patient']) ? $user['salary_per_patient'] : 0); ?>" step="1000" min="0" style="padding-right: 3rem;">
+                <span style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-weight: 600;">đ</span>
             </div>
         </div>
 

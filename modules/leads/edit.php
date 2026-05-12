@@ -5,7 +5,7 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_leads');
 
-$id = isset($_GET['id']) ? $_GET['id'] : 0;
+$id = (int)($_GET['id'] ?? 0);
 $db = getDB();
 
 // Fetch lead data
@@ -33,6 +33,8 @@ $lead_sources = get_lead_sources();
 
 // Handle form submission before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // H3 FIX: Verify CSRF
+    verify_csrf("edit.php?id=$id");
     $optionals = [
         'full_name' => $_POST['full_name'],
         'phone' => $_POST['phone'],
@@ -89,6 +91,7 @@ require_once '../../templates/header.php';
 </div>
 
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <!-- ... existing form fields ... -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
             <!-- [Lines 82-146 are preserved here] -->
@@ -111,7 +114,7 @@ require_once '../../templates/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label"><?php echo __('leads.form.label_birthday'); ?></label>
-                    <input type="date" name="birthday" class="form-input" value="<?php echo $lead['birthday']; ?>">
+                    <input type="date" name="birthday" min="1900-01-01" max="<?php echo date('Y-m-d'); ?>" class="form-input" value="<?php echo $lead['birthday']; ?>">
                 </div>
             </div>
             <div class="form-group">
@@ -190,6 +193,7 @@ require_once '../../templates/header.php';
             <i class="fas fa-plus-circle"></i> <?php echo __('leads.form.add_note'); ?>
         </h3>
         <form id="addLogForm" onsubmit="submitLog(event)">
+            <?php echo csrf_field(); ?>
             <input type="hidden" name="lead_id" value="<?php echo $id; ?>">
             <div style="display: flex; gap: 1rem;">
                 <textarea name="note" class="form-input" rows="2" placeholder="<?php echo __('leads.form.placeholder_notes'); ?>" style="background: white; border-radius: 10px;"></textarea>

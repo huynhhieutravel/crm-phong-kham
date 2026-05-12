@@ -1,21 +1,21 @@
 <?php
 // modules/medical/form.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_medical');
 require_once '../../includes/auth.php';
 $type = $_GET['type'] ?? 'chiropractic';
-$patient_id = $_GET['patient_id'] ?? 0;
-$session_id = $_GET['session_id'] ?? null;
+$patient_id = (int)($_GET['patient_id'] ?? 0);
+$session_id = isset($_GET['session_id']) ? (int)$_GET['session_id'] : null;
 
 $page_title = ($type === 'dong_y' ? __('medical.form.dong_y_title') : __('medical.form.chiro_title'));
 if ($type === 'initial_exam') $page_title = __('medical.form.initial_exam_title');
-if ($type === 'chiropractic_v1') $page_title = 'Phiếu Khám Chiropractic (V1 Cũ)';
+if ($type === 'chiropractic_v1') $page_title = __('medical.form.chiro_v1_title');
 $current_page = 'medical';
 $db = getDB();
-$history_id = $_GET['id'] ?? 0;
+$history_id = (int)($_GET['id'] ?? 0);
 
 // 1. Fetch Session Status for Locking
 $is_locked = false;
@@ -29,6 +29,7 @@ if ($session_id) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     if ($is_locked) {
         set_flash(__('medical.form.err_locked'), 'error');
         redirect("session_view.php?id=$session_id");
@@ -59,7 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     set_flash(__('medical.form.msg_success'));
     
-    if ($session_id) {
+    if (!empty($_POST['lang_switch_autosave'])) {
+        $redir_url = $_SERVER['REQUEST_URI'];
+        if (!$history_id && isset($new_id)) {
+            $redir_url .= (strpos($redir_url, '?') !== false ? '&' : '?') . 'id=' . $new_id;
+        }
+        redirect($redir_url);
+    } elseif ($session_id) {
         redirect("session_view.php?id=$session_id");
     } else {
         redirect("../patients/view.php?id=$patient_id");
@@ -347,6 +354,7 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
     </div>
 
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <?php if ($is_locked): ?>
             <div style="background: #fef2f2; color: #991b1b; padding: 1.25rem; border-radius: 20px; margin-bottom: 2rem; border: 1px solid #fecaca; display: flex; align-items: center; gap: 1rem; box-shadow: var(--premium-shadow);">
                 <i class="fas fa-lock fa-2x"></i>

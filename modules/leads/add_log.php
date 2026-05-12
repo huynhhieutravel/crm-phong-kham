@@ -8,8 +8,15 @@ require_permission('manage_leads');
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $lead_id = isset($_POST['lead_id']) ? $_POST['lead_id'] : 0;
-    $note = trim(isset($_POST['note']) ? $_POST['note'] : '');
+    // H4 FIX: Verify CSRF token for AJAX requests
+    $token = $_POST['_csrf_token'] ?? '';
+    if (empty($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+        exit;
+    }
+
+    $lead_id = (int)($_POST['lead_id'] ?? 0);
+    $note = trim($_POST['note'] ?? '');
     $user_id = $_SESSION['user_id'];
 
     if ($lead_id && $note) {

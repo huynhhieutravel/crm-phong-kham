@@ -1,14 +1,14 @@
 <?php
 // modules/medical/chiro_history.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_medical');
 
-$patient_id = $_GET['patient_id'] ?? 0;
-$session_id = $_GET['session_id'] ?? null;
-$record_id = $_GET['id'] ?? null;
+$patient_id = (int)($_GET['patient_id'] ?? 0);
+$session_id = isset($_GET['session_id']) ? (int)$_GET['session_id'] : null;
+$record_id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $db = getDB();
 
 $existing_data = [];
@@ -64,6 +64,7 @@ function checked_v($path, $value) {
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $exam = $_POST['exam'] ?? [];
     if (isset($exam['markers']) && is_string($exam['markers'])) {
         $exam['markers'] = json_decode($exam['markers'], true) ?: [];
@@ -79,11 +80,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES (?, ?, 'chiro_history', ?, ?)
         ");
         $stmt->execute([$patient_id, $session_id, $history_data, $_SESSION['user_id']]);
+        $new_id = $db->lastInsertId();
     }
     
     set_flash(__('medical.history.msg_success'));
     
-    if ($session_id) {
+    if (!empty($_POST['lang_switch_autosave'])) {
+        $redir_url = $_SERVER['REQUEST_URI'];
+        if (!$record_id && isset($new_id)) {
+            $redir_url .= (strpos($redir_url, '?') !== false ? '&' : '?') . 'id=' . $new_id;
+        }
+        redirect($redir_url);
+    } elseif ($session_id) {
         redirect("session_view.php?id=$session_id");
     } else {
         redirect("../patients/view.php?id=$patient_id");
@@ -114,6 +122,7 @@ require_once '../../templates/header.php';
     </div>
 
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <!-- PART 1: THÔNG TIN CƠ BẢN & LỐI SỐNG -->
         <div style="margin-bottom: 4rem;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
@@ -235,7 +244,7 @@ require_once '../../templates/header.php';
                 ?>
                 <div id="<?php echo $target_id; ?>" class="location-detail-card" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.5rem; margin-top: 1.5rem; margin-bottom: 2rem;">
                     <h4 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 2rem; text-transform: uppercase;">
-                        <i class="fas fa-map-pin"></i> CHI TIẾT VỊ TRÍ: <?php echo $loc_label; ?>
+                        <i class="fas fa-map-pin"></i> <?php echo __('medical.history.detail_location_label', 'CHI TIẾT VỊ TRÍ:'); ?> <?php echo __($loc_label); ?>
                     </h4>
 
                     <div class="form-group" style="margin-bottom: 2.5rem;">

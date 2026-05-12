@@ -21,9 +21,10 @@ $params = [];
 $conditions = [];
 
 if ($search) {
+    $safe_search = addcslashes($search, '%_');
     $conditions[] = "(u.full_name LIKE ? OR u.username LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $params[] = "%{$safe_search}%";
+    $params[] = "%{$safe_search}%";
 }
 
 if ($role_filter) {

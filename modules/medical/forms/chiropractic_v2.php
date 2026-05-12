@@ -2,117 +2,171 @@
 // modules/medical/forms/chiropractic_v2.php
 
 // 0. AUTO DATA MIGRATION: TƯƠNG THÍCH NGƯỢC DỮ LIỆU CŨ (V1)
-// Kiểm tra nếu $data chứa các key đặc trưng của bản cũ (như 'spine', 's', 'o'...)
-if (!empty($data) && (isset($data['spine']) || isset($data['s']) || isset($data['o']) || isset($data['a']))) {
-    $v2 = [];
-    
-    // 1. Phân mục S (Subjective) -> Subjective V2
-    if (isset($data['s'])) {
-        $v2['s_vas'] = $data['s']['vas'] ?? '5';
-        $v2['s_progress'] = $data['s']['progress'] ?? '';
-        $v2['s_frequency'] = $data['s']['frequency'] ?? '';
-        $v2['s_activities'] = $data['s']['activities'] ?? [];
-        $v2['pain_locations'] = [
-            ['name' => 'Khu vực đau chính (từ bản cũ)', 'vas' => $v2['s_vas'], 'trend' => '', 'symptoms' => [], 'notes' => '']
+function migrate_to_v2($input_data) {
+    if (!empty($input_data) && (isset($input_data['spine']) || isset($input_data['s']) || isset($input_data['o']) || isset($input_data['a']))) {
+        $v2 = [];
+        
+        // 1. Phân mục S (Subjective) -> Subjective V2
+        if (isset($input_data['s'])) {
+            $v2['s_vas'] = $input_data['s']['vas'] ?? '5';
+            $v2['s_progress'] = $input_data['s']['progress'] ?? '';
+            $v2['s_frequency'] = $input_data['s']['frequency'] ?? '';
+            $v2['s_activities'] = $input_data['s']['activities'] ?? [];
+            $v2['pain_locations'] = [
+                ['name' => 'Khu vực đau chính (từ bản cũ)', 'vas' => $v2['s_vas'], 'trend' => '', 'symptoms' => [], 'notes' => '']
+            ];
+        }
+        
+        // 2. Phân mục O (Objective) -> Objective V2
+        if (isset($input_data['o'])) {
+            $v2['muscle_hypertonicity'] = $input_data['o']['muscle_tone'] ?? '';
+            $v2['muscle_severity'] = $input_data['o']['severity'] ?? '';
+            $v2['rom_limitations'] = $input_data['o']['rom_limit'] ?? [];
+            $v2['symptom_notes'] = $input_data['o']['notes'] ?? '';
+        }
+        
+        // 3. Phân mục A (Assessment/Physio) -> Physio V2
+        if (isset($input_data['a'])) {
+            $pt_map = [
+                'Nhiệt/Lạnh' => 'Nhiệt/Lạnh (Heat/Cryo)',
+                'Trị liệu bằng tay' => 'Trị liệu bằng tay (Manual Therapy)'
+            ];
+            $physio = [];
+            $old_physio = $input_data['a']['physiotherapy'] ?? [];
+            if (is_array($old_physio)) {
+                foreach ($old_physio as $item) {
+                    $physio[] = $pt_map[$item] ?? $item;
+                }
+            }
+            $v2['physiotherapy'] = $physio;
+        }
+        
+        // 4. Phân mục P (Plan) -> Plan V2
+        if (isset($input_data['p'])) {
+            $v2['progress_assessment'] = $input_data['p']['evaluation'] ?? '';
+            $v2['treatment_frequency'] = $input_data['p']['frequency'] ?? '';
+            $v2['plan_notes'] = $input_data['p']['notes'] ?? '';
+        }
+        
+        // 5. SPINE MATRIX (Subluxation)
+        $v2['subluxation'] = [
+            'cervical' => [], 'thoracic' => [], 'lumbar' => [], 'sacrum' => [], 'peripheral' => [], 'becken' => []
         ];
-    }
-    
-    // 2. Phân mục O (Objective) -> Objective V2
-    if (isset($data['o'])) {
-        $v2['muscle_hypertonicity'] = $data['o']['muscle_tone'] ?? '';
-        $v2['muscle_severity'] = $data['o']['severity'] ?? '';
-        $v2['rom_limitations'] = $data['o']['rom_limit'] ?? [];
-        $v2['symptom_notes'] = $data['o']['notes'] ?? '';
-    }
-    
-    // 3. Phân mục A (Assessment/Physio) -> Physio V2
-    if (isset($data['a'])) {
-        $pt_map = [
-            'Nhiệt/Lạnh' => 'Nhiệt/Lạnh (Heat/Cryo)',
-            'Trị liệu bằng tay' => 'Trị liệu bằng tay (Manual Therapy)'
-        ];
-        $physio = [];
-        $old_physio = $data['a']['physiotherapy'] ?? [];
-        if (is_array($old_physio)) {
-            foreach ($old_physio as $item) {
-                $physio[] = $pt_map[$item] ?? $item;
+        
+        if (isset($input_data['spine'])) {
+            foreach ($input_data['spine'] as $node => $sides) {
+                $node = str_replace(['D'], ['T'], $node); // Đề phòng D1-D12 cũ
+                $sides = is_array($sides) ? $sides : [];
+                $sides_keys = array_keys(array_filter($sides)); // Lấy ['L', 'R', 'A', 'P']
+                
+                // Cervical
+                if ($node === 'C1') $v2['subluxation']['cervical']['Atlas (C1)'] = $sides_keys;
+                elseif ($node === 'C2') $v2['subluxation']['cervical']['Axis (C2)'] = $sides_keys;
+                elseif (in_array($node, ['C3','C4','C5','C6','C7'])) $v2['subluxation']['cervical'][$node] = $sides_keys;
+                
+                // Thoracic (Cần map A -> Interior, P -> Posterior)
+                elseif (preg_match('/^T\d+$/', $node)) {
+                    $mapped = [];
+                    if (in_array('L', $sides_keys)) $mapped[] = 'L';
+                    if (in_array('R', $sides_keys)) $mapped[] = 'R';
+                    if (in_array('A', $sides_keys)) $mapped[] = 'Interior';
+                    if (in_array('P', $sides_keys)) $mapped[] = 'Posterior';
+                    $v2['subluxation']['thoracic'][$node] = $mapped;
+                }
+                
+                // Lumbar
+                elseif (preg_match('/^L\d+$/', $node)) {
+                    $v2['subluxation']['lumbar'][$node] = $sides_keys;
+                }
+                
+                // Sac (Xương cùng)
+                elseif ($node === 'Sac' || $node === 'Coc') {
+                    $v2['subluxation']['sacrum']['S1'] = array_keys(array_filter($sides)); // Gom tạm vào S1
+                }
             }
         }
-        $v2['physiotherapy'] = $physio;
-    }
-    
-    // 4. Phân mục P (Plan) -> Plan V2
-    if (isset($data['p'])) {
-        $v2['progress_assessment'] = $data['p']['evaluation'] ?? '';
-        $v2['treatment_frequency'] = $data['p']['frequency'] ?? '';
-        $v2['plan_notes'] = $data['p']['notes'] ?? '';
-    }
-    
-    // 5. SPINE MATRIX (Subluxation)
-    $v2['subluxation'] = [
-        'cervical' => [], 'thoracic' => [], 'lumbar' => [], 'sacrum' => [], 'peripheral' => [], 'becken' => []
-    ];
-    
-    if (isset($data['spine'])) {
-        foreach ($data['spine'] as $node => $sides) {
-            $node = str_replace(['D'], ['T'], $node); // Đề phòng D1-D12 cũ
-            $sides = is_array($sides) ? $sides : [];
-            $sides_keys = array_keys(array_filter($sides)); // Lấy ['L', 'R', 'A', 'P']
-            
-            // Cervical
-            if ($node === 'C1') $v2['subluxation']['cervical']['Atlas (C1)'] = $sides_keys;
-            elseif ($node === 'C2') $v2['subluxation']['cervical']['Axis (C2)'] = $sides_keys;
-            elseif (in_array($node, ['C3','C4','C5','C6','C7'])) $v2['subluxation']['cervical'][$node] = $sides_keys;
-            
-            // Thoracic (Cần map A -> Interior, P -> Posterior)
-            elseif (preg_match('/^T\d+$/', $node)) {
-                $mapped = [];
-                if (in_array('L', $sides_keys)) $mapped[] = 'L';
-                if (in_array('R', $sides_keys)) $mapped[] = 'R';
-                if (in_array('A', $sides_keys)) $mapped[] = 'Interior';
-                if (in_array('P', $sides_keys)) $mapped[] = 'Posterior';
-                $v2['subluxation']['thoracic'][$node] = $mapped;
-            }
-            
-            // Lumbar
-            elseif (preg_match('/^L\d+$/', $node)) {
-                $v2['subluxation']['lumbar'][$node] = $sides_keys;
-            }
-            
-            // Sac (Xương cùng)
-            elseif ($node === 'Sac' || $node === 'Coc') {
-                $v2['subluxation']['sacrum']['S1'] = array_keys(array_filter($sides)); // Gom tạm vào S1
+        
+        if (isset($input_data['becken'])) {
+            foreach ($input_data['becken'] as $type => $sides) {
+                $v2['subluxation']['becken'][] = $type; // V2 Becken chỉ xài một chiều (Tên Becken)
             }
         }
-    }
-    
-    if (isset($data['becken'])) {
-        foreach ($data['becken'] as $type => $sides) {
-            $v2['subluxation']['becken'][] = $type; // V2 Becken chỉ xài một chiều (Tên Becken)
+        
+        if (isset($input_data['joints'])) {
+            $joint_map = [
+                'Khớp vai' => 'Khớp cùng đòn (ACG)',
+                'Khớp khuỷu tay' => 'Tennisarm',
+                'Khớp háng' => 'Khớp háng (Hip)',
+                'Khớp gối' => 'Gối (Knee)',
+                'Khớp cổ chân' => 'Cổ chân (Ankle)',
+                'Khớp cổ tay' => 'Cổ chân (Ankle)' // Bỏ vào tạm vì V2 ko có cổ tay, hoặc có thể custom
+            ];
+            foreach ($input_data['joints'] as $joint => $sides) {
+                $mapped_joint = $joint_map[$joint] ?? $joint;
+                $sides = is_array($sides) ? $sides : [];
+                $v2['subluxation']['peripheral'][$mapped_joint] = array_keys(array_filter($sides));
+            }
         }
+        
+        return $v2;
     }
-    
-    if (isset($data['joints'])) {
-        $joint_map = [
-            'Khớp vai' => 'Khớp cùng đòn (ACG)',
-            'Khớp khuỷu tay' => 'Tennisarm',
-            'Khớp háng' => 'Khớp háng (Hip)',
-            'Khớp gối' => 'Gối (Knee)',
-            'Khớp cổ chân' => 'Cổ chân (Ankle)',
-            'Khớp cổ tay' => 'Cổ chân (Ankle)' // Bỏ vào tạm vì V2 ko có cổ tay, hoặc có thể custom
-        ];
-        foreach ($data['joints'] as $joint => $sides) {
-            $mapped_joint = $joint_map[$joint] ?? $joint;
-            $sides = is_array($sides) ? $sides : [];
-            $v2['subluxation']['peripheral'][$mapped_joint] = array_keys(array_filter($sides));
-        }
-    }
-    
-    // Gán lại data V2 để form đọc
-    $data = $v2;
+    return $input_data;
 }
 
-// 1. CHUẨN BỊ BIẾN
+$data = migrate_to_v2($data);
+
+// Fetch previous session data for historical overlay
+$prev_data = [];
+$bone_history = [];
+if (!empty($patient_id)) {
+    global $db;
+    if (!empty($history_id)) {
+        $stmt_prev = $db->prepare("SELECT created_at, history_data FROM medical_history WHERE patient_id = ? AND type = 'chiropractic' AND id < ? ORDER BY id DESC LIMIT 10");
+        $stmt_prev->execute([$patient_id, $history_id]);
+    } else {
+        $stmt_prev = $db->prepare("SELECT created_at, history_data FROM medical_history WHERE patient_id = ? AND type = 'chiropractic' ORDER BY id DESC LIMIT 10");
+        $stmt_prev->execute([$patient_id]);
+    }
+    
+    $all_prev = $stmt_prev->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($all_prev)) {
+        $prev_data = migrate_to_v2(json_decode($all_prev[0]['history_data'], true) ?: []);
+        
+        $flatten = function($array, $prefix, $ds) use (&$flatten, &$bone_history) {
+            foreach ($array as $k => $v) {
+                $new_prefix = $prefix === '' ? $k : $prefix . '||' . $k;
+                $is_assoc = false;
+                if (is_array($v)) {
+                    foreach(array_keys($v) as $key) {
+                        if (!is_int($key)) { $is_assoc = true; break; }
+                    }
+                }
+                if (is_array($v) && $is_assoc) {
+                    $flatten($v, $new_prefix, $ds);
+                } else if (is_array($v)) {
+                    foreach ($v as $val) {
+                        $full_path = $new_prefix . '||' . ltrim(trim($val), '||');
+                        if (!isset($bone_history[$full_path])) $bone_history[$full_path] = [];
+                        $bone_history[$full_path][] = $ds;
+                    }
+                } else if ($v !== null && $v !== '') {
+                    $full_path = $new_prefix . '||' . ltrim(trim($v), '||');
+                    if (!isset($bone_history[$full_path])) $bone_history[$full_path] = [];
+                    $bone_history[$full_path][] = $ds;
+                }
+            }
+        };
+        
+        foreach ($all_prev as $row) {
+            $date_str = date('d/m/Y', strtotime($row['created_at']));
+            $data_v2 = migrate_to_v2(json_decode($row['history_data'], true) ?: []);
+            if (isset($data_v2['subluxation'])) {
+                $flatten(['subluxation' => $data_v2['subluxation']], '', $date_str);
+            }
+        }
+    }
+}
+
 $exam_date_val = $data['exam_date'] ?? date('Y-m-d');
 $session_num_val = $data['exam_session_number'] ?? '';
 $new_injury_status = $data['new_injury_status'] ?? 'Không';
@@ -267,7 +321,7 @@ $s_vas = $data['s_vas'] ?? '5';
                                     $checked = (($pain['trend'] ?? '') == $t) ? 'checked' : '';
                                 ?>
                                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                        <input type="radio" name="history[pain_locations][<?php echo $idx; ?>][trend]" value="<?php echo $t; ?>" <?php echo $checked; ?>> <?php echo $t; ?>
+                                        <input type="radio" name="history[pain_locations][<?php echo $idx; ?>][trend]" value="<?php echo $t; ?>" <?php echo $checked; ?>> <?php echo __($t); ?>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -284,14 +338,14 @@ $s_vas = $data['s_vas'] ?? '5';
                                 $checked = in_array($s, $current_syms) ? 'checked' : '';
                             ?>
                                 <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                    <input type="checkbox" name="history[pain_locations][<?php echo $idx; ?>][symptoms][]" value="<?php echo $s; ?>" <?php echo $checked; ?>> <?php echo $s; ?>
+                                    <input type="checkbox" name="history[pain_locations][<?php echo $idx; ?>][symptoms][]" value="<?php echo $s; ?>" <?php echo $checked; ?>> <?php echo __($s); ?>
                                 </label>
                             <?php endforeach; ?>
                         </div>
                     </div>
 
                     <div class="form-group" style="margin: 0;">
-                        <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;">Ghi chú nhanh</label>
+                        <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('Ghi chú nhanh'); ?></label>
                         <input type="text" name="history[pain_locations][<?php echo $idx; ?>][notes]" class="form-input" placeholder="..." value="<?php echo e($pain['notes'] ?? ''); ?>">
                     </div>
                 </div>
@@ -323,9 +377,9 @@ function addPainLocation() {
             <div>
                 <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('medical.v2.pain_trend'); ?></label>
                 <div style="display: flex; gap: 1rem;">
-                    <label style="display:flex; align-items:center; gap:0.5rem;"><input type="radio" name="history[pain_locations][${idx}][trend]" value="Giảm"> Giảm</label>
-                    <label style="display:flex; align-items:center; gap:0.5rem;"><input type="radio" name="history[pain_locations][${idx}][trend]" value="Tăng"> Tăng</label>
-                    <label style="display:flex; align-items:center; gap:0.5rem;"><input type="radio" name="history[pain_locations][${idx}][trend]" value="Không đổi"> Không đổi</label>
+                    <label style="display:flex; align-items:center; gap:0.5rem;"><input type="radio" name="history[pain_locations][${idx}][trend]" value="Giảm"> <?php echo __('Giảm'); ?></label>
+                    <label style="display:flex; align-items:center; gap:0.5rem;"><input type="radio" name="history[pain_locations][${idx}][trend]" value="Tăng"> <?php echo __('Tăng'); ?></label>
+                    <label style="display:flex; align-items:center; gap:0.5rem;"><input type="radio" name="history[pain_locations][${idx}][trend]" value="Không đổi"> <?php echo __('Không đổi'); ?></label>
                 </div>
             </div>
         </div>
@@ -333,12 +387,12 @@ function addPainLocation() {
             <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('medical.v2.pain_symptoms'); ?></label>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                 ${['Đau nhức', 'Tê bì', 'Cứng khớp', 'Chóng mặt/Đau đầu'].map(s => 
-                    `<label style="display:flex; align-items:center; gap:0.5rem;"><input type="checkbox" name="history[pain_locations][${idx}][symptoms][]" value="${s}"> ${s}</label>`
+                    `<label style="display:flex; align-items:center; gap:0.5rem;"><input type="checkbox" name="history[pain_locations][${idx}][symptoms][]" value="${s}"> ${s === 'Đau nhức' ? '<?php echo __('Đau nhức'); ?>' : s === 'Tê bì' ? '<?php echo __('Tê bì'); ?>' : s === 'Cứng khớp' ? '<?php echo __('Cứng khớp'); ?>' : '<?php echo __('Chóng mặt/Đau đầu'); ?>'}</label>`
                 ).join('')}
             </div>
         </div>
         <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;">Ghi chú nhanh</label>
+            <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('Ghi chú nhanh'); ?></label>
             <input type="text" name="history[pain_locations][${idx}][notes]" class="form-input" placeholder="...">
         </div>
     </div>`;
@@ -363,11 +417,11 @@ $rom_limitations = $data['rom_limitations'] ?? [];
     <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
         <i class="fas fa-stethoscope"></i> <?php echo __('medical.v2.obj_title'); ?>
     </h3>
-    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem;">Kết quả thăm khám của bác sĩ.</p>
+    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem;"><?php echo __('Kết quả thăm khám của bác sĩ.'); ?></p>
 
     <!-- 2.1 Sờ nắn & Trương lực cơ -->
     <div class="premium-card" style="margin-bottom: 1.5rem; background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <label class="section-label-premium" style="margin-bottom: 1rem;"><i class="fas fa-hand-holding-medical"></i> Sờ nắn (Palpation) & Trương lực cơ</label>
+        <label class="section-label-premium" style="margin-bottom: 1rem;"><i class="fas fa-hand-holding-medical"></i> <?php echo __('Sờ nắn (Palpation) & Trương lực cơ'); ?></label>
         
         <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-label" style="font-size: 0.85rem; opacity:0.8;"><?php echo __('medical.v2.obj_hypertonicity'); ?></label>
@@ -382,7 +436,7 @@ $rom_limitations = $data['rom_limitations'] ?? [];
                 $checked = ($muscle_severity === $sev) ? 'checked' : '';
             ?>
                 <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                    <input type="radio" name="history[muscle_severity]" value="<?php echo $sev; ?>" <?php echo $checked; ?>> <?php echo $sev; ?>
+                    <input type="radio" name="history[muscle_severity]" value="<?php echo $sev; ?>" <?php echo $checked; ?>> <?php echo __($sev); ?>
                 </label>
             <?php endforeach; ?>
         </div>
@@ -390,30 +444,30 @@ $rom_limitations = $data['rom_limitations'] ?? [];
 
     <!-- 2.2 Điểm đau / Cố định khớp -->
     <div class="premium-card" style="margin-bottom: 1.5rem; background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <label class="section-label-premium" style="margin-bottom: 1rem;"><i class="fas fa-bone"></i> Điểm đau / Cố định khớp (Fixation)</label>
+        <label class="section-label-premium" style="margin-bottom: 1rem;"><i class="fas fa-bone"></i> <?php echo __('Điểm đau / Cố định khớp (Fixation)'); ?></label>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
             <div>
-                <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;">Đốt sống cổ (C0-C7)</label>
+                <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('Đốt sống cổ (C0-C7)'); ?></label>
                 <input type="text" name="history[fixation_cervical]" class="form-input" value="<?php echo e($fixation_cervical); ?>">
             </div>
             <div>
-                <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;">Đốt sống ngực (T1-T12)</label>
+                <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('Đốt sống ngực (T1-T12)'); ?></label>
                 <input type="text" name="history[fixation_thoracic]" class="form-input" value="<?php echo e($fixation_thoracic); ?>">
             </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
             <div>
-                <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;">Đốt sống thắt lưng (L1-L5)</label>
+                <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('Đốt sống thắt lưng (L1-L5)'); ?></label>
                 <input type="text" name="history[fixation_lumbar]" class="form-input" value="<?php echo e($fixation_lumbar); ?>">
             </div>
             <div>
-                <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;">Khớp cùng chậu (SI Joint)</label>
+                <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('Khớp cùng chậu (SI Joint)'); ?></label>
                 <input type="text" name="history[fixation_si_joint]" class="form-input" value="<?php echo e($fixation_si_joint); ?>">
             </div>
         </div>
         <div>
-            <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;">Khớp ngoại vi (Vai, Khuỷu, Cổ tay, Hông, Gối, Cổ chân)</label>
+            <label class="form-label" style="font-size: 0.8rem; opacity: 0.8;"><?php echo __('Khớp ngoại vi (Vai, Khuỷu, Cổ tay, Hông, Gối, Cổ chân)'); ?></label>
             <input type="text" name="history[fixation_peripheral]" class="form-input" value="<?php echo e($fixation_peripheral); ?>">
         </div>
     </div>
@@ -428,7 +482,7 @@ $rom_limitations = $data['rom_limitations'] ?? [];
                 $checked = in_array($r, $rom_limitations) ? 'checked' : '';
             ?>
                 <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                    <input type="checkbox" name="history[rom_limitations][]" value="<?php echo $r; ?>" <?php echo $checked; ?>> <?php echo $r; ?>
+                    <input type="checkbox" name="history[rom_limitations][]" value="<?php echo $r; ?>" <?php echo $checked; ?>> <?php echo __($r); ?>
                 </label>
             <?php endforeach; ?>
         </div>
@@ -447,13 +501,9 @@ $plan_notes = $data['plan_notes'] ?? '';
 // Helper function để echo checkbox subluxation
 function echoSubCheckbox($subluxation, $group, $item, $side) {
     if(isset($subluxation[$group]) && isset($subluxation[$group][$item])) {
-        // Handle array format for L/R/In/Pos
-        if(is_array($subluxation[$group][$item])) {
-            $checked = in_array($side, $subluxation[$group][$item]) ? 'checked' : '';
-        } else {
-            // Fallback for single depth array if somehow malformed
-            $checked = '';
-        }
+        $val = $subluxation[$group][$item];
+        if(!is_array($val)) $val = [$val]; // Normalize string to array
+        $checked = in_array($side, $val) ? 'checked' : '';
     } else {
         $checked = '';
     }
@@ -517,11 +567,9 @@ $spine_groups = [
 
 function echoMatrixDot($subluxation, $group, $item, $side, $label) {
     if(isset($subluxation[$group]) && isset($subluxation[$group][$item])) {
-        if(is_array($subluxation[$group][$item])) {
-            $checked = in_array($side, $subluxation[$group][$item]) ? 'checked' : '';
-        } else {
-            $checked = '';
-        }
+        $val = $subluxation[$group][$item];
+        if(!is_array($val)) $val = [$val]; // Normalize string to array
+        $checked = in_array($side, $val) ? 'checked' : '';
     } else {
         $checked = '';
     }
@@ -562,20 +610,99 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
         .text-right { text-align: right; }
         .v2-title { font-weight: bold; margin-bottom: 10px; color: black; margin-top: 1.5rem; font-size: 1.05rem; }
         .v2-checkbox-list label { display: block; margin-bottom: 8px; color: black; cursor: pointer; }
+
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        .prev-checked-ring {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: rgba(99, 102, 241, 0.15); /* light indigo */
+            border-radius: 50%;
+            animation: pulseRing 2s infinite;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            vertical-align: middle;
+        }
+        .prev-checked-ring i.fa-history {
+            position: absolute;
+            top: -6px;
+            right: -10px;
+            font-size: 10px;
+            color: #4f46e5;
+            background: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+        .normal-checkbox-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            vertical-align: middle;
+        }
     </style>
 
     <?php 
     // Helper to render checkbox inside table
     function renderV2Cb($name, $val, $arr, $bone = '') {
-        $checked = (is_array($arr) && in_array($val, $arr)) ? 'checked' : '';
+        global $bone_history;
+        if(!is_array($arr)) $arr = $arr ? [$arr] : [];
+        $checked = in_array($val, $arr) ? 'checked' : '';
+        
+        $path_str = str_replace(['][', ']', '['], '||', $name);
+        $path_str = trim($path_str, '||');
+        $full_path = $path_str . '||' . $val;
+        
+        $dates = $bone_history[$full_path] ?? [];
+        $was_checked = !empty($dates);
+        
         $dataBone = $bone ? ' class="sub-cb" data-bone="'.htmlspecialchars($bone).'"' : '';
-        return '<input type="checkbox" name="history['.$name.'][]" value="'.$val.'" '.$checked.' style="width:16px; height:16px; cursor:pointer;"'.$dataBone.'>';
+        
+        if ($was_checked) {
+            $title = 'Đã nắn chỉnh các ngày: ' . implode(', ', array_unique($dates));
+            $html = '<div class="prev-checked-ring" title="'.htmlspecialchars($title).'">';
+            $html .= '<input type="checkbox" name="history['.$name.'][]" value="'.$val.'" '.$checked.' style="width:16px; height:16px; cursor:pointer; position:relative; z-index:2; margin:0;"'.$dataBone.'>';
+            $html .= '<i class="fas fa-history"></i>';
+            $html .= '</div>';
+        } else {
+            $html = '<div class="normal-checkbox-wrap">';
+            $html .= '<input type="checkbox" name="history['.$name.'][]" value="'.$val.'" '.$checked.' style="width:16px; height:16px; cursor:pointer; position:relative; z-index:2; margin:0;"'.$dataBone.'>';
+            $html .= '</div>';
+        }
+        return $html;
     }
     ?>
 
     <div class="v2-title"><?php echo __('medical.v3.cervical'); ?></div>
-    <label style="display:block; margin-bottom: 15px; color: black; cursor: pointer;">
-        <input type="checkbox" name="history[subluxation][cervical][Occiput_general]" value="1" <?php echo isset($data['subluxation']['cervical']['Occiput_general']) ? 'checked' : ''; ?> style="width:16px; height:16px;" class="sub-cb" data-bone="Occiput"> Occiput
+    <label style="display:inline-flex; align-items:center; margin-bottom: 15px; color: black; cursor: pointer; gap: 0.5rem; position: relative;">
+        <?php 
+        $occ_path = 'subluxation||cervical||Occiput_general||1';
+        $occ_dates = $bone_history[$occ_path] ?? [];
+        $was_checked_occ = !empty($occ_dates); 
+        ?>
+        <?php if ($was_checked_occ): ?>
+            <div class="prev-checked-ring" title="Đã nắn chỉnh các ngày: <?php echo htmlspecialchars(implode(', ', array_unique($occ_dates))); ?>">
+                <input type="checkbox" name="history[subluxation][cervical][Occiput_general][]" value="1" <?php echo isset($data['subluxation']['cervical']['Occiput_general']) && in_array(1, (array)$data['subluxation']['cervical']['Occiput_general']) ? 'checked' : ''; ?> style="width:16px; height:16px; position:relative; z-index:2; margin:0;" class="sub-cb" data-bone="Occiput">
+                <i class="fas fa-history"></i>
+            </div>
+        <?php else: ?>
+            <div class="normal-checkbox-wrap">
+                <input type="checkbox" name="history[subluxation][cervical][Occiput_general][]" value="1" <?php echo isset($data['subluxation']['cervical']['Occiput_general']) && in_array(1, (array)$data['subluxation']['cervical']['Occiput_general']) ? 'checked' : ''; ?> style="width:16px; height:16px; position:relative; z-index:2; margin:0;" class="sub-cb" data-bone="Occiput">
+            </div>
+        <?php endif; ?>
+        <span>Occiput</span>
     </label>
 
     <table class="v2-table">
@@ -605,7 +732,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
             <tr>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][cervical]['.$item['key'].']', 'L', $arr, $item['key']); ?></td>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][cervical]['.$item['key'].']', 'R', $arr, $item['key']); ?></td>
-                <td style="padding-left:15px;"><?php echo $item['name']; ?></td>
+                <td style="padding-left:15px;"><?php echo __($item['name']); ?></td>
                 <td class="text-center"><?php echo $item['suffix']; ?></td>
             </tr>
             <?php endforeach; ?>
@@ -619,8 +746,8 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
                 <th style="width:60px;">L</th>
                 <th style="width:60px;">R</th>
                 <th></th>
-                <th style="width:100px;">Interior</th>
-                <th style="width:100px;">Posterior</th>
+                <th style="width:100px;"><?php echo __('medical.v3.interior'); ?></th>
+                <th style="width:100px;"><?php echo __('medical.v3.posterior'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -632,7 +759,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
             <tr>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][thoracic][T'.$i.']', 'L', $arr, 'T'.$i); ?></td>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][thoracic][T'.$i.']', 'R', $arr, 'T'.$i); ?></td>
-                <td class="text-right" style="padding-right: 15px;"><?php echo $name; ?></td>
+                <td class="text-right" style="padding-right: 15px;"><?php echo __($name); ?></td>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][thoracic][T'.$i.']', 'Interior', $arr, 'T'.$i); ?></td>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][thoracic][T'.$i.']', 'Posterior', $arr, 'T'.$i); ?></td>
             </tr>
@@ -646,8 +773,8 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
                 <th style="width:60px;">L</th>
                 <th style="width:60px;">R</th>
                 <th></th>
-                <th style="width:100px;">Interior</th>
-                <th style="width:100px;">Posterior</th>
+                <th style="width:100px;"><?php echo __('medical.v3.interior'); ?></th>
+                <th style="width:100px;"><?php echo __('medical.v3.posterior'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -659,7 +786,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
             <tr>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][ribs][Rib'.$i.']', 'L', $arr, 'Rib'.$i); ?></td>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][ribs][Rib'.$i.']', 'R', $arr, 'Rib'.$i); ?></td>
-                <td class="text-right" style="padding-right: 15px;"><?php echo $name; ?></td>
+                <td class="text-right" style="padding-right: 15px;"><?php echo __($name); ?></td>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][ribs][Rib'.$i.']', 'Interior', $arr, 'Rib'.$i); ?></td>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][ribs][Rib'.$i.']', 'Posterior', $arr, 'Rib'.$i); ?></td>
             </tr>
@@ -685,7 +812,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
             <tr>
                 <td style="width:60px;" class="text-center"><?php echo renderV2Cb('subluxation][peripheral]['.$key.']', 'L', $arr, $key); ?></td>
                 <td style="width:60px;" class="text-center"><?php echo renderV2Cb('subluxation][peripheral]['.$key.']', 'R', $arr, $key); ?></td>
-                <td class="text-right" style="padding-right: 15px;"><?php echo $name; ?></td>
+                <td class="text-right" style="padding-right: 15px;"><?php echo __($name); ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -709,7 +836,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
             <tr>
                 <td style="width:60px;" class="text-center"><?php echo renderV2Cb('subluxation][lumbar]['.$item['key'].']', 'L', $arr, $item['key']); ?></td>
                 <td style="width:60px;" class="text-center"><?php echo renderV2Cb('subluxation][lumbar]['.$item['key'].']', 'R', $arr, $item['key']); ?></td>
-                <td class="text-right" style="padding-right: 15px;"><?php echo $item['name']; ?></td>
+                <td class="text-right" style="padding-right: 15px;"><?php echo __($item['name']); ?></td>
                 <td style="width:40px;" class="text-center"><?php echo $item['suffix']; ?></td>
             </tr>
             <?php endforeach; ?>
@@ -758,7 +885,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
             $becken_cols = ['AS', 'PI', 'IN-Ilium', 'EX-Ilium', 'Up-Slip', 'Down-Slip'];
             foreach($becken_sides as $label => $val): ?>
             <tr>
-                <td style="padding-left: 15px;"><?php echo $label; ?></td>
+                <td style="padding-left: 15px;"><?php echo __($label); ?></td>
                 <?php foreach($becken_cols as $col): 
                     $arr = $data['subluxation']['becken'][$val] ?? [];
                 ?>
@@ -796,7 +923,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
             <tr>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][peripheral]['.$key.']', 'L', $arr, $key); ?></td>
                 <td class="text-center"><?php echo renderV2Cb('subluxation][peripheral]['.$key.']', 'R', $arr, $key); ?></td>
-                <td style="padding-left: 15px;"><?php echo $name; ?></td>
+                <td style="padding-left: 15px;"><?php echo __($name); ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -838,41 +965,41 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
 
     <!-- PHẦN 4: PLAN -->
     <h3 style="font-size: 1.1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
-        <i class="fas fa-clipboard-check"></i> 4. ĐÁNH GIÁ & KẾ HOẠCH (ASSESSMENT & PLAN - A/P)
+        <i class="fas fa-clipboard-check"></i> <?php echo __('4. ĐÁNH GIÁ & KẾ HOẠCH (ASSESSMENT & PLAN - A/P)'); ?>
     </h3>
     
     <div class="premium-card" style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
         <div style="margin-bottom: 1.5rem;">
-            <label class="form-label" style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fas fa-chart-line"></i> Đánh giá buổi hôm nay:</label>
+            <label class="form-label" style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fas fa-chart-line"></i> <?php echo __('Đánh giá buổi hôm nay:'); ?></label>
             <div style="display: flex; gap: 1.5rem;">
                 <?php 
                 $progs = ['Tiến triển tốt', 'Tiến triển chậm', 'Chưa cải thiện'];
                 foreach($progs as $p): 
                 ?>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="radio" name="history[progress_assessment]" value="<?php echo $p; ?>" <?php echo ($progress_assessment === $p) ? 'checked' : ''; ?>> <?php echo $p; ?>
+                        <input type="radio" name="history[progress_assessment]" value="<?php echo $p; ?>" <?php echo ($progress_assessment === $p) ? 'checked' : ''; ?>> <?php echo __($p); ?>
                     </label>
                 <?php endforeach; ?>
             </div>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
-            <label class="form-label" style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fas fa-calendar-check"></i> Kế hoạch tiếp theo (Tần suất):</label>
+            <label class="form-label" style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fas fa-calendar-check"></i> <?php echo __('Kế hoạch tiếp theo (Tần suất):'); ?></label>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                 <?php 
                 $freqs = ['3 lần/tuần', '2 lần/tuần', '1 lần/tuần', '1 lần/2 tuần', '1 lần/tháng', '1 lần/3 tháng', 'Khi cần (PRN)'];
                 foreach($freqs as $f): 
                 ?>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="radio" name="history[treatment_frequency]" value="<?php echo $f; ?>" <?php echo ($treatment_frequency === $f) ? 'checked' : ''; ?>> <?php echo $f; ?>
+                        <input type="radio" name="history[treatment_frequency]" value="<?php echo $f; ?>" <?php echo ($treatment_frequency === $f) ? 'checked' : ''; ?>> <?php echo __($f); ?>
                     </label>
                 <?php endforeach; ?>
             </div>
         </div>
 
         <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fas fa-pen-alt"></i> Ghi chú (Notes):</label>
-            <textarea name="history[plan_notes]" class="form-input" rows="3" placeholder="Nhập phác đồ, nhắc nhở định kỳ cho bệnh nhân..."><?php echo e($plan_notes); ?></textarea>
+            <label class="form-label" style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fas fa-pen-alt"></i> <?php echo __('Ghi chú (Notes):'); ?></label>
+            <textarea name="history[plan_notes]" class="form-input" rows="3" placeholder="<?php echo __('Nhập phác đồ, nhắc nhở định kỳ cho bệnh nhân...'); ?>"><?php echo e($plan_notes); ?></textarea>
         </div>
     </div>
 </div>
@@ -894,8 +1021,8 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
 
     <!-- Khung Ghi chú thêm cho Bác sĩ -->
     <div style="border-top: 1px dashed #bfdbfe; padding-top: 1.5rem;">
-        <label class="form-label" style="font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;"><i class="fas fa-user-md"></i> <?php echo __('medical.v2.doctor_notes_title'); ?></label>
-        <textarea name="history[symptom_notes]" class="form-input" rows="2" placeholder="<?php echo __('medical.v2.doctor_notes_ph'); ?>"><?php echo e($symptom_notes); ?></textarea>
+        <label class="form-label" style="font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;"><i class="fas fa-user-md"></i> <?php echo __('Doctor\'s Diagnostic Notes (Optional):'); ?></label>
+        <textarea name="history[symptom_notes]" class="form-input" rows="2" placeholder="<?php echo __('The doctor can enter additional professional diagnoses or edit the suggestions above...'); ?>"><?php echo e($symptom_notes); ?></textarea>
     </div>
 </div>
 
@@ -903,38 +1030,38 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
 // Từ điển Triệu Chứng
 const symptomDict = {
     // Cổ
-    "Atlas (C1)": "Não, tuyến yên, tai trong, hệ TK giao cảm - Đau đầu, mất ngủ, chóng mặt, huyết áp cao.",
-    "Axis (C2)": "Mắt, TK thị giác, xoang, lưỡi - Viêm xoang, dị ứng, đau quanh mắt.",
-    "C3": "Má, tai ngoài, răng, dây TK mặt - Đau dây TK, mụn trứng cá, chàm.",
-    "C4": "Mũi, môi, miệng, vòi Eustachian - Sổ mũi, điếc nhẹ, vấn đề vùng miệng.",
-    "C5": "Dây thanh quản, các tuyến ở cổ - Viêm họng, khàn tiếng.",
-    "C6": "Cơ cổ, vai, amidan - Đau vai, cứng cổ, ho mãn tính.",
-    "C7": "Tuyến giáp, khuỷu tay - Viêm bao hoạt dịch vai, vấn đề tuyến giáp.",
+    "Atlas (C1)": "<?php echo __('Não, tuyến yên, tai trong, hệ TK giao cảm - Đau đầu, mất ngủ, chóng mặt, huyết áp cao.'); ?>",
+    "Axis (C2)": "<?php echo __('Mắt, TK thị giác, xoang, lưỡi - Viêm xoang, dị ứng, đau quanh mắt.'); ?>",
+    "C3": "<?php echo __('Má, tai ngoài, răng, dây TK mặt - Đau dây TK, mụn trứng cá, chàm.'); ?>",
+    "C4": "<?php echo __('Mũi, môi, miệng, vòi Eustachian - Sổ mũi, điếc nhẹ, vấn đề vùng miệng.'); ?>",
+    "C5": "<?php echo __('Dây thanh quản, các tuyến ở cổ - Viêm họng, khàn tiếng.'); ?>",
+    "C6": "<?php echo __('Cơ cổ, vai, amidan - Đau vai, cứng cổ, ho mãn tính.'); ?>",
+    "C7": "<?php echo __('Tuyến giáp, khuỷu tay - Viêm bao hoạt dịch vai, vấn đề tuyến giáp.'); ?>",
     // Ngực
-    "T1": "Cẳng tay, bàn tay, thực quản, khí quản - Đau tay, khó thở, hen suyễn.",
-    "T2": "Tim, động mạch vành - Các vấn đề về ngực, rối loạn nhịp tim.",
-    "T3": "Phổi, phế quản, ngực - Viêm phế quản, viêm phổi, khó thở.",
-    "T4": "Túi mật, ống mật - Vấn đề túi mật, sỏi mật.",
-    "T5": "Gan, hệ tuần hoàn - Huyết áp thấp, vấn đề về gan.",
-    "T6": "Dạ dày - Khó tiêu, ợ chua, đau dạ dày.",
-    "T7": "Tuyến tụy, tá tràng - Viêm loét tá tràng, vấn đề đường huyết.",
-    "T8": "Lá lách - Sức đề kháng kém, vấn đề về máu.",
-    "T9": "Tuyến thượng thận - Dị ứng, nổi mề đay.",
-    "T10": "Thận - Mệt mỏi mãn tính, vấn đề về thận.",
-    "T11": "Thận, niệu quản - Vấn đề về da, tiểu tiện khó.",
-    "T12": "Ruột non, hệ bạch huyết - Đau thấp khớp, đầy hơi.",
+    "T1": "<?php echo __('Cẳng tay, bàn tay, thực quản, khí quản - Đau tay, khó thở, hen suyễn.'); ?>",
+    "T2": "<?php echo __('Tim, động mạch vành - Các vấn đề về ngực, rối loạn nhịp tim.'); ?>",
+    "T3": "<?php echo __('Phổi, phế quản, ngực - Viêm phế quản, viêm phổi, khó thở.'); ?>",
+    "T4": "<?php echo __('Túi mật, ống mật - Vấn đề túi mật, sỏi mật.'); ?>",
+    "T5": "<?php echo __('Gan, hệ tuần hoàn - Huyết áp thấp, vấn đề về gan.'); ?>",
+    "T6": "<?php echo __('Dạ dày - Khó tiêu, ợ chua, đau dạ dày.'); ?>",
+    "T7": "<?php echo __('Tuyến tụy, tá tràng - Viêm loét tá tràng, vấn đề đường huyết.'); ?>",
+    "T8": "<?php echo __('Lá lách - Sức đề kháng kém, vấn đề về máu.'); ?>",
+    "T9": "<?php echo __('Tuyến thượng thận - Dị ứng, nổi mề đay.'); ?>",
+    "T10": "<?php echo __('Thận - Mệt mỏi mãn tính, vấn đề về thận.'); ?>",
+    "T11": "<?php echo __('Thận, niệu quản - Vấn đề về da, tiểu tiện khó.'); ?>",
+    "T12": "<?php echo __('Ruột non, hệ bạch huyết - Đau thấp khớp, đầy hơi.'); ?>",
     // Thắt lưng
-    "L1": "Ruột già, đại tràng - Táo bón, tiêu chảy, viêm đại tràng.",
-    "L2": "Ruột thừa, bụng, đùi - Đau bụng, chuột rút.",
-    "L3": "Cơ quan sinh dục, bàng quang, đầu gối - Vấn đề kinh nguyệt, bàng quang.",
-    "L4": "Tuyến tiền liệt, cơ lưng dưới, TK tọa - Đau thần kinh tọa, đau lưng dưới.",
-    "L5": "Cẳng chân, cổ chân, bàn chân - Tuần hoàn kém ở chân, sưng mắt cá.",
+    "L1": "<?php echo __('Ruột già, đại tràng - Táo bón, tiêu chảy, viêm đại tràng.'); ?>",
+    "L2": "<?php echo __('Ruột thừa, bụng, đùi - Đau bụng, chuột rút.'); ?>",
+    "L3": "<?php echo __('Cơ quan sinh dục, bàng quang, đầu gối - Vấn đề kinh nguyệt, bàng quang.'); ?>",
+    "L4": "<?php echo __('Tuyến tiền liệt, cơ lưng dưới, TK tọa - Đau thần kinh tọa, đau lưng dưới.'); ?>",
+    "L5": "<?php echo __('Cẳng chân, cổ chân, bàn chân - Tuần hoàn kém ở chân, sưng mắt cá.'); ?>",
     // Xương cùng
-    "S1": "Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.",
-    "S2": "Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.",
-    "S3": "Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.",
-    "S4": "Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.",
-    "S5": "Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu."
+    "S1": "<?php echo __('Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.'); ?>",
+    "S2": "<?php echo __('Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.'); ?>",
+    "S3": "<?php echo __('Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.'); ?>",
+    "S4": "<?php echo __('Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.'); ?>",
+    "S5": "<?php echo __('Xương chậu, mông - Đau khớp cùng chậu, vấn đề vùng chậu.'); ?>"
 };
 
 function updateSymptomSummary() {
@@ -948,7 +1075,7 @@ function updateSymptomSummary() {
 
     const box = document.getElementById('symptom_summary_box');
     if(checkedBones.size === 0) {
-        box.innerHTML = '<em>Chọn các sai lệch trên ma trận (Cột sống/Khung chậu) để hệ thống tự động gợi ý các chức năng/cơ quan bị ảnh hưởng và triệu chứng liên quan.</em>';
+        box.innerHTML = '<em><?php echo __('Chọn các sai lệch trên ma trận (Cột sống/Khung chậu) để hệ thống tự động gợi ý các chức năng/cơ quan bị ảnh hưởng và triệu chứng liên quan.'); ?></em>';
         return;
     }
 
@@ -970,7 +1097,7 @@ function updateSymptomSummary() {
     });
     
     if(addedCount === 0) {
-        html = '<em>Đã ghi nhận sai lệch ngoại vi/xương sườn (Không nằm trong từ điển gợi ý tự động).</em>';
+        html = '<em><?php echo __('Đã ghi nhận sai lệch ngoại vi/xương sườn (Không nằm trong từ điển gợi ý tự động).'); ?></em>';
     }
     
     box.innerHTML = html;
@@ -984,11 +1111,11 @@ function copySymptomsToNotes() {
     
     const items = box.querySelectorAll('.symptom-tag');
     if(items.length === 0) {
-        alert('Không có triệu chứng nào để chép. Vui lòng check vào các đốt sống có sai lệch trước!');
+        alert('<?php echo __('Không có triệu chứng nào để chép. Vui lòng check vào các đốt sống có sai lệch trước!'); ?>');
         return;
     }
     
-    let textToCopy = "=== GỢI Ý CHẨN ĐOÁN LÂM SÀNG ===\n";
+    let textToCopy = "=== <?php echo __('GỢI Ý CHẨN ĐOÁN LÂM SÀNG'); ?> ===\n";
     items.forEach(tag => {
         const bone = tag.querySelector('strong').innerText;
         const desc = tag.querySelector('.symptom-text').innerText;
@@ -1003,7 +1130,7 @@ function copySymptomsToNotes() {
     const btn = document.querySelector('button[onclick="copySymptomsToNotes()"]');
     if(btn) {
         const oldHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check"></i> Đã chép thành công';
+        btn.innerHTML = '<i class="fas fa-check"></i> <?php echo __('Đã chép thành công'); ?>';
         btn.style.background = '#10b981';
         setTimeout(() => {
             btn.innerHTML = oldHtml;

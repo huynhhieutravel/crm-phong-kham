@@ -42,8 +42,9 @@ $recent_activity = $stmt_recent->fetchAll();
 $search_params = [];
 $conditions = [];
 if ($search) {
+    $safe_search = addcslashes($search, '%_');
     $conditions[] = "(p.full_name LIKE ? OR p.phone LIKE ?)";
-    $search_params = ["%$search%", "%$search%"];
+    $search_params = ["%{$safe_search}%", "%{$safe_search}%"];
 }
 
 if ($period) {
@@ -274,53 +275,55 @@ $is_filtered = $search || $period;
     </div>
 </div>
 
-<div class="card" style="padding: 0; border-radius: 20px; overflow: hidden;">
-    <div style="padding: 1.25rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0;"><?php echo __('medical.index.patient_list_title'); ?></h4>
+<div class="card" style="padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+    <div style="padding: 1.5rem 1.5rem; background: #fff; border-bottom: 2px solid #f8fafc; display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-users" style="color: #6366f1;"></i> <?php echo __('medical.index.patient_list_title'); ?></h4>
     </div>
     <div class="table-responsive">
-    <table class="table" style="width: 100%; border-collapse: collapse;">
+    <table class="table" style="width: 100%; border-collapse: collapse; margin: 0;">
         <thead>
-            <tr style="text-align: left; background: white;">
-                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;"><?php echo __('common.patient'); ?></th>
-                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;"><?php echo __('common.contact'); ?></th>
-                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b;"><?php echo __('medical.index.record_status'); ?></th>
-                <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; text-align: right;"><?php echo __('common.actions'); ?></th>
+            <tr style="text-align: left; background: #f8fafc;">
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 800; letter-spacing: 0.5px; border-bottom: none;"><?php echo __('common.patient'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 800; letter-spacing: 0.5px; border-bottom: none;"><?php echo __('common.contact'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 800; letter-spacing: 0.5px; border-bottom: none;"><?php echo __('medical.index.record_status'); ?></th>
+                <th style="padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 800; letter-spacing: 0.5px; border-bottom: none; text-align: right;"><?php echo __('common.actions'); ?></th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($patients as $p): ?>
-                <tr style="border-top: 1px solid #f1f5f9;">
-                    <td style="padding: 1rem 1.5rem;">
-                        <div style="font-weight: 800; color: #1e293b;"><?php echo e($p['full_name']); ?></div>
-                        <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600;">ID: #<?php echo str_pad($p['id'], 5, '0', STR_PAD_LEFT); ?></div>
+                <tr style="border-top: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='transparent';">
+                    <td style="padding: 1.25rem 1.5rem;">
+                        <div style="font-weight: 800; color: #1e293b; font-size: 1.05rem; margin-bottom: 0.25rem;"><?php echo e($p['full_name']); ?></div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; display: inline-flex; background: #f1f5f9; padding: 0.2rem 0.5rem; border-radius: 4px;">ID: #<?php echo str_pad($p['id'], 5, '0', STR_PAD_LEFT); ?></div>
                     </td>
-                    <td style="padding: 1rem 1.5rem;">
-                        <div style="font-size: 0.9rem; font-weight: 700; color: #475569;"><?php echo e($p['phone']); ?></div>
+                    <td style="padding: 1.25rem 1.5rem;">
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #475569;"><i class="fas fa-phone-alt" style="color: #cbd5e1; font-size: 0.8rem; margin-right: 0.4rem;"></i><?php echo e($p['phone']); ?></div>
                     </td>
-                    <td style="padding: 1rem 1.5rem;">
+                    <td style="padding: 1.25rem 1.5rem;">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <?php if ($p['history_count'] > 0): ?>
-                                <span class="badge" style="background: #e0e7ff; color: #4338ca; border-radius: 6px; font-weight: 700;">
-                                    <?php echo $p['history_count']; ?> bộ hồ sơ
+                                <span class="badge" style="background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 8px; font-weight: 800; padding: 0.4rem 0.75rem; font-size: 0.75rem;">
+                                    <i class="fas fa-folder-open" style="margin-right: 0.25rem; opacity: 0.8;"></i> <?php echo $p['history_count']; ?> <?php echo __('medical.index.records_count'); ?>
                                 </span>
                             <?php else: ?>
-                                <span class="badge" style="background: #f1f5f9; color: #94a3b8; border-radius: 6px; font-weight: 700;"><?php echo __('medical.index.no_record'); ?></span>
+                                <span class="badge" style="background: #f8fafc; color: #94a3b8; border: 1px dashed #cbd5e1; border-radius: 8px; font-weight: 600; padding: 0.4rem 0.75rem; font-size: 0.75rem;">
+                                    <?php echo __('medical.index.no_record'); ?>
+                                </span>
                             <?php endif; ?>
 
                             <?php if ($p['active_session_id']): ?>
-                                <span class="badge" style="background: #fef9c3; color: #854d0e; border-radius: 6px; font-weight: 700;">
+                                <span class="badge" style="background: #fef9c3; color: #b45309; border: 1px solid #fde047; border-radius: 8px; font-weight: 800; padding: 0.4rem 0.75rem; font-size: 0.75rem;">
                                     <i class="fas fa-spinner fa-spin"></i> <?php echo __('medical.index.examining'); ?>
                                 </span>
                             <?php endif; ?>
                         </div>
                     </td>
-                    <td style="padding: 1rem 1.5rem; text-align: right;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                            <a href="session_start.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-primary" style="font-weight: 800; padding: 0.5rem 1.25rem;">
-                                <?php echo $p['active_session_id'] ? __('medical.index.continue_exam') : __('medical.index.choose_exam'); ?>
+                    <td style="padding: 1.25rem 1.5rem; text-align: right;">
+                        <div style="display: flex; gap: 0.6rem; justify-content: flex-end; align-items: center;">
+                            <a href="session_start.php?patient_id=<?php echo $p['id']; ?>" class="btn btn-primary" style="font-weight: 800; padding: 0.6rem 1.25rem; border-radius: 12px; font-size: 0.85rem; background: linear-gradient(135deg, #4f46e5, #6366f1); border: none; box-shadow: 0 4px 12px rgba(99,102,241,0.2); transition: transform 0.2s;">
+                                <?php echo $p['active_session_id'] ? '<i class="fas fa-play-circle"></i> ' . __('medical.index.continue') : '<i class="fas fa-stethoscope"></i> ' . __('medical.index.select_exam'); ?>
                             </a>
-                            <a href="../patients/view.php?id=<?php echo $p['id']; ?>" class="btn" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;" title="<?php echo __('medical.index.view_detail'); ?>">
+                            <a href="../patients/view.php?id=<?php echo $p['id']; ?>" class="btn" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.6rem 0.8rem; transition: background 0.2s;" title="<?php echo __('medical.index.view_detail'); ?>">
                                 <i class="fas fa-eye"></i>
                             </a>
                         </div>
@@ -330,9 +333,6 @@ $is_filtered = $search || $period;
         </tbody>
     </table>
     </div>
-</div>
-    </div>
-</div>
 </div>
 
 <script>

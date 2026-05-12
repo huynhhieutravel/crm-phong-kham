@@ -1,13 +1,13 @@
 <?php
 // modules/medical/session_view.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('view_medical');
 
 $db = getDB();
-$session_id = isset($_GET['id']) ? $_GET['id'] : 0;
+$session_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$session_id) {
     set_flash(__('medical.session.err_missing_id'), 'error');
@@ -33,6 +33,7 @@ if (!$session) {
 
 // 2. Handle POST (Assessment & Plan & Status Changes)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     // Check Lock: If completed and not admin, block editing
     if ($session['status'] === 'completed' && !has_role('admin')) {
         set_flash(__('medical.session.err_locked'), 'error');
@@ -59,8 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $can_edit_summary = (has_role('doctor') || has_role('admin'));
-    $assessment = (isset($_POST['assessment']) && $can_edit_summary) ? $_POST['assessment'] : $session['assessment'];
-    $plan = (isset($_POST['treatment_plan']) && $can_edit_summary) ? $_POST['treatment_plan'] : $session['treatment_plan'];
+    $allowed_tags = '<p><br><strong><em><u><ol><ul><li><span><h1><h2><h3>';
+    $assessment = (isset($_POST['assessment']) && $can_edit_summary) ? strip_tags($_POST['assessment'], $allowed_tags) : $session['assessment'];
+    $plan = (isset($_POST['treatment_plan']) && $can_edit_summary) ? strip_tags($_POST['treatment_plan'], $allowed_tags) : $session['treatment_plan'];
     $doctor_id = isset($_POST['doctor_id']) ? (int)$_POST['doctor_id'] : $session['doctor_id'];
     $status = $session['status'];
     
@@ -113,7 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("../patients/view.php?id=" . $session['patient_id']);
     }
     // Refresh
-    header("Location: session_view.php?id=$session_id");
+    if (!empty($_POST['lang_switch_autosave'])) {
+        header("Location: " . $_SERVER['REQUEST_URI']);
+    } else {
+        header("Location: session_view.php?id=$session_id");
+    }
     exit;
 }
 
@@ -239,11 +245,11 @@ require_once '../../templates/header.php';
                         <div style="font-weight: 800; font-size: 1.1rem; color: #1e293b;"><?php echo __('medical.type.chiro_history_full'); ?></div>
                         <?php if (!$has_history): ?>
                             <div style="color: #ea580c; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
-                                <i class="fas fa-exclamation-triangle"></i> Khách hàng chưa khai báo tiền sử bệnh (Chỉ cần tạo 1 lần).
+                                <i class="fas fa-exclamation-triangle"></i> <?php echo __('medical.session.history_not_filled'); ?>
                             </div>
                         <?php else: ?>
                             <div style="color: #10b981; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
-                                <i class="fas fa-check-circle"></i> Đã có tiền sử bệnh lý chung
+                                <i class="fas fa-check-circle"></i> <?php echo __('medical.session.history_exists'); ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -257,11 +263,11 @@ require_once '../../templates/header.php';
                             <i class="fas fa-eye"></i> Xem
                         </a>
                         <a href="<?php echo $history_edit_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem;">
-                            <i class="fas fa-edit"></i> Sửa
+                            <i class="fas fa-edit"></i> <?php echo __('common.edit'); ?>
                         </a>
                     <?php else: ?>
                         <a href="<?php echo $history_create_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-weight: 600;">
-                            <i class="fas fa-plus-circle"></i> Tạo mới Tiền sử
+                            <i class="fas fa-plus-circle"></i> <?php echo __('medical.session.btn_create_history'); ?>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -274,23 +280,23 @@ require_once '../../templates/header.php';
                         <i class="fas fa-leaf fa-lg"></i>
                     </div>
                     <div>
-                        <div style="font-weight: 800; font-size: 1.1rem; color: #1e293b;">Phiếu khám Đông Y gần nhất</div>
+                        <div style="font-weight: 800; font-size: 1.1rem; color: #1e293b;"><?php echo __('medical.session.latest_dong_y_title'); ?></div>
                         <?php if (!$latest_dong_y): ?>
                             <div style="color: #ea580c; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
-                                <i class="fas fa-exclamation-triangle"></i> Bệnh nhân chưa từng có Phiếu khám Đông Y nào.
+                                <i class="fas fa-exclamation-triangle"></i> <?php echo __('medical.session.no_dong_y_yet'); ?>
                             </div>
                         <?php else: ?>
                             <div style="color: #10b981; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
-                                <i class="fas fa-clock"></i> Khám ngày: <?php echo date('d/m/Y H:i', strtotime($latest_dong_y['created_at'])); ?> 
+                                <i class="fas fa-clock"></i> <?php echo __('medical.session.date_label'); ?> <?php echo date('d/m/Y H:i', strtotime($latest_dong_y['created_at'])); ?> 
                                 <span style="margin: 0 0.5rem; color: #cbd5e1;">|</span> 
-                                <i class="fas fa-user-md"></i> Bác sĩ: <?php echo e($latest_dong_y['doctor_name'] ?? 'Không rõ'); ?>
+                                <i class="fas fa-user-md"></i> <?php echo __('medical.session.doctor_label'); ?> <?php echo e($latest_dong_y['doctor_name'] ?? 'Không rõ'); ?>
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
                     <?php if ($latest_dong_y): ?>
-                        <a href="print_record.php?type=dong_y&id=<?php echo $latest_dong_y['id']; ?>" target="_blank" class="btn btn-sm" style="background: white; border: 1px solid #22c55e; color: #22c55e; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.6rem;">
+                        <a href="print_record.php?type=history&id=<?php echo $latest_dong_y['id']; ?>" target="_blank" class="btn btn-sm" style="background: white; border: 1px solid #22c55e; color: #22c55e; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.6rem;">
                             <i class="fas fa-print"></i> PDF
                         </a>
                         <a href="view_form.php?id=<?php echo $latest_dong_y['id']; ?>" target="_blank" class="btn btn-sm btn-outline" style="border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem; color: #64748b; border-color: #cbd5e1;">
@@ -302,7 +308,7 @@ require_once '../../templates/header.php';
 
             <!-- CHỈ MỤC CÁC THÀNH PHẦN KHÁC -->
             <h4 style="margin: 0 0 1rem 0; color: #1e293b; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem;">
-                <i class="fas fa-tasks text-primary"></i> Các thành phần buổi khám
+                <i class="fas fa-tasks text-primary"></i> <?php echo __('medical.session.components_list_title'); ?>
             </h4>
 
             <?php foreach ($components as $type => $info):
@@ -355,7 +361,7 @@ require_once '../../templates/header.php';
                             </a>
                         <?php endif; ?>
                         <a href="<?php echo $edit_url; ?>" class="btn btn-sm <?php echo $is_done ? 'btn-outline' : 'btn-primary'; ?>" style="border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem;">
-                            <?php echo $is_done ? '<i class="fas fa-edit"></i> Sửa' : $btn_label; ?>
+                            <?php echo $is_done ? '<i class="fas fa-edit"></i> ' . __('common.edit') : $btn_label; ?>
                         </a>
                     </div>
                 </div>
@@ -375,23 +381,38 @@ require_once '../../templates/header.php';
             $all_attachments = [];
             while ($row = $stmt_att->fetch()) {
                 $atts = json_decode($row['attachments'], true);
-                if ($atts) $all_attachments = array_merge($all_attachments, $atts);
+                if ($atts) {
+                    foreach ($atts as &$att) {
+                        $att['record_id'] = $row['id'];
+                    }
+                    $all_attachments = array_merge($all_attachments, $atts);
+                }
             }
             ?>
 
             <?php if (!empty($all_attachments)): ?>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
                 <?php foreach ($all_attachments as $att): ?>
-                <div style="position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; cursor: pointer; aspect-ratio: 1;" onclick="openLightbox('<?php echo $att['path']; ?>')">
-                    <?php if (strpos(isset($att['type']) ? $att['type'] : '', 'image') !== false): ?>
-                    <img src="<?php echo $att['path']; ?>" style="width: 100%; height: 100%; object-fit: cover;" alt="<?php echo e($att['name']); ?>">
-                    <?php else: ?>
-                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f1f5f9;">
-                        <i class="fas fa-file-pdf" style="font-size: 2rem; color: #ef4444;"></i>
+                <div style="position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; aspect-ratio: 1;" class="att-item">
+                    <div style="cursor: pointer; width: 100%; height: 100%;" onclick="openLightbox('<?php echo addslashes($att['path']); ?>')">
+                        <?php if (strpos(isset($att['type']) ? $att['type'] : '', 'image') !== false): ?>
+                        <img src="<?php echo $att['path']; ?>" style="width: 100%; height: 100%; object-fit: cover;" alt="<?php echo e($att['name']); ?>">
+                        <?php else: ?>
+                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f1f5f9;">
+                            <i class="fas fa-file-pdf" style="font-size: 2rem; color: #ef4444;"></i>
+                        </div>
+                        <?php endif; ?>
                     </div>
+                    <?php if (!$is_locked): ?>
+                    <button type="button" class="btn-delete-att" onclick="deleteAttachment(event, <?php echo $att['record_id']; ?>, '<?php echo addslashes($att['path']); ?>')" title="Xoá ảnh" style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); border: 2px solid white; width: 28px; height: 28px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; padding: 0;">
+                        <i class="fas fa-trash-alt" style="font-size: 0.7rem;"></i>
+                    </button>
+                    <button type="button" class="btn-edit-att" onclick="renameAttachment(event, <?php echo $att['record_id']; ?>, '<?php echo addslashes($att['path']); ?>', '<?php echo addslashes($att['name']); ?>')" title="Đổi tên ảnh" style="position: absolute; top: 6px; right: 38px; background: rgba(59, 130, 246, 0.9); border: 2px solid white; width: 28px; height: 28px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; padding: 0;">
+                        <i class="fas fa-pencil-alt" style="font-size: 0.7rem;"></i>
+                    </button>
                     <?php endif; ?>
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 0.5rem; color: white; font-size: 0.65rem; font-weight: 600;">
-                        <?php echo e(mb_substr($att['name'], 0, 18)); ?>
+                    <div style="position: absolute; pointer-events: none; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.85)); padding: 1.5rem 0.5rem 0.5rem; color: white; font-size: 0.7rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); line-height: 1.25;">
+                        <?php echo e(mb_strlen($att['name']) > 35 ? mb_substr($att['name'], 0, 32) . '...' : $att['name']); ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -418,6 +439,7 @@ require_once '../../templates/header.php';
     <!-- Right Column: Assessment & Plan (Rich-Text) -->
     <div style="width: 500px; display: flex; flex-direction: column; gap: 1.5rem;">
         <form method="POST" id="session-form" class="card" style="position: sticky; top: 1.5rem; background: #fcfdfe;">
+            <?php echo csrf_field(); ?>
             <?php if ($session['status'] === 'completed'): ?>
                 <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #fecaca; display: flex; align-items: center; gap: 0.75rem;">
                     <i class="fas fa-lock"></i>
@@ -545,6 +567,7 @@ function uploadFiles(files) {
     if (!files.length) return;
     var fd = new FormData();
     fd.append('patient_id', '<?php echo $session['patient_id']; ?>');
+    fd.append('session_id', '<?php echo $session_id; ?>');
     
     for (var i = 0; i < files.length; i++) {
         fd.append('images[]', files[i]);
@@ -586,6 +609,214 @@ function uploadFiles(files) {
     };
     
     xhr.send(fd);
+}
+
+function renameAttachment(event, recordId, path, oldName) {
+    if(event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    var overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0'; overlay.style.left = '0';
+    overlay.style.width = '100vw'; overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.6)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.display = 'flex'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '9999';
+    overlay.style.animation = 'fadeIn 0.2s ease-out';
+    
+    var box = document.createElement('div');
+    box.style.background = 'white'; box.style.padding = '2rem';
+    box.style.borderRadius = '16px'; box.style.textAlign = 'center';
+    box.style.fontFamily = "'Inter', sans-serif";
+    box.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+    box.style.transform = 'scale(0.95)';
+    box.style.animation = 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+    box.style.width = '100%';
+    box.style.maxWidth = '400px';
+    
+    var icon = document.createElement('div');
+    icon.innerHTML = '<i class="fas fa-pencil-alt" style="font-size: 2.5rem; color: #3b82f6; margin-bottom: 1rem;"></i>';
+    
+    var title = document.createElement('h3');
+    title.textContent = 'Đổi tên hình ảnh';
+    title.style.margin = '0 0 1rem 0'; title.style.color = '#1e293b'; title.style.fontSize = '1.25rem';
+    
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = oldName;
+    input.style.width = '100%';
+    input.style.padding = '0.75rem';
+    input.style.borderRadius = '8px';
+    input.style.border = '1px solid #cbd5e1';
+    input.style.marginBottom = '1.5rem';
+    input.style.fontSize = '1rem';
+    input.style.boxSizing = 'border-box';
+    input.style.outline = 'none';
+    input.placeholder = 'Nhập tên mô tả ảnh...';
+    
+    var btnWrapper = document.createElement('div');
+    btnWrapper.style.display = 'flex'; btnWrapper.style.gap = '1rem'; btnWrapper.style.justifyContent = 'center';
+    
+    var btnCancel = document.createElement('button');
+    btnCancel.innerHTML = '<i class="fas fa-times"></i> Hủy';
+    btnCancel.style.padding = '0.6rem 1.25rem'; btnCancel.style.border = '1px solid #e2e8f0';
+    btnCancel.style.background = 'white'; btnCancel.style.borderRadius = '8px';
+    btnCancel.style.cursor = 'pointer'; btnCancel.style.fontWeight = '600'; btnCancel.style.color = '#475569';
+    btnCancel.style.flex = '1';
+    
+    var btnOk = document.createElement('button');
+    btnOk.innerHTML = '<i class="fas fa-save"></i> Lưu tên';
+    btnOk.style.padding = '0.6rem 1.25rem'; btnOk.style.border = 'none';
+    btnOk.style.background = '#3b82f6'; btnOk.style.borderRadius = '8px';
+    btnOk.style.cursor = 'pointer'; btnOk.style.fontWeight = '600'; btnOk.style.color = 'white';
+    btnOk.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.3)';
+    btnOk.style.flex = '1';
+    
+    var addStyles = document.createElement('style');
+    addStyles.textContent = "@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }";
+    document.head.appendChild(addStyles);
+    
+    btnCancel.onclick = function() { document.body.removeChild(overlay); };
+    
+    btnOk.onclick = function() {
+        var newName = input.value;
+        if (newName !== null && newName.trim() !== '') {
+            document.body.removeChild(overlay);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/includes/rename_attachment.php');
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        if (res.success) {
+                            location.reload();
+                        } else {
+                            alert('Lỗi: ' + (res.error || 'Không thể đổi tên'));
+                        }
+                    } catch(e) {
+                        alert('Lỗi phản hồi máy chủ!');
+                    }
+                } else {
+                    alert('Lỗi kết nối mạng!');
+                }
+            };
+            
+            xhr.send('record_id=' + encodeURIComponent(recordId) + '&path=' + encodeURIComponent(path) + '&new_name=' + encodeURIComponent(newName.trim()));
+        } else {
+            input.style.border = '2px solid #ef4444';
+            input.focus();
+        }
+    };
+    
+    btnWrapper.appendChild(btnCancel);
+    btnWrapper.appendChild(btnOk);
+    box.appendChild(icon);
+    box.appendChild(title);
+    box.appendChild(input);
+    box.appendChild(btnWrapper);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => { input.focus(); input.select(); }, 100);
+}
+
+function deleteAttachment(event, recordId, path) {
+    if(event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    // Custom Modal Design
+    var overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0'; overlay.style.left = '0';
+    overlay.style.width = '100vw'; overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.6)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.display = 'flex'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '9999';
+    overlay.style.animation = 'fadeIn 0.2s ease-out';
+    
+    var box = document.createElement('div');
+    box.style.background = 'white'; box.style.padding = '2rem';
+    box.style.borderRadius = '16px'; box.style.textAlign = 'center';
+    box.style.fontFamily = "'Inter', sans-serif";
+    box.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+    box.style.transform = 'scale(0.95)';
+    box.style.animation = 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+    
+    var icon = document.createElement('div');
+    icon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;"></i>';
+    
+    var title = document.createElement('h3');
+    title.textContent = 'Trọng tài xoá ảnh?';
+    title.style.margin = '0 0 0.5rem 0'; title.style.color = '#1e293b'; title.style.fontSize = '1.25rem';
+    
+    var desc = document.createElement('p');
+    desc.textContent = 'Bạn có chắc chắn muốn xoá vĩnh viễn ảnh này?';
+    desc.style.margin = '0 0 2rem 0'; desc.style.color = '#64748b'; desc.style.fontSize = '0.9rem';
+    
+    var btnWrapper = document.createElement('div');
+    btnWrapper.style.display = 'flex'; btnWrapper.style.gap = '1rem'; btnWrapper.style.justifyContent = 'center';
+    
+    var btnCancel = document.createElement('button');
+    btnCancel.innerHTML = '<i class="fas fa-times"></i> Hủy';
+    btnCancel.style.padding = '0.6rem 1.25rem'; btnCancel.style.border = '1px solid #e2e8f0';
+    btnCancel.style.background = 'white'; btnCancel.style.borderRadius = '8px';
+    btnCancel.style.cursor = 'pointer'; btnCancel.style.fontWeight = '600'; btnCancel.style.color = '#475569';
+    
+    var btnOk = document.createElement('button');
+    btnOk.innerHTML = '<i class="fas fa-trash-alt"></i> Xoá ngay';
+    btnOk.style.padding = '0.6rem 1.25rem'; btnOk.style.border = 'none';
+    btnOk.style.background = '#ef4444'; btnOk.style.borderRadius = '8px';
+    btnOk.style.cursor = 'pointer'; btnOk.style.fontWeight = '600'; btnOk.style.color = 'white';
+    btnOk.style.boxShadow = '0 4px 6px -1px rgba(239, 68, 68, 0.3)';
+    
+    var addStyles = document.createElement('style');
+    addStyles.textContent = "@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }";
+    document.head.appendChild(addStyles);
+    
+    btnCancel.onclick = function() { document.body.removeChild(overlay); };
+    
+    btnOk.onclick = function() {
+        document.body.removeChild(overlay);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/includes/delete_attachment.php');
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var res = JSON.parse(xhr.responseText);
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + (res.error || 'Không thể xóa'));
+                    }
+                } catch(e) {
+                    alert('Lỗi phản hồi máy chủ!');
+                }
+            } else {
+                alert('Lỗi kết nối mạng!');
+            }
+        };
+        
+        xhr.send('record_id=' + encodeURIComponent(recordId) + '&path=' + encodeURIComponent(path));
+    };
+    
+    btnWrapper.appendChild(btnCancel);
+    btnWrapper.appendChild(btnOk);
+    box.appendChild(icon);
+    box.appendChild(title);
+    box.appendChild(desc);
+    box.appendChild(btnWrapper);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
 }
 
 // Lightbox

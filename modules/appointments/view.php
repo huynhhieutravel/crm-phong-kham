@@ -6,7 +6,7 @@ require_once '../../includes/auth_middleware.php';
 require_permission('view_appointments');
 
 $db = getDB();
-$id = isset($_GET['id']) ? $_GET['id'] : 0;
+$id = (int)($_GET['id'] ?? 0);
 
 $stmt = $db->prepare("
     SELECT a.*, p.full_name as patient_name, l.full_name as lead_name, u.full_name as doctor_name

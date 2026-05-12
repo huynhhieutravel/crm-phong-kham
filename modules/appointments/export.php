@@ -5,8 +5,10 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('view_appointments');
 
-error_reporting(0);
+// L2 FIX: Log errors but don't display (outputting CSV binary)
+error_reporting(E_ALL);
 ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 
 $db = getDB();
@@ -32,8 +34,10 @@ $params = [];
 $conditions = [];
 
 if ($search) {
+    // H4 FIX: Escape LIKE wildcards
+    $safe_search = addcslashes($search, '%_');
     $conditions[] = "(p.full_name LIKE ? OR l.full_name LIKE ? OR p.phone LIKE ? OR l.phone LIKE ?)";
-    $params = array_merge($params, ["%$search%", "%$search%", "%$search%", "%$search%"]);
+    $params = array_merge($params, ["%$safe_search%", "%$safe_search%", "%$safe_search%", "%$safe_search%"]);
 }
 if ($status_filter) {
     $conditions[] = "a.status = ?";
@@ -78,7 +82,7 @@ fputcsv($output, [
     'Loại',
     'Trạng thái',
     'Ghi chú'
-], ",", "\r", "");
+]);
 
 foreach ($appointments as $a) {
     fputcsv($output, [
@@ -90,7 +94,7 @@ foreach ($appointments as $a) {
         $a['type'],
         $a['status'],
         $a['notes']
-    ], ",", "\r", "");
+    ]);
 }
 
 fclose($output);

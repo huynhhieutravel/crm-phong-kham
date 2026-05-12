@@ -144,7 +144,7 @@ function run_migrations($db = null) {
 
 // Cho phép chạy trực tiếp từ trình duyệt: /includes/migration.php
 if (php_sapi_name() !== 'cli' && basename($_SERVER['SCRIPT_FILENAME']) === 'migration.php') {
-    session_start();
+
     require_once __DIR__ . '/db.php';
     $db = getDB();
     $results = run_migrations($db);

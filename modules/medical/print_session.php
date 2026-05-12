@@ -1,13 +1,13 @@
 <?php
 // modules/medical/print_session.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('view_medical');
 
 $db = getDB();
-$session_id = isset($_GET['id']) ? $_GET['id'] : 0;
+$session_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$session_id) {
     die(__('medical.print.err_missing_id'));
@@ -161,7 +161,7 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
                 <p><?php echo __('medical.print.clinic_address'); ?></p>
             </div>
             <div style="text-align: right;">
-                <p style="margin: 0; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.session_code_label'); ?><?php echo str_pad($session_id, 6, '0', STR_PAD_LEFT); ?></p>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.session_code_label'); ?><?php echo 'HS' . date('ym', strtotime($session['session_date'] ?: 'now')) . '-' . strtoupper(substr(md5('session_' . $session_id), 0, 5)); ?></p>
                 <p style="margin: 5px 0 0 0; font-weight: 700; color: #3b82f6;"><?php echo __('medical.print.date_label'); ?><?php echo $session['session_date'] ? date('d/m/Y', strtotime($session['session_date'])) : date('d/m/Y'); ?></p>
             </div>
         </div>
@@ -253,8 +253,8 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
                 <?php elseif ($rec['type'] === 'chiro_history'): ?>
                     <div class="section-title"><?php echo __('medical.print.pathology_history'); ?></div>
                     <div class="rich-content" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc; font-size: 13px; line-height: 1.8;">
-                        <div><strong><?php echo __('medical.print.main_pain_loc'); ?></strong> <?php echo implode(', ', ($data['pathology']['locations'] ?? [])); ?></div>
-                        <div><strong><?php echo __('medical.print.pain_intensity'); ?></strong> <span style="color: #ef4444; font-weight: bold;"><?php echo ($data['pathology']['intensity'] ?? 0); ?>/10</span> &nbsp;|&nbsp; <strong><?php echo __('medical.print.symptom_duration'); ?></strong> <?php echo ($data['pathology']['duration'] ?? 'N/A'); ?></div>
+                        <div><strong><?php echo __('medical.print.main_pain_loc'); ?></strong> <?php echo implode(', ', array_map('__', ($data['pathology']['locations'] ?? []))); ?></div>
+                        <div><strong><?php echo __('medical.print.pain_intensity'); ?></strong> <span style="color: #ef4444; font-weight: bold;"><?php echo __($data['pathology']['intensity'] ?? 0); ?>/10</span> &nbsp;|&nbsp; <strong><?php echo __('medical.print.symptom_duration'); ?></strong> <?php echo __($data['pathology']['duration'] ?? 'N/A'); ?></div>
                         <div style="margin-top: 10px;"><strong><?php echo __('medical.print.detailed_description'); ?></strong> <?php echo nl2br(e($data['pathology']['description'] ?? '')); ?></div>
                     </div>
                 <?php elseif ($rec['type'] === 'chiropractic' || $rec['type'] === 'soap_note' || $rec['type'] === 'initial_exam'): ?>
@@ -265,22 +265,22 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
                     <div class="rich-content" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc; font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div>
                             <div style="color: #3b82f6; font-weight: bold; margin-bottom: 5px;"><?php echo __('medical.print.soap_s'); ?></div>
-                            <div>VAS: <?php echo ($data['s']['vas'] ?? 0); ?>/10</div>
-                            <div><?php echo __('medical.print.progress'); ?> <?php echo ($data['s']['progress'] ?? 'N/A'); ?></div>
+                            <div>VAS: <?php echo __($data['s']['vas'] ?? 0); ?>/10</div>
+                            <div><?php echo __('medical.print.progress'); ?> <?php echo __($data['s']['progress'] ?? 'N/A'); ?></div>
                         </div>
                         <div>
                             <div style="color: #10b981; font-weight: bold; margin-bottom: 5px;"><?php echo __('medical.print.soap_o'); ?></div>
-                            <div><?php echo __('medical.print.muscle_spasm'); ?> <?php echo ($data['o']['muscle_tone'] ?? 'N/A'); ?></div>
-                            <div><?php echo __('medical.print.rom_limit'); ?> <?php echo implode(', ', ($data['o']['rom_limit'] ?? [])); ?></div>
+                            <div><?php echo __('medical.print.muscle_spasm'); ?> <?php echo __($data['o']['muscle_tone'] ?? 'N/A'); ?></div>
+                            <div><?php echo __('medical.print.rom_limit'); ?> <?php echo implode(', ', array_map('__', ($data['o']['rom_limit'] ?? []))); ?></div>
                         </div>
                         <div style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
                             <div style="color: #f59e0b; font-weight: bold; margin-bottom: 5px;"><?php echo __('medical.print.soap_a'); ?></div>
                             <div><?php echo __('medical.print.adjust_tech'); ?> <?php echo implode(', ', array_keys($data['a']['spine'] ?? [])); ?></div>
-                            <div><?php echo __('medical.print.physio'); ?> <?php echo implode(', ', ($data['a']['physiotherapy'] ?? [])); ?></div>
+                            <div><?php echo __('medical.print.physio'); ?> <?php echo implode(', ', array_map('__', ($data['a']['physiotherapy'] ?? []))); ?></div>
                         </div>
                         <div style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
                             <div style="color: #6366f1; font-weight: bold; margin-bottom: 5px;"><?php echo __('medical.print.soap_p'); ?></div>
-                            <div><?php echo __('medical.print.frequency'); ?> <?php echo ($data['p']['frequency'] ?? 'N/A'); ?></div>
+                            <div><?php echo __('medical.print.frequency'); ?> <?php echo __($data['p']['frequency'] ?? 'N/A'); ?></div>
                             <div style="font-style: italic;">"<?php echo ($data['p']['notes'] ?? ''); ?>"</div>
                         </div>
                     </div>
@@ -317,12 +317,16 @@ $age = $session['birthday'] ? date_diff(date_create($session['birthday']), date_
 
         <div class="footer-sig">
             <div class="sig-box">
-                <p><?php echo __('medical.print.sig_customer'); ?></p>
-                <p style="font-weight: 400; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.sig_note_1'); ?></p>
+                <div>
+                    <p><?php echo __('medical.print.sig_customer'); ?></p>
+                    <p style="font-weight: 400; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.sig_note_1'); ?></p>
+                </div>
             </div>
             <div class="sig-box">
-                <p><?php echo __('medical.print.sig_doctor'); ?></p>
-                <div style="font-size: 20px; color: #cbd5e1; margin: 20px 0;"><?php echo __('medical.print.sig_note_2'); ?></div>
+                <div>
+                    <p><?php echo __('medical.print.sig_doctor'); ?></p>
+                    <p style="font-weight: 400; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.sig_note_2'); ?></p>
+                </div>
                 <p><?php echo e($session['doctor_name']); ?></p>
             </div>
         </div>

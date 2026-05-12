@@ -8,7 +8,7 @@ $page_title = __('patient.detail.title');
 $current_page = 'patients';
 require_once '../../templates/header.php';
 
-$id = isset($_GET['id']) ? $_GET['id'] : 0;
+$id = (int)($_GET['id'] ?? 0);
 $db = getDB();
 
 $stmt = $db->prepare("
@@ -41,15 +41,73 @@ $stmt = $db->prepare("SELECT t.*, u.full_name as technician_name FROM treatments
 $stmt->execute([$id]);
 $treatments = $stmt->fetchAll();
 
-// Fetch package progress
+// Fetch ALL packages (active + exhausted + expired) with full info
 $stmt = $db->prepare("
-    SELECT pp.*, p.name as package_name 
+    SELECT pp.*, pkg.name as package_name, pkg.total_sessions as pkg_total_sessions, pkg.total_price as pkg_price
     FROM patient_packages pp 
-    JOIN packages p ON pp.package_id = p.id 
-    WHERE pp.patient_id = ? AND pp.status = 'active'
+    JOIN packages pkg ON pp.package_id = pkg.id 
+    WHERE pp.patient_id = ?
+    ORDER BY FIELD(pp.status, 'active','exhausted','expired'), pp.purchase_date DESC
 ");
 $stmt->execute([$id]);
-$packages = $stmt->fetchAll();
+$all_packages = $stmt->fetchAll();
+
+// Fetch usage logs for all packages of this patient, with appointment + session links
+$pkg_ids = array_column($all_packages, 'id');
+$usage_logs_by_pkg = [];
+if (!empty($pkg_ids)) {
+    $in_clause = implode(',', array_map('intval', $pkg_ids));
+    $usage_stmt = $db->query("
+        SELECT pul.*, 
+               p.full_name as used_by_name,
+               u.full_name as technician_name,
+               t.treatment_date,
+               t.session_id,
+               a.id as appointment_id, a.appointment_date
+        FROM package_usage_logs pul
+        JOIN patients p ON pul.patient_id = p.id
+        LEFT JOIN treatments t ON pul.treatment_id = t.id
+        LEFT JOIN users u ON COALESCE(t.technician_id, pul.technician_id) = u.id
+        LEFT JOIN appointments a ON pul.appointment_id = a.id
+        WHERE pul.patient_package_id IN ($in_clause)
+        ORDER BY pul.used_at DESC
+    ");
+    foreach ($usage_stmt->fetchAll() as $log) {
+        $usage_logs_by_pkg[$log['patient_package_id']][] = $log;
+    }
+}
+
+// Auto-sync sessions_remaining if out of sync BEFORE calculating summaries
+foreach ($all_packages as &$pkg) {
+    $total_sess = $pkg['pkg_total_sessions'] ?: 1;
+    $logs = $usage_logs_by_pkg[$pkg['id']] ?? [];
+    $used = count($logs);
+    
+    $expected_rem = max(0, $total_sess - $used);
+    
+    // Auto-sync sessions_remaining
+    if ($pkg['sessions_remaining'] != $expected_rem) {
+        $db->prepare("UPDATE patient_packages SET sessions_remaining = ? WHERE id = ?")->execute([$expected_rem, $pkg['id']]);
+        $pkg['sessions_remaining'] = $expected_rem;
+    }
+    
+    // Auto-sync status independently
+    if ($expected_rem > 0 && $pkg['status'] === 'exhausted') {
+        $db->prepare("UPDATE patient_packages SET status = 'active' WHERE id = ?")->execute([$pkg['id']]);
+        $pkg['status'] = 'active';
+    } elseif ($expected_rem <= 0 && $pkg['status'] === 'active') {
+        $db->prepare("UPDATE patient_packages SET status = 'exhausted' WHERE id = ?")->execute([$pkg['id']]);
+        $pkg['status'] = 'exhausted';
+    }
+}
+unset($pkg);
+
+// Summary stats
+$active_packages = array_filter($all_packages, function($p) { return $p['status'] === 'active'; });
+$total_remaining = array_sum(array_column($active_packages, 'sessions_remaining'));
+
+// Keep $packages for backward compat (active only)
+$packages = $active_packages;
 
 // Fetch re-examination rules
 $stmt = $db->prepare("SELECT * FROM reexam_rules WHERE patient_id = ? ORDER BY next_due_at ASC");
@@ -61,6 +119,13 @@ $rules = $stmt->fetchAll();
     <!-- Left Column: Patient Info -->
     <div style="flex: 1;">
 <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+    <!-- Back Button -->
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <a href="index.php" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: 700; font-size: 0.9rem; text-decoration: none; padding: 0.5rem 1rem; background: #eef2ff; border-radius: 10px; transition: all 0.2s;" onmouseover="this.style.background='#e0e7ff'; this.style.transform='translateX(-3px)'" onmouseout="this.style.background='#eef2ff'; this.style.transform='translateX(0)'">
+            <i class="fas fa-arrow-left"></i> <?php echo __('common.back_to_list'); ?>
+        </a>
+    </div>
+
     <!-- Top Banner Card -->
     <div class="card" style="padding: 0; overflow: hidden; border: none; box-shadow: var(--shadow-premium); background: white;">
         <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 2.5rem; color: white; display: flex; align-items: center; gap: 2.5rem; position: relative;">
@@ -101,6 +166,40 @@ $rules = $stmt->fetchAll();
                 </a>
             </div>
         </div>
+
+        <!-- Active Packages Summary -->
+        <?php if (!empty($active_packages)): ?>
+        <div style="padding: 1.5rem 2.5rem; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 48px; height: 48px; background: #10b981; color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #065f46;">Gói Dịch Vụ Đang Kích Hoạt</h3>
+                    <div style="font-size: 0.95rem; color: #047857; font-weight: 600; margin-top: 0.25rem;">
+                        Còn <strong style="font-size: 1.1rem;"><?php echo $total_remaining; ?></strong> buổi trong <?php echo count($active_packages); ?> gói
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
+                <?php foreach ($active_packages as $pkg): 
+                    $used = max(0, $pkg['pkg_total_sessions'] - $pkg['sessions_remaining']);
+                    $pct = $pkg['pkg_total_sessions'] > 0 ? min(100, round(($used / $pkg['pkg_total_sessions']) * 100)) : 0;
+                    $bar_color = $pct >= 80 ? '#ef4444' : ($pct >= 50 ? '#f59e0b' : '#10b981');
+                ?>
+                <div style="background: white; border: 1px solid #bbf7d0; padding: 0.75rem 1rem; border-radius: 10px; min-width: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; align-items: center;">
+                        <span style="font-size: 0.85rem; font-weight: 800; color: #1e293b;"><?php echo e($pkg['package_name']); ?></span>
+                        <span style="font-size: 0.8rem; font-weight: 800; color: <?php echo $bar_color; ?>;"><?php echo $pkg['sessions_remaining']; ?>/<?php echo $pkg['pkg_total_sessions']; ?></span>
+                    </div>
+                    <div style="background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div style="background: <?php echo $bar_color; ?>; height: 100%; width: <?php echo $pct; ?>%;"></div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Info Grid -->
         <div style="padding: 2.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem; border-bottom: 1px solid var(--border-color);">
@@ -195,7 +294,7 @@ $rules = $stmt->fetchAll();
                 <?php if ($chiro_history): ?>
                     <div style="display: flex; gap: 0.5rem;">
                         <a href="../medical/print_record.php?type=history&id=<?php echo $chiro_history['id']; ?>" target="_blank" class="btn" style="background: white; border: 1px solid #d8b4fe; color: #9333ea; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; transition: all 0.2s;" onmouseover="this.style.background='#9333ea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#9333ea';">
-                            <i class="fas fa-print"></i> In PDF
+                            <i class="fas fa-print"></i> <?php echo __('common.print_pdf', 'In PDF'); ?>
                         </a>
                         <a href="../medical/chiro_history.php?patient_id=<?php echo $patient['id']; ?>&id=<?php echo $chiro_history['id']; ?>" class="btn" style="background: white; border: 1px solid #d8b4fe; color: #9333ea; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; transition: all 0.2s;" onmouseover="this.style.background='#9333ea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#9333ea';">
                             <i class="fas fa-edit"></i> <?php echo __('patient.history.view_update'); ?>
@@ -210,16 +309,34 @@ $rules = $stmt->fetchAll();
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <style>
+        .patient-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 900px) {
+            .patient-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <div class="patient-grid">
         <!-- Left: Medical Timeline -->
         <div class="card" style="border: none; box-shadow: var(--shadow-sm);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
-                <h3 style="margin: 0; font-weight: 800;"><i class="fas fa-stream" style="color: var(--primary);"></i> <?php echo __('patient.history.title'); ?></h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
+                <h3 style="margin: 0; font-weight: 800;"><i class="fas fa-laptop-medical" style="color: var(--primary);"></i> <?php echo __('patient.history.title'); ?></h3>
                 <a href="../medical/session_add.php?patient_id=<?php echo $id; ?>" class="btn btn-primary shadow-sm" style="border-radius: 50px; font-size: 0.85rem;">
                     <i class="fas fa-plus"></i> <?php echo __('patient.history.new_session'); ?>
                 </a>
             </div>
 
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0;">
+                <button class="med-tab-btn active" onclick="switchMedicalTab('timeline', this)"><i class="fas fa-stream"></i> <?php echo __('patient.history.tab_timeline', 'Lịch sử khám bệnh'); ?></button>
+                <button class="med-tab-btn" onclick="switchMedicalTab('gallery', this)"><i class="fas fa-images"></i> <?php echo __('patient.history.tab_gallery', 'Kho Hình Ảnh X-Quang'); ?></button>
+            </div>
+
+            <div id="tab-timeline">
             <div class="timeline-visual" style="position: relative; padding-left: 2rem;">
                 <div style="position: absolute; left: 0.25rem; top: 0; bottom: 0; width: 2px; background: #f1f5f9;"></div>
                 
@@ -405,13 +522,72 @@ $rules = $stmt->fetchAll();
                                     </a>
                                     <?php endif; ?>
                                     <a href="../medical/print_record.php?type=<?php echo $is_tr ? 'treatment' : 'history'; ?>&id=<?php echo $i['id']; ?>" target="_blank" style="font-size: 0.75rem; color: #10b981; text-decoration: none; font-weight: 700;">
-                                        <i class="fas fa-print"></i> In PDF
+                                        <i class="fas fa-print"></i> <?php echo __('common.print_pdf', 'In PDF'); ?>
                                     </a>
                                 </div>
                             </div>
                         <?php endif; ?>
 
                     <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            </div> <!-- End tab-timeline -->
+            
+            <div id="tab-gallery" style="display: none;">
+                <?php
+                // Build gallery array from $histories
+                $gallery_items = [];
+                foreach ($histories as $h) {
+                    if (!empty($h['attachments']) && $h['attachments'] !== '[]') {
+                        $atts = json_decode($h['attachments'], true);
+                        if ($atts) {
+                            foreach ($atts as $att) {
+                                // Only add images (skip pdfs for the visual gallery if preferred, or include them with generic icon)
+                                if (strpos((isset($att['type']) ? $att['type'] : ''), 'image') !== false) {
+                                    $att['date'] = $h['created_at'];
+                                    $att['doctor'] = $h['doctor_name'];
+                                    $att['session_id'] = $h['session_id'];
+                                    $gallery_items[] = $att;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Sort images by date DESC
+                usort($gallery_items, function($a, $b) {
+                    return strtotime($b['date']) <=> strtotime($a['date']);
+                });
+                
+                if (empty($gallery_items)): ?>
+                    <div style="text-align: center; padding: 4rem 2rem; border: 2px dashed #e2e8f0; border-radius: 16px; background: #f8fafc;">
+                        <i class="fas fa-images" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                        <h4 style="margin: 0; color: #64748b;"><?php echo __('patient.history.no_images_title', 'Chưa có hình ảnh nào'); ?></h4>
+                        <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.5rem;"><?php echo __('patient.history.no_images_desc', 'Hình ảnh X-Quang / Hồ sơ sẽ tự động xuất hiện ở đây khi bạn tải lên trong Buổi khám.'); ?></p>
+                    </div>
+                <?php else: ?>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;">
+                        <?php foreach($gallery_items as $att): ?>
+                        <div style="position: relative; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; aspect-ratio: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="cursor: pointer; width: 100%; height: 100%;" onclick="openLightbox('<?php echo addslashes($att['path']); ?>')">
+                                <img src="<?php echo $att['path']; ?>" style="width: 100%; height: 100%; object-fit: cover; display: block;" alt="<?php echo e($att['name']); ?>">
+                            </div>
+                            <div style="position: absolute; pointer-events: none; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.85)); padding: 2rem 0.5rem 0.5rem; color: white; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <div style="font-size: 0.75rem; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.8); line-height: 1.2;">
+                                    <?php echo e(mb_strlen($att['name']) > 25 ? mb_substr($att['name'], 0, 22) . '...' : $att['name']); ?>
+                                </div>
+                                <div style="font-size: 0.6rem; color: #94a3b8; font-weight: 600;">
+                                    <?php echo date('d/m/Y', strtotime($att['date'])); ?> 
+                                </div>
+                            </div>
+                            <?php if ($att['session_id']): ?>
+                            <a href="../medical/session_view.php?id=<?php echo $att['session_id']; ?>" title="<?php echo __('patient.history.view_session_btn', 'Xem buổi khám'); ?>" style="position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.9); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #6366f1; text-decoration: none; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); pointer-events: auto;">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </div>
@@ -436,26 +612,105 @@ $rules = $stmt->fetchAll();
                     </div>
                 </div>
 
-                <!-- Package Progress -->
-                <?php if (empty($packages)): ?>
-                    <div style="padding: 1.5rem; text-align: center; background: #f8fafc; border-radius: 16px; border: 1px dashed #e2e8f0; margin-bottom: 1.5rem;">
-                        <i class="fas fa-shopping-basket" style="font-size: 1.5rem; color: #cbd5e1; margin-bottom: 0.75rem;"></i>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><?php echo __('patient.finance.no_packages'); ?></p>
+                <!-- Package Management Section -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px;"><i class="fas fa-box-open" style="color: #6366f1;"></i> <?php echo __('patient.pkg.title', 'Gói Dịch Vụ'); ?></h4>
+                        <?php if (!empty($all_packages)): ?>
+                        <span style="font-size: 0.7rem; font-weight: 800; background: #eef2ff; color: #4f46e5; padding: 0.2rem 0.6rem; border-radius: 50px;">
+                            <?php echo count($active_packages); ?> <?php echo __('patient.pkg.pkg_unit', 'gói'); ?> · <?php echo $total_remaining; ?> <?php echo __('patient.pkg.session_unit', 'buổi'); ?>
+                        </span>
+                        <?php endif; ?>
                     </div>
-                <?php else: ?>
-                    <?php foreach ($packages as $pkg): ?>
-                        <div style="padding: 1rem; background: #fffcf0; border: 1px solid #fde68a; border-radius: 12px; margin-bottom: 0.75rem;">
-                            <div style="font-weight: 800; font-size: 0.9rem; color: #92400e;"><?php echo e($pkg['package_name']); ?></div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 0.25rem;">
-                                <span><?php echo __('patient.finance.remaining'); ?> <strong><?php echo $pkg['remaining_sessions']; ?>/<?php echo $pkg['total_sessions']; ?></strong></span>
-                                <span style="color: var(--text-muted);"><?php echo __('patient.finance.expired'); ?> <?php echo date('d/m/y', strtotime($pkg['expiry_date'])); ?></span>
+
+                    <?php if (empty($all_packages)): ?>
+                        <div style="padding: 2rem; text-align: center; background: #f8fafc; border-radius: 16px; border: 1px dashed #e2e8f0;">
+                            <i class="fas fa-box-open" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><?php echo __('patient.pkg.no_package', 'Chưa mua gói nào'); ?></p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($all_packages as $pi => $pkg):
+                            $total_sess = $pkg['pkg_total_sessions'] ?: 1;
+                            $logs = $usage_logs_by_pkg[$pkg['id']] ?? [];
+                            $used = count($logs);
+                            
+                            $is_active = $pkg['status'] === 'active';
+                            $pct = round(($used / $total_sess) * 100);
+                            $status_colors = [
+                                'active' => ['#10b981','#ecfdf5','#d1fae5'],
+                                'exhausted' => ['#f59e0b','#fffbeb','#fef3c7'],
+                                'expired' => ['#94a3b8','#f8fafc','#e2e8f0']
+                            ];
+                            $sc = $status_colors[$pkg['status']] ?? $status_colors['expired'];
+                            $bar_color = $pct >= 80 ? '#ef4444' : ($pct >= 50 ? '#f59e0b' : '#10b981');
+                        ?>
+                        <div style="margin-bottom: 0.75rem; border: 1px solid <?php echo $sc[2]; ?>; border-radius: 14px; overflow: hidden; background: white; <?php echo !$is_active ? 'opacity: 0.7;' : ''; ?>">
+                            <!-- Package Header (clickable) -->
+                            <div onclick="togglePkgDetail(<?php echo $pi; ?>)" style="padding: 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;" onmouseover="this.style.background='<?php echo $sc[1]; ?>'" onmouseout="this.style.background='white'">
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                                        <span style="font-weight: 800; font-size: 0.85rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo e($pkg['package_name']); ?></span>
+                                        <span style="font-size: 0.6rem; font-weight: 800; background: <?php echo $sc[1]; ?>; color: <?php echo $sc[0]; ?>; padding: 0.1rem 0.4rem; border-radius: 4px; text-transform: uppercase; flex-shrink: 0;"><?php echo strtoupper($pkg['status']); ?></span>
+                                    </div>
+                                    <!-- Progress bar -->
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div style="flex: 1; background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden;">
+                                            <div style="background: <?php echo $bar_color; ?>; height: 100%; width: <?php echo $pct; ?>%; border-radius: 3px; transition: width 0.3s;"></div>
+                                        </div>
+                                        <span style="font-size: 0.7rem; font-weight: 800; color: <?php echo $bar_color; ?>; white-space: nowrap;"><?php echo $used; ?>/<?php echo $total_sess; ?></span>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-down" id="pkgIcon<?php echo $pi; ?>" style="color: #94a3b8; font-size: 0.7rem; transition: transform 0.3s;"></i>
                             </div>
-                            <div style="margin-top: 0.5rem; background: #fef3c7; height: 4px; border-radius: 2px; overflow: hidden;">
-                                <div style="background: #f59e0b; height: 100%; width: <?php echo ($pkg['remaining_sessions'] / $pkg['total_sessions']) * 100; ?>%;"></div>
+
+                            <!-- Package Detail (hidden by default, except first active) -->
+                            <div id="pkgDetail<?php echo $pi; ?>" style="display: <?php echo ($pi === 0 && $is_active) ? 'block' : 'none'; ?>; border-top: 1px solid #f1f5f9;">
+                                <div style="padding: 0.75rem 1rem; background: #f8fafc; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.75rem;">
+                                    <div><span style="color: #64748b;"><?php echo __('patient.pkg.sessions_remaining', 'Buổi còn lại:'); ?></span> <strong style="color: #0f172a;"><?php echo $pkg['sessions_remaining']; ?></strong></div>
+                                    <div><span style="color: #64748b;"><?php echo __('patient.pkg.purchase_date', 'Ngày mua:'); ?></span> <strong><?php echo date('d/m/Y', strtotime($pkg['purchase_date'])); ?></strong></div>
+                                    <div><span style="color: #64748b;"><?php echo __('patient.pkg.value', 'Giá trị:'); ?></span> <strong style="color: #6366f1;"><?php echo number_format($pkg['total_amount'], 0, ',', '.'); ?>đ</strong></div>
+                                    <div><span style="color: #64748b;"><?php echo __('patient.pkg.expiry', 'Hết hạn:'); ?></span> <strong><?php echo $pkg['expire_date'] ? date('d/m/Y', strtotime($pkg['expire_date'])) : '—'; ?></strong></div>
+                                </div>
+
+                                <!-- Usage History -->
+                                <div style="padding: 0.75rem 1rem;">
+                                    <div style="font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 0.5rem;">
+                                        <i class="fas fa-history"></i> <?php echo __('patient.pkg.usage_history', 'Lịch sử dùng'); ?> (<?php echo count($logs); ?> <?php echo __('patient.pkg.turns', 'lượt'); ?>)
+                                    </div>
+                                    <?php if (empty($logs)): ?>
+                                        <div style="text-align: center; padding: 0.75rem; color: #94a3b8; font-size: 0.8rem; font-style: italic;"><?php echo __('patient.pkg.not_used', 'Chưa sử dụng'); ?></div>
+                                    <?php else: ?>
+                                        <?php foreach (array_slice($logs, 0, 5) as $log): ?>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; border-bottom: 1px solid #f8fafc; font-size: 0.75rem;">
+                                            <div style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; flex-shrink: 0;"></div>
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="font-weight: 700; color: #1e293b;">
+                                                    <?php echo date('d/m H:i', strtotime($log['used_at'])); ?>
+                                                    <?php if ($log['technician_name']): ?>
+                                                        <span style="color: #64748b; font-weight: 600;">· <?php echo e($log['technician_name']); ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
+                                                <?php if ($log['appointment_id']): ?>
+                                                <a href="../appointments/view.php?id=<?php echo $log['appointment_id']; ?>" title="<?php echo __('appointment.view_title'); ?>" style="width: 22px; height: 22px; background: #eef2ff; color: #6366f1; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.6rem;"><i class="fas fa-calendar-check"></i></a>
+                                                <?php endif; ?>
+                                                <?php if ($log['session_id']): ?>
+                                                <a href="../medical/session_view.php?id=<?php echo $log['session_id']; ?>" title="<?php echo __('patient.history.view_session_btn', 'Xem buổi khám'); ?>" style="width: 22px; height: 22px; background: #f0fdf4; color: #10b981; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.6rem;"><i class="fas fa-file-medical"></i></a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                        <?php if (count($logs) > 5): ?>
+                                        <a href="../sales/manage_shared.php?id=<?php echo $pkg['id']; ?>" style="display: block; text-align: center; padding: 0.4rem; font-size: 0.7rem; color: #6366f1; font-weight: 700; text-decoration: none;"><?php echo sprintf(__('patient.pkg.view_all_turns', 'Xem tất cả %s lượt →'), count($logs)); ?></a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
 
                 <a href="../sales/add_package.php?patient_id=<?php echo $id; ?>" class="btn shadow-sm" style="width: 100%; justify-content: center; background: #0f172a; color: white;">
                     <i class="fas fa-cart-plus"></i> <?php echo __('patient.finance.new_package'); ?>
@@ -471,6 +726,7 @@ $rules = $stmt->fetchAll();
                 
                 <div id="reexamForm" style="display: none; margin-bottom: 1.5rem; padding: 1.25rem; background: white; border-radius: 16px; border: 1px solid #fde68a;">
                     <form action="manage_reexam.php" method="POST">
+                        <?php echo csrf_field(); ?>
                         <input type="hidden" name="patient_id" value="<?php echo $id; ?>">
                         <div class="form-group" style="margin-bottom: 1rem;">
                             <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.service_note'); ?></label>
@@ -504,7 +760,7 @@ $rules = $stmt->fetchAll();
                     <p style="font-size: 0.85rem; color: #92400e; opacity: 0.7;"><?php echo __('patient.reexam.no_data'); ?></p>
                 <?php else: ?>
                     <?php foreach ($rules as $rule): ?>
-                        <div style="background: white; padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center;">
+                        <div id="reexamView<?php echo $rule['id']; ?>" style="background: white; padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1;">
                                 <?php
                                 $f_type = ($rule['frequency_type'] === 'days') ? __('common.day') : (($rule['frequency_type'] === 'weeks') ? __('common.week') : __('common.month'));
@@ -517,13 +773,50 @@ $rules = $stmt->fetchAll();
                             </div>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
                                 <a href="../appointments/add.php?contact_id=patient:<?php echo $id; ?>&type=re_exam&reexam_rule_id=<?php echo $rule['id']; ?>" class="btn btn-sm" style="background: #fef3c7; color: #92400e; font-size: 0.7rem; padding: 0.25rem 0.5rem;"><?php echo __('appointment.book_title'); ?></a>
-                                <form action="manage_reexam.php" method="POST" style="margin: 0;" onsubmit="return confirm('<?php echo __('common.confirm_delete'); ?>')">
+                                <button type="button" onclick="toggleEditReexam(<?php echo $rule['id']; ?>)" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 0.25rem;"><i class="fas fa-edit"></i></button>
+                                <form action="manage_reexam.php" method="POST" style="margin: 0;" id="delReexam<?php echo $rule['id']; ?>">
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="patient_id" value="<?php echo $id; ?>">
                                     <input type="hidden" name="id" value="<?php echo $rule['id']; ?>">
                                     <input type="hidden" name="action" value="delete">
-                                    <button type="submit" style="background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 0.25rem;"><i class="fas fa-trash"></i></button>
+                                    <button type="button" onclick="confirmAndSubmit(document.getElementById('delReexam<?php echo $rule['id']; ?>'), '<?php echo __('common.confirm_delete'); ?>')" style="background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 0.25rem;"><i class="fas fa-trash"></i></button>
                                 </form>
                             </div>
+                        </div>
+
+                        <!-- Edit Form -->
+                        <div id="reexamEdit<?php echo $rule['id']; ?>" style="display: none; background: #fffbeb; padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; border: 1px solid #fde68a;">
+                            <form action="manage_reexam.php" method="POST" style="margin:0;">
+                                <?php echo csrf_field(); ?>
+                                <input type="hidden" name="action" value="edit">
+                                <input type="hidden" name="patient_id" value="<?php echo $id; ?>">
+                                <input type="hidden" name="id" value="<?php echo $rule['id']; ?>">
+                                <div class="form-group" style="margin-bottom: 1rem;">
+                                    <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.service_note'); ?></label>
+                                    <input type="text" name="service_name" class="form-input" value="<?php echo e($rule['service_name']); ?>" required style="padding: 0.5rem; font-size: 0.85rem;">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                                    <div class="form-group">
+                                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.frequency'); ?></label>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <input type="number" name="frequency" class="form-input" min="1" value="<?php echo $rule['frequency']; ?>" style="padding: 0.5rem; font-size: 0.85rem; flex: 1;" required>
+                                            <select name="frequency_type" class="form-input" style="padding: 0.5rem; font-size: 0.85rem; flex: 1;">
+                                                <option value="days" <?php echo $rule['frequency_type'] == 'days' ? 'selected' : ''; ?>><?php echo __('common.day'); ?></option>
+                                                <option value="weeks" <?php echo $rule['frequency_type'] == 'weeks' ? 'selected' : ''; ?>><?php echo __('common.week'); ?></option>
+                                                <option value="months" <?php echo $rule['frequency_type'] == 'months' ? 'selected' : ''; ?>><?php echo __('common.month'); ?></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);"><?php echo __('patient.reexam.start_date'); ?></label>
+                                        <input type="date" name="first_date" class="form-input" value="<?php echo date('Y-m-d', strtotime($rule['next_due_at'])); ?>" style="padding: 0.4rem; font-size: 0.85rem;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                    <button type="button" onclick="toggleEditReexam(<?php echo $rule['id']; ?>)" class="btn btn-sm" style="background: white; font-weight: 700; border: 1px solid #cbd5e1;"><?php echo __('common.cancel'); ?></button>
+                                    <button type="submit" class="btn btn-sm btn-primary" style="background: #d97706; border: none; font-weight: 700;">Lưu thay đổi</button>
+                                </div>
+                            </form>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -541,7 +834,7 @@ $rules = $stmt->fetchAll();
 .social-icon:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 .timeline-node:last-child { margin-bottom: 0 !important; }
 
-/* Filter Pill Styles */
+/* Filter Pill Styles (Legacy Timeline Filters) */
 .filter-pill {
     padding: 0.4rem 1rem;
     border-radius: 50px;
@@ -559,12 +852,46 @@ $rules = $stmt->fetchAll();
     color: white;
     box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
 }
+
+/* Medical Tab Styles */
+.med-tab-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.med-tab-btn:hover { color: var(--primary); }
+.med-tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
 </style>
 
 <script>
 function toggleReexamForm() {
     const form = document.getElementById('reexamForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleEditReexam(id) {
+    const editForm = document.getElementById('reexamEdit' + id);
+    const viewDiv = document.getElementById('reexamView' + id);
+    if (editForm.style.display === 'none') {
+        editForm.style.display = 'block';
+        viewDiv.style.display = 'none';
+    } else {
+        editForm.style.display = 'none';
+        viewDiv.style.display = 'flex';
+    }
 }
 
 function filterTimeline(type, event) {
@@ -585,6 +912,46 @@ function filterTimeline(type, event) {
             node.style.display = 'none';
         }
     });
+}
+
+function togglePkgDetail(idx) {
+    var detail = document.getElementById('pkgDetail' + idx);
+    var icon = document.getElementById('pkgIcon' + idx);
+    if (detail.style.display === 'none') {
+        detail.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        detail.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+function switchMedicalTab(tabId, btn) {
+    document.querySelectorAll('.med-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    document.getElementById('tab-timeline').style.display = 'none';
+    document.getElementById('tab-gallery').style.display = 'none';
+    
+    document.getElementById('tab-' + tabId).style.display = 'block';
+}
+
+function openLightbox(src) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(5px)';
+    overlay.onclick = function() { document.body.removeChild(overlay); };
+    
+    var img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'max-width:90%;max-height:90%;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5)';
+    overlay.appendChild(img);
+    
+    var closeBtn = document.createElement('div');
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.style.cssText = 'position:absolute;top:1.5rem;right:1.5rem;width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.2rem;cursor:pointer';
+    overlay.appendChild(closeBtn);
+    
+    document.body.appendChild(overlay);
 }
 </script>
 

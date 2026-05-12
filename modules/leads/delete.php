@@ -11,11 +11,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('index.php');
 }
 
+// C3 FIX: Verify CSRF token
+verify_csrf('index.php');
+
 $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 $db = getDB();
 
 if ($id) {
     try {
+        // Xóa logs liên quan trước
+        $db->prepare("DELETE FROM lead_logs WHERE lead_id = ?")->execute([$id]);
+        // Xóa lead
         $stmt = $db->prepare("DELETE FROM leads WHERE id = ?");
         $stmt->execute([$id]);
         set_flash('Đã xóa Lead thành công!');

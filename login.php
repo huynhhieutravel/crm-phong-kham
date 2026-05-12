@@ -13,8 +13,6 @@ if (is_logged_in()) {
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_DURATION', 5 * 60); // 5 phút
 
-if (session_status() === PHP_SESSION_NONE) session_start();
-
 $error = '';
 $is_locked = false;
 

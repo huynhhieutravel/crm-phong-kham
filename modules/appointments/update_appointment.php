@@ -1,13 +1,38 @@
 <?php
 // modules/appointments/update_appointment.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_appointments');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = isset($_POST['id']) ? $_POST['id'] : 0;
+    // C2 FIX: Cast ID to int
+    $id = (int)($_POST['id'] ?? 0);
+    
+    if (!$id) {
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid ID']);
+            exit;
+        }
+        $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+        redirect($redirect_url);
+    }
+
+    // C2 FIX: Verify CSRF
+    $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+    if (!$is_ajax) {
+        verify_csrf('index.php');
+    } else {
+        $token = $_POST['_csrf_token'] ?? '';
+        if (empty($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+            exit;
+        }
+    }
+
     $db = getDB();
 
     if (isset($_POST['doctor_id'])) {
@@ -17,6 +42,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['status'])) {
         $status = $_POST['status'];
+
+        // GUARD: "completed" can ONLY be set automatically by the invoice system (create_invoice_api.php)
+        // Manual status change to "completed" is blocked here
+        if ($status === 'completed') {
+            if ($is_ajax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Trạng thái "Hoàn thành" chỉ được tự động chuyển khi đã hoàn tất Phiếu Tính Tiền.']);
+                exit;
+            }
+            set_flash('Trạng thái "Hoàn thành" chỉ được tự động chuyển khi đã hoàn tất Phiếu Tính Tiền.', 'error');
+            $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+            redirect($redirect_url);
+        }
+
         $stmt = $db->prepare("UPDATE appointments SET status = ? WHERE id = ?");
         $stmt->execute([$status, $id]);
 
@@ -78,11 +117,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+    if ($is_ajax) {
         header('Content-Type: application/json');
         echo json_encode(['success' => true]);
         exit;
     }
 
-    redirect('index.php');
+    $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+    redirect($redirect_url);
 }

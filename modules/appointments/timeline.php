@@ -12,6 +12,9 @@ require_once '../../templates/header.php';
 
 $db = getDB();
 
+// Save the current URL with filters so that edit/delete actions can redirect back here
+$_SESSION['appointment_list_url'] = $_SERVER['REQUEST_URI'];
+
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
 $date_filter = get_sticky_appointment_date();
@@ -132,6 +135,10 @@ $status_map = [
 
 $type_map = [
     'consultation' => ['label' => __('appointment.type.consultation'), 'color' => '#3b82f6', 'icon' => 'fa-comments'],
+    'dong_y_60'    => ['label' => __('appointment.type.dong_y_60'), 'color' => '#10b981', 'icon' => 'fa-leaf'],
+    'dong_y_90'    => ['label' => __('appointment.type.dong_y_90'), 'color' => '#059669', 'icon' => 'fa-seedling'],
+    'chiro'        => ['label' => __('appointment.type.chiro'), 'color' => '#f59e0b', 'icon' => 'fa-bone'],
+    'support_other'=> ['label' => __('appointment.type.support_other'), 'color' => '#64748b', 'icon' => 'fa-hands-helping'],
     'treatment'    => ['label' => __('appointment.type.treatment'), 'color' => '#10b981', 'icon' => 'fa-hand-holding-medical'],
     're_exam'      => ['label' => __('appointment.type.re_exam'), 'color' => '#8b5cf6', 'icon' => 'fa-redo'],
     'adjustment'   => ['label' => __('appointment.type.adjustment'), 'color' => '#64748b', 'icon' => 'fa-tools']
@@ -329,21 +336,21 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
                             <i class="fas fa-user-md" style="color: var(--primary); margin-right: 0.4rem;"></i>
                             <?php echo e($doc['full_name']); ?>
                         </span>
-                        <span style="font-size: 0.65rem; font-weight: 700; background: #e2e8f0; color: var(--text-muted); padding: 0.2rem 0.5rem; border-radius: 6px; white-space: nowrap;">
-                            <?php echo count($staff_appts); ?> <?php echo __('appointment.session_count'); ?>
+                        <span class="session-counter" style="font-size: 0.65rem; font-weight: 700; background: #e2e8f0; color: var(--text-muted); padding: 0.2rem 0.5rem; border-radius: 6px; white-space: nowrap;">
+                            <span class="count-number"><?php echo count($staff_appts); ?></span> <?php echo __('appointment.session_count'); ?>
                         </span>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    <div class="sortable-list" data-doctor-id="<?php echo $doc['id']; ?>" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 50px;">
                         <?php if (empty($staff_appts)): ?>
-                            <div style="text-align: center; padding: 1.5rem 0; color: var(--text-muted); font-size: 0.8rem; font-style: italic;">
+                            <div class="empty-list-placeholder" style="text-align: center; padding: 1.5rem 0; color: var(--text-muted); font-size: 0.8rem; font-style: italic;">
                                 <?php echo __('appointment.no_appointments'); ?>
                             </div>
                         <?php else: ?>
                             <?php foreach ($staff_appts as $a): 
                                 $status = isset($status_map[$a['status']]) ? $status_map[$a['status']] : ['color' => '#64748b', 'label' => 'Unknown'];
                             ?>
-                                <div class="day-event-card" style="background: white; border-radius: 12px; padding: 0.75rem; box-shadow: var(--shadow-sm); border-left: 4px solid <?php echo $status['color']; ?>; cursor: pointer; transition: transform 0.2s;" onclick="location.href='view.php?id=<?php echo $a['id']; ?>'">
+                                <div class="day-event-card" data-appointment-id="<?php echo $a['id']; ?>" style="background: white; border-radius: 12px; padding: 0.75rem; box-shadow: var(--shadow-sm); border-left: 4px solid <?php echo $status['color']; ?>; cursor: grab; transition: transform 0.2s;" onclick="location.href='view.php?id=<?php echo $a['id']; ?>'">
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 4px;">
                                         <span style="font-weight: 800; font-size: 0.8rem; color: var(--text-main); line-height: 1.2;">
                                             <?php 
@@ -371,6 +378,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
             <?php endforeach; ?>
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
         <script>
         document.addEventListener('DOMContentLoaded', function() {
             const zoomSlider = document.getElementById('zoomSliderDay');
@@ -392,6 +400,83 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
                 // Save to localStorage when released
                 zoomSlider.addEventListener('change', function() {
                     localStorage.setItem('crmTimelineDayZoom', this.value);
+                });
+            }
+
+            // Drag and Drop Logic
+            if (typeof Sortable !== 'undefined') {
+                const lists = document.querySelectorAll('.sortable-list');
+                lists.forEach(function(list) {
+                    new Sortable(list, {
+                        group: 'shared', 
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                        dragClass: 'sortable-drag',
+                        onStart: function(evt) {
+                            document.body.style.cursor = 'grabbing';
+                        },
+                        onEnd: function(evt) {
+                            document.body.style.cursor = 'default';
+                            
+                            const itemEl = evt.item;
+                            const fromEl = evt.from;
+                            const toEl = evt.to;
+
+                            if (fromEl === toEl) return;
+
+                            const appointmentId = itemEl.getAttribute('data-appointment-id');
+                            const newDoctorId = toEl.getAttribute('data-doctor-id');
+                            
+                            // Remove empty placeholder from target if exists
+                            const toPlaceholder = toEl.querySelector('.empty-list-placeholder');
+                            if (toPlaceholder) toPlaceholder.style.display = 'none';
+
+                            // Show empty placeholder in source if empty
+                            if (fromEl.querySelectorAll('.day-event-card').length === 0) {
+                                const fromPlaceholder = fromEl.querySelector('.empty-list-placeholder');
+                                if (fromPlaceholder) {
+                                    fromPlaceholder.style.display = 'block';
+                                } else {
+                                    fromEl.insertAdjacentHTML('afterbegin', '<div class="empty-list-placeholder" style="text-align: center; padding: 1.5rem 0; color: var(--text-muted); font-size: 0.8rem; font-style: italic;"><?php echo __('appointment.no_appointments'); ?></div>');
+                                }
+                            }
+
+                            // Update counters
+                            const fromCounter = fromEl.closest('.staff-day-column').querySelector('.count-number');
+                            const toCounter = toEl.closest('.staff-day-column').querySelector('.count-number');
+                            
+                            if (fromCounter) fromCounter.textContent = parseInt(fromCounter.textContent) - 1;
+                            if (toCounter) toCounter.textContent = parseInt(toCounter.textContent) + 1;
+
+                            // Call API
+                            fetch('api_update_doctor.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    appointment_id: appointmentId,
+                                    doctor_id: newDoctorId
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if(!data.success) {
+                                    alert('Error: ' + data.message);
+                                    window.location.reload();
+                                } else {
+                                    // Make card blink to show success
+                                    itemEl.style.transition = 'background-color 0.3s';
+                                    itemEl.style.backgroundColor = '#ecfdf5'; // light emerald
+                                    setTimeout(() => itemEl.style.backgroundColor = 'white', 1000);
+                                }
+                            })
+                            .catch(err => {
+                                alert('Network error occurred.');
+                                window.location.reload();
+                            });
+                        }
+                    });
                 });
             }
         });
@@ -419,7 +504,17 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
             $grouped_week[$did][$day][] = $a;
         }
         ?>
-        <div class="timeline-grid" style="display: grid; grid-template-columns: 150px repeat(7, 1fr); min-width: 1000px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 150px;"></div>
+            <h2 style="margin: 0; font-weight: 800; color: var(--text-main); text-align: center; flex: 2; min-width: 250px;">Tuần từ <?php echo date('d/m/Y', strtotime($start_of_week)); ?></h2>
+            <div style="flex: 1; display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end; min-width: 150px;">
+                <i class="fas fa-search-minus" style="color: var(--text-muted); font-size: 0.85rem;" title="Thu nhỏ (Nhiều cột)"></i>
+                <input type="range" id="zoomSliderWeek" min="600" max="2500" value="1000" style="width: 120px; cursor: pointer; accent-color: var(--primary);" title="Thay đổi kích thước bảng">
+                <i class="fas fa-search-plus" style="color: var(--text-muted); font-size: 0.85rem;" title="Phóng to (Ít cột)"></i>
+            </div>
+        </div>
+        
+        <div id="weekGridContainer" class="timeline-grid" style="display: grid; grid-template-columns: 150px repeat(7, minmax(80px, 1fr)); min-width: 1000px; transition: min-width 0.1s ease-out;">
             <!-- Header Row -->
             <div style="padding: 1rem; border-bottom: 2px solid #e2e8f0; font-weight: 800; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;"><?php echo __('appointment.doctor'); ?></div>
             <?php foreach ($week_days as $day): ?>
@@ -456,6 +551,28 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || ($
                 <?php endforeach; ?>
             <?php endforeach; ?>
         </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const zoomSliderW = document.getElementById('zoomSliderWeek');
+            const weekGridW = document.getElementById('weekGridContainer');
+            
+            if(zoomSliderW && weekGridW) {
+                const savedZoomW = localStorage.getItem('timeline_week_zoom');
+                if(savedZoomW) {
+                    zoomSliderW.value = savedZoomW;
+                    weekGridW.style.minWidth = savedZoomW + 'px';
+                }
+                
+                zoomSliderW.addEventListener('input', function() {
+                    weekGridW.style.minWidth = this.value + 'px';
+                });
+                
+                zoomSliderW.addEventListener('change', function() {
+                    localStorage.setItem('timeline_week_zoom', this.value);
+                });
+            }
+        });
+        </script>
     </div>
 <?php elseif ($view === 'timeline_month'): ?>
     <!-- Month Timeline View -->

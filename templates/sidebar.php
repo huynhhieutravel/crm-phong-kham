@@ -2,9 +2,14 @@
 // templates/sidebar.php
 ?>
 <aside class="sidebar">
-    <div class="brand">
-        <i class="fas fa-hand-holding-medical"></i>
-        <span>SIMON CENTER</span>
+    <div class="brand" style="display: flex; justify-content: space-between; align-items: center; padding: 2.5rem 1.5rem; letter-spacing: 0;">
+        <div class="brand-logo" style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden; white-space: nowrap;">
+            <i class="fas fa-hand-holding-medical" style="font-size: 1.4rem;"></i>
+            <span style="font-size: 1.15rem; font-weight: 800;">SIMON CENTER</span>
+        </div>
+        <button id="sidebarToggle" class="btn btn-icon sidebar-tgl-btn" style="background: rgba(255,255,255,0.05); color: #94a3b8; border: none; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.3s;">
+            <i class="fas fa-chevron-left toggle-icon" style="transition: transform 0.3s;"></i>
+        </button>
     </div>
     <nav class="nav-menu">
         <div class="nav-item-wrapper">
@@ -44,7 +49,7 @@
 
         <?php if (can('view_appointments')): ?>
         <div class="nav-item-wrapper">
-            <a href="<?php echo $base_url; ?>modules/appointments/timeline.php" class="nav-item <?php echo $current_page === 'appointments' ? 'active' : ''; ?>">
+            <a href="<?php echo $base_url; ?>modules/appointments/index.php" class="nav-item <?php echo $current_page === 'appointments' ? 'active' : ''; ?>">
                 <i class="fas fa-calendar-check"></i>
                 <span><?php echo __('menu.appointments'); ?></span>
             </a>
@@ -67,16 +72,19 @@
 
         <?php if (can('view_patients')): ?>
         <div class="nav-item-wrapper">
-            <a href="<?php echo $base_url; ?>modules/patients/dashboard.php" class="nav-item <?php echo $current_page === 'patients' ? 'active' : ''; ?>">
+            <a href="<?php echo $base_url; ?>modules/patients/index.php" class="nav-item <?php echo ($current_page === 'patients' || $current_page === 'cskh') ? 'active' : ''; ?>">
                 <i class="fas fa-users"></i>
                 <span><?php echo __('menu.patients'); ?></span>
             </a>
             <div class="submenu">
+                <a href="<?php echo $base_url; ?>modules/patients/index.php" class="submenu-item <?php echo ($current_page === 'patients' && strpos($_SERVER['PHP_SELF'], 'index.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-list-ul"></i> <?php echo __('menu.patients.list'); ?>
+                </a>
                 <a href="<?php echo $base_url; ?>modules/patients/dashboard.php" class="submenu-item <?php echo ($current_page === 'patients' && strpos($_SERVER['PHP_SELF'], 'dashboard.php') !== false) ? 'active' : ''; ?>">
                     <i class="fas fa-chart-pie"></i> <?php echo __('menu.patients.dashboard'); ?>
                 </a>
-                <a href="<?php echo $base_url; ?>modules/patients/index.php" class="submenu-item <?php echo ($current_page === 'patients' && strpos($_SERVER['PHP_SELF'], 'index.php') !== false) ? 'active' : ''; ?>">
-                    <i class="fas fa-list-ul"></i> <?php echo __('menu.patients.list'); ?>
+                <a href="<?php echo $base_url; ?>modules/cskh/index.php" class="submenu-item <?php echo $current_page === 'cskh' ? 'active' : ''; ?>">
+                    <i class="fas fa-headset"></i> <?php echo __('menu.cskh'); ?>
                 </a>
             </div>
         </div>
@@ -109,9 +117,29 @@
         <?php endif; ?>
 
         <?php if (can('view_sales')): ?>
-        <a href="<?php echo $base_url; ?>modules/sales/index.php" class="nav-item <?php echo $current_page === 'sales' ? 'active' : ''; ?>">
-            <i class="fas fa-shopping-cart"></i>
-            <span><?php echo __('menu.sales'); ?></span>
+        <div class="nav-item-wrapper">
+            <a href="<?php echo $base_url; ?>modules/sales/index.php" class="nav-item <?php echo $current_page === 'sales' ? 'active' : ''; ?>">
+                <i class="fas fa-shopping-cart"></i>
+                <span><?php echo __('menu.sales'); ?></span>
+            </a>
+            <div class="submenu">
+                <a href="<?php echo $base_url; ?>modules/sales/index.php" class="submenu-item <?php echo ($current_page === 'sales' && strpos($_SERVER['PHP_SELF'], 'index.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-list"></i> <?php echo __('menu.sales.packages_list'); ?>
+                </a>
+                <a href="<?php echo $base_url; ?>modules/sales/config_packages.php" class="submenu-item <?php echo ($current_page === 'sales' && strpos($_SERVER['PHP_SELF'], 'config_packages.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-cogs"></i> <?php echo __('menu.sales.config_packages'); ?>
+                </a>
+                <a href="<?php echo $base_url; ?>modules/billing/config_products.php" class="submenu-item <?php echo ($current_page === 'billing' && strpos($_SERVER['PHP_SELF'], 'config_products.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-box"></i> <?php echo __('menu.sales.manage_products'); ?>
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if (can('view_billing')): ?>
+        <a href="<?php echo $base_url; ?>modules/billing/index.php" class="nav-item <?php echo $current_page === 'billing' ? 'active' : ''; ?>">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span><?php echo __('menu.billing'); ?></span>
         </a>
         <?php endif; ?>
 
@@ -174,15 +202,27 @@
             <i class="fas fa-shopping-cart"></i>
             <span><?php echo __('guide.sales'); ?></span>
         </a>
-    </nav>
-    <div class="sidebar-footer" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+        <a href="<?php echo $base_url; ?>modules/guide/index.php?section=payment" class="nav-item <?php echo ($current_page === 'guide' && $guide_section === 'payment') ? 'active' : ''; ?>">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span><?php echo __('guide.payment'); ?></span>
+        </a>
+        <a href="<?php echo $base_url; ?>modules/guide/index.php?section=cskh" class="nav-item <?php echo ($current_page === 'guide' && $guide_section === 'cskh') ? 'active' : ''; ?>">
+            <i class="fas fa-headset"></i>
+            <span><?php echo __('guide.cskh'); ?></span>
+        </a>
+        <div class="nav-section-label" style="padding: 1.5rem 1.5rem 0.5rem; font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 700; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 1rem;"><?php echo __('Cá nhân'); ?></div>
+        
+        <a href="<?php echo $base_url; ?>modules/hr/leaves.php" class="nav-item <?php echo $current_page === 'leaves' ? 'active' : ''; ?>" style="color: #f59e0b;">
+            <i class="fas fa-calendar-times"></i>
+            <span><?php echo __('menu.leave_request'); ?></span>
+        </a>
         <a href="<?php echo $base_url; ?>modules/hr/change_password.php" class="nav-item <?php echo $current_page === 'change_password' ? 'active' : ''; ?>" style="color: #94a3b8;">
             <i class="fas fa-key"></i>
             <span><?php echo __('menu.change_password'); ?></span>
         </a>
-        <a href="<?php echo $base_url; ?>logout.php" class="nav-item" style="color: #f87171;">
+        <a href="<?php echo $base_url; ?>logout.php?t=<?php echo time(); ?>" class="nav-item" style="color: #f87171;">
             <i class="fas fa-sign-out-alt"></i>
             <span><?php echo __('menu.logout'); ?></span>
         </a>
-    </div>
+    </nav>
 </aside>

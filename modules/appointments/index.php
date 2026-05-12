@@ -12,6 +12,9 @@ require_once '../../templates/header.php';
 
 $db = getDB();
 
+// Save the current URL with filters so that edit/delete actions can redirect back here
+$_SESSION['appointment_list_url'] = $_SERVER['REQUEST_URI'];
+
 $search = $_GET['search'] ?? '';
 $status_filter = $_GET['status'] ?? '';
 $date_filter = $_GET['date'] ?? '';
@@ -40,8 +43,10 @@ $conditions = [];
 $params = [];
 
 if ($search) {
+    // H4 FIX: Escape LIKE wildcards
+    $safe_search = addcslashes($search, '%_');
     $conditions[] = "(p.full_name LIKE ? OR l.full_name LIKE ? OR p.phone LIKE ? OR l.phone LIKE ?)";
-    $params = array_merge($params, ["%$search%", "%$search%", "%$search%", "%$search%"]);
+    $params = array_merge($params, ["%$safe_search%", "%$safe_search%", "%$safe_search%", "%$safe_search%"]);
 }
 
 if ($status_filter) {
@@ -105,13 +110,9 @@ try {
     $stmt->execute($params);
     $appointments = $stmt->fetchAll();
 } catch (Exception $e) {
-    // Fallback: simple query if JOIN or new columns like label failed
-    try {
-        $fallback_query = "SELECT *, 'Patient/Lead' as contact_name, '' as contact_phone FROM appointments ORDER BY appointment_date ASC " . get_sql_limit($limit, $page);
-        $appointments = $db->query($fallback_query)->fetchAll();
-    } catch (Exception $e2) {
-        $appointments = [];
-    }
+    // H3 FIX: Log error instead of fallback that ignores all filters
+    error_log("Appointments query failed: " . $e->getMessage());
+    $appointments = [];
 }
 
 
@@ -146,6 +147,10 @@ $status_map = [
 
 $type_map = [
     'consultation' => ['label' => __('appointment.type.consultation'), 'color' => '#3b82f6', 'icon' => 'fa-comments'],
+    'dong_y_60'    => ['label' => __('appointment.type.dong_y_60'), 'color' => '#10b981', 'icon' => 'fa-leaf'],
+    'dong_y_90'    => ['label' => __('appointment.type.dong_y_90'), 'color' => '#059669', 'icon' => 'fa-seedling'],
+    'chiro'        => ['label' => __('appointment.type.chiro'), 'color' => '#f59e0b', 'icon' => 'fa-bone'],
+    'support_other'=> ['label' => __('appointment.type.support_other'), 'color' => '#64748b', 'icon' => 'fa-hands-helping'],
     'treatment'    => ['label' => __('appointment.type.treatment'), 'color' => '#10b981', 'icon' => 'fa-hand-holding-medical'],
     're_exam'      => ['label' => __('appointment.type.re_exam'), 'color' => '#8b5cf6', 'icon' => 'fa-redo'],
     'adjustment'   => ['label' => __('appointment.type.adjustment'), 'color' => '#64748b', 'icon' => 'fa-tools']
@@ -282,6 +287,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                         
                         <a href="#" class="filter-btn <?php echo $period == '' ? 'active' : ''; ?>" onclick="setPeriod(event, '')"><?php echo __('filter.all'); ?></a>
                         <a href="#" class="filter-btn <?php echo $period == 'today' ? 'active' : ''; ?>" onclick="setPeriod(event, 'today')"><?php echo __('filter.today'); ?></a>
+                        <a href="#" class="filter-btn <?php echo $period == 'tomorrow' ? 'active' : ''; ?>" onclick="setPeriod(event, 'tomorrow')"><?php echo __('filter.tomorrow'); ?></a>
                         <a href="#" class="filter-btn <?php echo $period == 'week' ? 'active' : ''; ?>" onclick="setPeriod(event, 'week')"><?php echo __('filter.week'); ?></a>
                         <a href="#" class="filter-btn <?php echo $period == 'month' ? 'active' : ''; ?>" onclick="setPeriod(event, 'month')"><?php echo __('filter.month'); ?></a>
                         <a href="#" class="filter-btn <?php echo $period == 'quarter' ? 'active' : ''; ?>" onclick="setPeriod(event, 'quarter')"><?php echo __('filter.quarter'); ?></a>
@@ -371,11 +377,11 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                 <i class="fas fa-plus"></i> <?php echo __('appointment.book_btn'); ?>
             </a>
             <div style="display: flex; gap: 0.4rem;">
-                <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Xuất CSV">
-                    <i class="fas fa-file-export"></i> Xuất
+                <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('leads.index.export_csv'); ?>">
+                    <i class="fas fa-file-export"></i> <?php echo __('common.export'); ?>
                 </a>
-                <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="Nhập CSV">
-                    <i class="fas fa-file-import"></i> Nhập
+                <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('leads.index.import_csv'); ?>">
+                    <i class="fas fa-file-import"></i> <?php echo __('common.import'); ?>
                 </a>
             </div>
         </div>
@@ -433,7 +439,11 @@ function setPeriod(event, p) {
                             </td>
                             <td style="padding: 1.25rem 1.5rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
-                                    <span style="font-weight: 700; color: var(--text-main);"><?php echo e($a['contact_name']); ?></span>
+                                    <?php if ($a['contact_type'] === 'Patient' && !empty($a['patient_id'])): ?>
+                                        <a href="../patients/view.php?id=<?php echo $a['patient_id']; ?>" style="font-weight: 700; color: var(--primary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#1e40af'" onmouseout="this.style.color='var(--primary)'"><?php echo e($a['contact_name']); ?></a>
+                                    <?php else: ?>
+                                        <span style="font-weight: 700; color: var(--text-main);"><?php echo e($a['contact_name']); ?></span>
+                                    <?php endif; ?>
                                     
                                     <div style="display: flex; gap: 0.25rem; align-items: center;">
                                         <span style="font-size: 0.6rem; font-weight: 800; padding: 0.15rem 0.4rem; border-radius: 4px; text-transform: uppercase; <?php echo $a['contact_type'] === 'Patient' ? 'background: #e0f2fe; color: #0369a1;' : 'background: #fef3c7; color: #92400e;'; ?>">
@@ -459,7 +469,8 @@ function setPeriod(event, p) {
                                     <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600;"><i class="fas fa-phone-alt" style="font-size: 0.7rem;"></i> <?php echo e($a['contact_phone']); ?></div>
                                     
                                     <?php 
-                                    $t = $type_map[$a['type']] ?? array('label' => $a['type'], 'color' => '#64748b', 'icon' => 'fa-calendar');
+                                    $a_type = $a['type'] ?: 'consultation';
+                                    $t = $type_map[$a_type] ?? array('label' => $a_type, 'color' => '#64748b', 'icon' => 'fa-calendar');
                                     ?>
                                     <span style="font-size: 0.65rem; font-weight: 700; color: <?php echo $t['color']; ?>; background: <?php echo $t['color']; ?>1a; padding: 0.1rem 0.6rem; border-radius: 50px; border: 1px solid <?php echo $t['color']; ?>33;">
                                         <i class="fas <?php echo $t['icon']; ?>" style="font-size: 0.6rem;"></i> <?php echo $t['label']; ?>
@@ -468,24 +479,31 @@ function setPeriod(event, p) {
                             </td>
                             <td style="padding: 1.25rem 1.5rem; width: 220px;">
                                 <form action="update_appointment.php" method="POST" class="quick-status-form">
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
                                     <select name="doctor_id" class="form-input" style="padding: 0.4rem; font-size: 0.9rem; border: 1px solid transparent; background: transparent; font-weight: 600; cursor: pointer;" onchange="updateAppointment(this)">
                                         <option value="">-- <?php echo __('appointment.unassigned_doctor'); ?> --</option>
                                         <?php foreach ($doctors as $doc): ?>
-                                            <option value="<?php echo $doc['id']; ?>" <?php echo (int)$a['doctor_id'] === (int)$doc['id'] ? 'selected' : ''; ?>><?php echo e($doc['full_name']); ?> (<?php echo e($doc['role_name']); ?>)</option>
+                                            <option value="<?php echo $doc['id']; ?>" <?php echo (int)$a['doctor_id'] === (int)$doc['id'] ? 'selected' : ''; ?>><?php echo e($doc['full_name']); ?> (<?php echo __($doc['role_name']); ?>)</option>
                                         <?php endforeach; ?>
                                     </select>
                                 </form>
                             </td>
                             <td style="padding: 1.25rem 1.5rem;">
                                 <?php 
-                                $status = $status_map[$a['status']] ?? array('label' => $a['status'], 'color' => '#64748b', 'icon' => 'fa-question-circle');
+                                $a_status = $a['status'] ?: 'scheduled';
+                                $status = $status_map[$a_status] ?? array('label' => $a_status, 'color' => '#64748b', 'icon' => 'fa-question-circle');
                                 ?>
                                 <form action="update_appointment.php" method="POST">
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
                                     <select name="status" class="form-input" style="width: auto; padding: 0.35rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 1px solid <?php echo $status['color']; ?>; color: <?php echo $status['color']; ?>; background: <?php echo $status['color']; ?>0d;" onchange="updateAppointment(this)">
                                         <?php foreach ($status_map as $key => $info): ?>
-                                            <option value="<?php echo $key; ?>" <?php echo $a['status'] === $key ? 'selected' : ''; ?>><?php echo $info['label']; ?></option>
+                                            <?php
+                                            // "completed" can only be set by invoice system, disable manual selection
+                                            $is_completed_locked = ($key === 'completed' && $a_status !== 'completed');
+                                            ?>
+                                            <option value="<?php echo $key; ?>" <?php echo $a_status === $key ? 'selected' : ''; ?> <?php echo $is_completed_locked ? 'disabled' : ''; ?>><?php echo $info['label']; ?><?php echo $is_completed_locked ? ' 🔒' : ''; ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </form>
@@ -495,10 +513,20 @@ function setPeriod(event, p) {
                                     <?php 
                                     $appt_date = date('Y-m-d', strtotime($a['appointment_date']));
                                     $is_today = $appt_date === date('Y-m-d');
-                                    if ($a['contact_type'] === 'Lead' && $a['status'] !== 'cancelled' && $a['status'] !== 'arrived' && $is_today): 
                                     ?>
-                                        <a href="checkin.php?id=<?php echo $a['id']; ?>" class="btn btn-sm" style="background: #10b981; color: white; padding: 0.5rem 1rem; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
-                                            <i class="fas fa-sign-in-alt"></i> <?php echo __('appointment.btn.checkin'); ?>
+                                    <?php if ($a['contact_type'] === 'Lead' && $a['status'] !== 'cancelled' && $a['status'] !== 'arrived' && $is_today): ?>
+                                        <form action="checkin.php" method="POST" style="display:inline">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="appointment_id" value="<?php echo $a['id']; ?>">
+                                            <button type="submit" class="btn btn-sm" style="background: #10b981; color: white; padding: 0.5rem 1rem; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); border: none; cursor: pointer;">
+                                                <i class="fas fa-sign-in-alt"></i> <?php echo __('appointment.btn.checkin'); ?>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($a['patient_id']): ?>
+                                        <a href="#" onclick="openInvoicePopup({patient_id: <?php echo $a['patient_id']; ?>, patient_name: '<?php echo addslashes(e($a['contact_name'])); ?>', technician_id: <?php echo (int)$a['doctor_id']; ?>, appointment_id: <?php echo $a['id']; ?>}); return false;" class="btn btn-sm" title="<?php echo __('appointments.btn_bill'); ?>" style="background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; padding: 0.5rem 0.75rem; border-radius: 10px; font-weight: 700; display:flex; align-items:center; gap:0.4rem; white-space:nowrap;">
+                                            <i class="fas fa-file-invoice-dollar"></i> <?php echo __('appointments.btn_bill'); ?>
                                         </a>
                                     <?php endif; ?>
                                     
@@ -507,6 +535,7 @@ function setPeriod(event, p) {
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <div id="action-menu-<?php echo $a['id']; ?>" class="action-menu" style="display: none; position: absolute; right: 0; top: 100%; min-width: 220px; width: max-content; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1100; padding: 0.5rem; border: 1px solid var(--border-color); margin-top: 0.5rem;">
+
                                             <a href="view.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-eye"></i> <?php echo __('common.view_details'); ?></a>
                                             <a href="edit.php?id=<?php echo $a['id']; ?>" class="action-item"><i class="fas fa-edit"></i> <?php echo __('common.edit'); ?></a>
                                             <?php if ($a['patient_id']): ?>
@@ -514,14 +543,19 @@ function setPeriod(event, p) {
                                             <?php endif; ?>
                                             
                                             <?php if ($a['status'] === 'arrived' && !empty($a['lead_id'])): ?>
-                                                <a href="revert_checkin.php?id=<?php echo $a['id']; ?>" class="action-item" style="color: #f59e0b;" onclick="return confirm('<?php echo __('appointment.confirm.revert'); ?>')">
-                                                    <i class="fas fa-undo"></i> <?php echo __('appointment.action.revert_checkin'); ?>
-                                                </a>
+                                                <form action="revert_checkin.php" method="POST" style="display:inline" id="revertAppt<?php echo $a['id']; ?>">
+                                                    <?php echo csrf_field(); ?>
+                                                    <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
+                                                    <button type="button" onclick="confirmAndSubmit(document.getElementById('revertAppt<?php echo $a['id']; ?>'), '<?php echo __('appointment.confirm.revert'); ?>')" class="action-item" style="color: #f59e0b; background: none; border: none; cursor: pointer; width: 100%; text-align: left; padding: 0.6rem 0.75rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; border-radius: 8px;">
+                                                        <i class="fas fa-undo" style="width: 16px; text-align: center; font-size: 0.9rem;"></i> <?php echo __('appointment.action.revert_checkin'); ?>
+                                                    </button>
+                                                </form>
                                             <?php endif; ?>
                                             
-                                            <form action="delete.php" method="POST" style="display:inline" onsubmit="return confirm('<?php echo __('appointment.confirm.delete'); ?>')">
+                                            <form action="delete.php" method="POST" style="display:inline" id="delAppt<?php echo $a['id']; ?>">
+                                                <?php echo csrf_field(); ?>
                                                 <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
-                                                <button type="submit" class="action-item" style="color: #ef4444; background: none; border: none; cursor: pointer; width: 100%; text-align: left; padding: 0.6rem 0.75rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; border-radius: 8px;"><i class="fas fa-trash-alt" style="width: 16px; text-align: center; font-size: 0.9rem;"></i> <?php echo __('appointment.action.delete'); ?></button>
+                                                <button type="button" onclick="confirmAndSubmit(document.getElementById('delAppt<?php echo $a['id']; ?>'), '<?php echo __('appointment.confirm.delete'); ?>')" class="action-item" style="color: #ef4444; background: none; border: none; cursor: pointer; width: 100%; text-align: left; padding: 0.6rem 0.75rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; border-radius: 8px;"><i class="fas fa-trash-alt" style="width: 16px; text-align: center; font-size: 0.9rem;"></i> <?php echo __('appointment.action.delete'); ?></button>
                                             </form>
                                         </div>
                                     </div>
@@ -715,8 +749,14 @@ function updateAppointment(select) {
                 setTimeout(() => location.reload(), 500);
             }
         } else {
-            alert('<?php echo __('appointment.toast.save_error'); ?>');
-            location.reload();
+            // Show error toast with backend message (e.g. "completed" guard)
+            var errMsg = data.message || '<?php echo __('appointment.toast.save_error'); ?>';
+            var toast = document.getElementById('quick-toast');
+            toast.querySelector('i').style.color = '#ef4444';
+            document.getElementById('toast-msg').innerText = errMsg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; toast.querySelector('i').style.color = '#10b981'; }, 3000);
+            setTimeout(() => location.reload(), 1500);
         }
     })
     .catch(error => {
@@ -726,5 +766,6 @@ function updateAppointment(select) {
     });
 }
 </script>
+<?php include '../../includes/invoice_popup.php'; ?>
 
 <?php require_once '../../templates/footer.php'; ?>

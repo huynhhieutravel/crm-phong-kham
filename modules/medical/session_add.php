@@ -1,17 +1,17 @@
 <?php
 // modules/medical/session_add.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_medical');
 
 $db = getDB();
-$patient_id = isset($_GET['patient_id']) ? $_GET['patient_id'] : 0;
-$appointment_id = isset($_GET['appointment_id']) ? $_GET['appointment_id'] : null;
+$patient_id = isset($_GET['patient_id']) ? (int)$_GET['patient_id'] : 0;
+$appointment_id = isset($_GET['appointment_id']) ? (int)$_GET['appointment_id'] : null;
 
 if (!$patient_id) {
-    set_flash('Thiếu thông tin bệnh nhân.', 'error');
+    set_flash(__('medical.session.err_missing_patient'), 'error');
     redirect('../patients/index.php');
 }
 
@@ -53,6 +53,7 @@ try {
     redirect("session_view.php?id=$session_id");
 
 } catch (Exception $e) {
-    set_flash('Lỗi khi tạo buổi khám: ' . $e->getMessage(), 'error');
+    error_log('Session creation error: ' . $e->getMessage());
+    set_flash(__('medical.session.err_create_fail'), 'error');
     redirect("../patients/view.php?id=$patient_id");
 }

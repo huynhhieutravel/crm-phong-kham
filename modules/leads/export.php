@@ -5,8 +5,10 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('view_leads');
 
-error_reporting(0);
+// L3 FIX: Log errors but don't display (we're outputting CSV binary)
+error_reporting(E_ALL);
 ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 
 $db = getDB();
@@ -80,7 +82,7 @@ fputcsv($output, [
     'Trạng thái tư vấn',
     'Trạng thái hệ thống',
     'Ngày tạo'
-], ",", "\r", "");
+]);
 
 // Lead Sources and Groups for translation
 $lead_sources = get_lead_sources();
@@ -97,7 +99,7 @@ foreach ($leads as $l) {
         $l['consultation_status'],
         $l['status'],
         $l['created_at']
-    ], ",", "\r", "");
+    ]);
 }
 
 fclose($output);

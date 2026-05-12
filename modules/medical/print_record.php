@@ -1,6 +1,6 @@
 <?php
 // modules/medical/print_record.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
@@ -8,10 +8,11 @@ require_permission('view_medical');
 
 $db = getDB();
 $type = isset($_GET['type']) ? $_GET['type'] : '';
-$id = isset($_GET['id']) ? $_GET['id'] : 0;
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$id || !in_array($type, ['history', 'treatment'])) {
-    die("Invalid request / Yêu cầu không hợp lệ.");
+    http_response_code(400);
+    die(__('medical.print.err_invalid_request'));
 }
 
 $record = null;
@@ -225,7 +226,7 @@ $age = $patient['birthday'] ? date_diff(date_create($patient['birthday']), date_
                 <p><?php echo __('medical.print.clinic_address'); ?></p>
             </div>
             <div style="text-align: right;">
-                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Hồ sơ: <?php echo str_pad($record['id'], 6, '0', STR_PAD_LEFT); ?></p>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Hồ sơ: <?php echo 'HS' . date('ym', strtotime($record_date ?: 'now')) . '-' . strtoupper(substr(md5('record_' . $record['id']), 0, 5)); ?></p>
                 <p style="margin: 5px 0 0 0; font-weight: 700; color: #3b82f6;">Ngày lập: <?php echo $record_date ? date('d/m/Y', strtotime($record_date)) : date('d/m/Y'); ?></p>
             </div>
         </div>
@@ -277,12 +278,16 @@ $age = $patient['birthday'] ? date_diff(date_create($patient['birthday']), date_
 
         <div class="footer-sig">
             <div class="sig-box">
-                <p><?php echo __('medical.print.sig_customer'); ?></p>
-                <p style="font-weight: 400; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.sig_note_1'); ?></p>
+                <div>
+                    <p><?php echo __('medical.print.sig_customer'); ?></p>
+                    <p style="font-weight: 400; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.sig_note_1'); ?></p>
+                </div>
             </div>
             <div class="sig-box">
-                <p><?php echo $record_type === 'treatment' ? 'KỸ THUẬT VIÊN' : __('medical.print.sig_doctor'); ?></p>
-                <div style="font-size: 20px; color: #cbd5e1; margin: 20px 0;"><?php echo __('medical.print.sig_note_2'); ?></div>
+                <div>
+                    <p><?php echo $record_type === 'treatment' ? 'KỸ THUẬT VIÊN' : __('medical.print.sig_doctor'); ?></p>
+                    <p style="font-weight: 400; font-size: 12px; color: #94a3b8;"><?php echo __('medical.print.sig_note_2'); ?></p>
+                </div>
                 <p><?php echo e($user); ?></p>
             </div>
         </div>

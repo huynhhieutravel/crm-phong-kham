@@ -21,13 +21,37 @@ $range = get_date_range($period, $start_date, $end_date);
 
 $params = [$range['start'] . ' 00:00:00', $range['end'] . ' 23:59:59'];
 
-// 1. Total Patients (All Time)
-$stmt = $db->query("SELECT COUNT(*) FROM patients");
-$total_patients = $stmt->fetchColumn();
+$min_age = isset($_GET['min_age']) && $_GET['min_age'] !== '' ? (int)$_GET['min_age'] : null;
+$max_age = isset($_GET['max_age']) && $_GET['max_age'] !== '' ? (int)$_GET['max_age'] : null;
+
+$age_condition = "";
+$age_params = [];
+if ($min_age !== null) {
+    $age_condition .= " AND TIMESTAMPDIFF(YEAR, birthday, CURDATE()) >= ?";
+    $age_params[] = $min_age;
+}
+if ($max_age !== null) {
+    $age_condition .= " AND TIMESTAMPDIFF(YEAR, birthday, CURDATE()) <= ?";
+    $age_params[] = $max_age;
+}
+
+$params = [$range['start'] . ' 00:00:00', $range['end'] . ' 23:59:59'];
+$base_params = array_merge($params, $age_params);
+
+// 1. Total Patients (All Time but Filtered by Age)
+if (empty($age_condition)) {
+    $stmt = $db->query("SELECT COUNT(*) FROM patients");
+    $total_patients = $stmt->fetchColumn();
+} else {
+    // 1=1 is needed because $age_condition starts with AND
+    $stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE 1=1 " . $age_condition);
+    $stmt->execute($age_params);
+    $total_patients = $stmt->fetchColumn();
+}
 
 // 2. New Patients in Period
-$stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN ? AND ?");
-$stmt->execute($params);
+$stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN ? AND ? " . $age_condition);
+$stmt->execute($base_params);
 $new_patients = $stmt->fetchColumn();
 
 // Compare with previous period (e.g. if month, compare with last month)
@@ -36,8 +60,9 @@ if ($interval_days <= 1) $interval_days = 1;
 $prev_start = date('Y-m-d H:i:s', strtotime($range['start'] . " - $interval_days days"));
 $prev_end = date('Y-m-d H:i:s', strtotime($range['end'] . " - $interval_days days"));
 
-$stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN ? AND ?");
-$stmt->execute([$prev_start, $prev_end]);
+$prev_params = array_merge([$prev_start, $prev_end], $age_params);
+$stmt = $db->prepare("SELECT COUNT(*) FROM patients WHERE created_at BETWEEN ? AND ? " . $age_condition);
+$stmt->execute($prev_params);
 $prev_new_patients = $stmt->fetchColumn();
 
 $growth_percent = 0;
@@ -48,8 +73,8 @@ if ($prev_new_patients > 0) {
 }
 
 // 3. Gender Distribution in Period
-$stmt = $db->prepare("SELECT gender, COUNT(*) as count FROM patients WHERE created_at BETWEEN ? AND ? GROUP BY gender");
-$stmt->execute($params);
+$stmt = $db->prepare("SELECT gender, COUNT(*) as count FROM patients WHERE created_at BETWEEN ? AND ? " . $age_condition . " GROUP BY gender");
+$stmt->execute($base_params);
 $gender_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $gender_map = [
@@ -64,30 +89,42 @@ $stmt = $db->prepare("
     SELECT 
         CASE 
             WHEN birthday IS NULL THEN 'Unknown'
-            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) < 18 THEN '< 18 Tuổi'
-            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 18 AND 35 THEN '18-35 Tuổi'
-            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 36 AND 50 THEN '36-50 Tuổi'
-            ELSE '> 50 Tuổi' 
-        END as age_group, 
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) < 5 THEN '< 5'
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 5 AND 11 THEN '5-11'
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 12 AND 18 THEN '12-18'
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 19 AND 35 THEN '19-35'
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 36 AND 50 THEN '36-50'
+            ELSE '> 50' 
+        END as age_group,
+        CASE 
+            WHEN birthday IS NULL THEN 99
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) < 5 THEN 1
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 5 AND 11 THEN 2
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 12 AND 18 THEN 3
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 19 AND 35 THEN 4
+            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 36 AND 50 THEN 5
+            ELSE 6 
+        END as age_sort,
         COUNT(*) as count
     FROM patients
-    WHERE created_at BETWEEN ? AND ?
-    GROUP BY age_group
-    ORDER BY age_group
+    WHERE created_at BETWEEN ? AND ? " . $age_condition . "
+    GROUP BY age_group, age_sort
+    ORDER BY age_sort
 ");
-$stmt->execute($params);
+$stmt->execute($base_params);
 $age_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 5. Source Distribution in Period
+$source_other_label = __('patients.dashboard.source_other');
 $stmt = $db->prepare("
-    SELECT IFNULL(NULLIF(source, ''), 'Khác/Tự đến') as source, COUNT(*) as count 
+    SELECT COALESCE(NULLIF(source, ''), ?) as source, COUNT(*) as count 
     FROM patients 
-    WHERE created_at BETWEEN ? AND ?
+    WHERE created_at BETWEEN ? AND ? " . $age_condition . "
     GROUP BY source
     ORDER BY count DESC
     LIMIT 6
 ");
-$stmt->execute($params);
+$stmt->execute(array_merge([$source_other_label], $base_params));
 $source_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 6. Trend Data (Daily if <= 40 days, otherwise Monthly)
@@ -97,7 +134,7 @@ if ($is_monthly_trend) {
     $stmt = $db->prepare("
         SELECT DATE_FORMAT(created_at, '%Y-%m') as date, COUNT(*) as count
         FROM patients 
-        WHERE created_at BETWEEN ? AND ?
+        WHERE created_at BETWEEN ? AND ? " . $age_condition . "
         GROUP BY DATE_FORMAT(created_at, '%Y-%m')
         ORDER BY date ASC
     ");
@@ -105,21 +142,32 @@ if ($is_monthly_trend) {
     $stmt = $db->prepare("
         SELECT DATE(created_at) as date, COUNT(*) as count
         FROM patients 
-        WHERE created_at BETWEEN ? AND ?
+        WHERE created_at BETWEEN ? AND ? " . $age_condition . "
         GROUP BY DATE(created_at)
         ORDER BY date ASC
     ");
 }
-$stmt->execute($params);
+$stmt->execute($base_params);
 $trend_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 7. Re-exam (Retention) stat
-$stmt = $db->prepare("SELECT COUNT(*) FROM appointments WHERE type = 're_exam' AND appointment_date BETWEEN ? AND ?");
-$stmt->execute($params);
+$apts_age_condition = str_replace("birthday", "p.birthday", $age_condition);
+$stmt = $db->prepare("
+    SELECT COUNT(*) 
+    FROM appointments a
+    LEFT JOIN patients p ON a.patient_id = p.id
+    WHERE a.type = 're_exam' AND a.appointment_date BETWEEN ? AND ? " . $apts_age_condition . "
+");
+$stmt->execute($base_params);
 $reexam_apts = $stmt->fetchColumn();
 
-$stmt = $db->prepare("SELECT COUNT(*) FROM appointments WHERE appointment_date BETWEEN ? AND ?");
-$stmt->execute($params);
+$stmt = $db->prepare("
+    SELECT COUNT(*) 
+    FROM appointments a
+    LEFT JOIN patients p ON a.patient_id = p.id
+    WHERE a.appointment_date BETWEEN ? AND ? " . $apts_age_condition . "
+");
+$stmt->execute($base_params);
 $period_apts = $stmt->fetchColumn();
 
 $reexam_rate = $period_apts > 0 ? round(($reexam_apts / $period_apts) * 100, 1) : 0;
@@ -202,7 +250,7 @@ $reexam_rate = $period_apts > 0 ? round(($reexam_apts / $period_apts) * 100, 1) 
                         <?php if($period === 'month'): ?>
                             <select name="sel_month" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none; width: auto;" onchange="this.form.submit()">
                                 <?php for($m=1; $m<=12; $m++): ?>
-                                    <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>>Tháng <?php echo $m; ?></option>
+                                    <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>><?php echo __('common.month'); ?> <?php echo $m; ?></option>
                                 <?php endfor; ?>
                             </select>
                         <?php endif; ?>
@@ -210,12 +258,24 @@ $reexam_rate = $period_apts > 0 ? round(($reexam_apts / $period_apts) * 100, 1) 
                         <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
                             <select name="sel_year" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none; width: auto;" onchange="this.form.submit()">
                                 <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
-                                    <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>>Năm <?php echo $y; ?></option>
+                                    <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>><?php echo __('common.year'); ?> <?php echo $y; ?></option>
                                 <?php endfor; ?>
                             </select>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
+
+                <!-- Age Filters -->
+                <div style="display: flex; align-items: center; gap: 0.5rem; border-left: 1px solid #e2e8f0; padding-left: 1rem; margin-left: 0.5rem;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #64748b;">ĐỘ TUỔI:</span>
+                    <input type="number" name="min_age" placeholder="Từ" value="<?php echo isset($_GET['min_age']) ? e($_GET['min_age']) : ''; ?>" style="width: 60px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; padding: 0.4rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()" min="0" max="120">
+                    <span style="font-size: 0.8rem; color: #94a3b8;">-</span>
+                    <input type="number" name="max_age" placeholder="Đến" value="<?php echo isset($_GET['max_age']) ? e($_GET['max_age']) : ''; ?>" style="width: 60px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; padding: 0.4rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()" min="0" max="120">
+                    
+                    <?php if ((isset($_GET['min_age']) && $_GET['min_age'] !== '') || (isset($_GET['max_age']) && $_GET['max_age'] !== '')): ?>
+                        <a href="#" onclick="document.querySelector('input[name=min_age]').value=''; document.querySelector('input[name=max_age]').value=''; document.querySelector('.filter-bar-pat').submit(); return false;" style="color: #ef4444; font-size: 0.85rem; margin-left: 0.25rem; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #fee2e2; text-decoration: none;" title="Xóa bộ lọc độ tuổi"><i class="fas fa-times"></i></a>
+                    <?php endif; ?>
+                </div>
             </div>
             
             <div id="customDates" style="display: <?php echo $period == 'custom' ? 'flex' : 'none'; ?>; align-items: center; gap: 0.8rem;">
@@ -346,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: [<?php foreach($trend_data as $t) echo "'" . ($is_monthly_trend ? str_replace('-', '/', $t['date']) : date('d/m', strtotime($t['date']))) . "',"; ?>],
             datasets: [{
-                label: 'Khách đăng ký mới',
+                label: '<?php echo __('patients.dashboard.chart_new_patients_label'); ?>',
                 data: [<?php foreach($trend_data as $t) echo $t['count'] . ","; ?>],
                 borderColor: '#10b981', borderWidth: 4, backgroundColor: gradient, fill: true, tension: 0.4,
                 pointRadius: 4, pointHoverRadius: 8, pointHoverBackgroundColor: '#10b981', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 3
@@ -369,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: [<?php foreach($age_data as $a) echo "'" . $a['age_group'] . "',"; ?>],
             datasets: [{
-                label: 'Số lượng',
+                label: '<?php echo __('patients.dashboard.chart_count_label'); ?>',
                 data: [<?php foreach($age_data as $a) echo $a['count'] . ","; ?>],
                 backgroundColor: '#cbd5e1', hoverBackgroundColor: '#f59e0b', borderRadius: 8, barThickness: 'flex', maxBarThickness: 40
             }]
@@ -390,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: [<?php foreach($source_data as $s) echo "'" . e($s['source']) . "',"; ?>],
             datasets: [{
-                label: 'Lượt khách',
+                label: '<?php echo __('patients.dashboard.chart_visitors_label'); ?>',
                 data: [<?php foreach($source_data as $s) echo $s['count'] . ","; ?>],
                 backgroundColor: '#8b5cf6', borderRadius: 6
             }]

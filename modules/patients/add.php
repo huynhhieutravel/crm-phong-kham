@@ -1,17 +1,7 @@
 <?php
 // modules/patients/add.php
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    die("ERROR: [$errno] $errstr in $errfile on line $errline");
-});
-register_shutdown_function(function() {
-    $error = error_get_last();
-    if ($error !== NULL) {
-        die("FATAL ERROR: " . print_r($error, true));
-    }
-});
+
 
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -31,6 +21,8 @@ $consultants_stmt = $db->query("
 $consultants = $consultants_stmt->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // H1 FIX: Verify CSRF
+    verify_csrf('add.php');
     $optionals = [
         'customer_id' => $_POST['customer_id'] ?: null,
         'full_name' => $_POST['full_name'] ?: '',
@@ -95,6 +87,7 @@ require_once '../../templates/header.php';
     </div>
 
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <!-- Section 1: General Info -->
         <div class="card" style="margin-bottom: 1.5rem; padding: 2rem;">
             <h3 style="font-size: 1rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem;">
@@ -113,7 +106,7 @@ require_once '../../templates/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.customer_id_opt'); ?></label>
-                    <input type="text" name="customer_id" class="form-input" placeholder="Để trống hệ thống sẽ tự sinh mã (VD: 2603-0001)">
+                    <input type="text" name="customer_id" class="form-input" placeholder="<?php echo __('patient.placeholder.customer_id_auto'); ?>">
                 </div>
                 
                 <div class="form-group">
@@ -132,14 +125,14 @@ require_once '../../templates/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.dob'); ?></label>
-                    <input type="date" name="birthday" class="form-input">
+                    <input type="date" name="birthday" min="1900-01-01" max="<?php echo date('Y-m-d'); ?>" class="form-input">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.branch'); ?></label>
                     <select name="branch" class="form-input">
                         <option value="Trụ sở chính"><?php echo __('common.main_branch'); ?></option>
-                        <option value="Chi nhánh 1">Chi nhánh 1</option>
+                        <option value="Chi nhánh 1"><?php echo __('common.branch_1'); ?></option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -248,11 +241,11 @@ require_once '../../templates/header.php';
             </h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="form-group">
-                    <label class="form-label" style="color: #6366f1; font-weight: 800;"><?php echo __('medical.record.medical'); ?> (Doctor)</label>
+                    <label class="form-label" style="color: #6366f1; font-weight: 800;"><?php echo __('medical.record.medical'); ?> <?php echo __('patient.info.notes_doctor'); ?></label>
                     <textarea name="notes" class="form-input" rows="4" placeholder="<?php echo __('patient.placeholder.notes'); ?>"></textarea>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" style="color: #db2777; font-weight: 800;"><?php echo __('patient.info.personal_notes'); ?> (Consultant)</label>
+                    <label class="form-label" style="color: #db2777; font-weight: 800;"><?php echo __('patient.info.personal_notes'); ?> <?php echo __('patient.info.notes_consultant'); ?></label>
                     <textarea name="personal_notes" class="form-input" rows="4" placeholder="<?php echo __('patient.placeholder.personal_notes'); ?>" style="border-color: #fce7f3;"></textarea>
                     <small style="color: var(--text-muted); font-style: italic;"><?php echo __('patient.info.personal_notes_desc'); ?></small>
                 </div>

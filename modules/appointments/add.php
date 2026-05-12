@@ -5,13 +5,11 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_appointments');
 
-try {
-    $db = getDB();
-} catch (Exception $e) {
-    die("Database Connection Error: " . $e->getMessage());
-}
+$db = getDB();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // H2 FIX: Verify CSRF
+    verify_csrf('add.php');
     $contact_val = $_POST['contact_id'] ?? '';
     list($type, $cid) = explode(':', $contact_val);
     
@@ -33,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'branch_id' => $_SESSION['branch_id'] ?? 1,
         'appointment_end_time' => $_POST['appointment_end_time'] ?: null,
         'type' => $_POST['type'] ?? 'consultation',
-        'reexam_rule_id' => $_GET['reexam_rule_id'] ?: null
+        'reexam_rule_id' => isset($_GET['reexam_rule_id']) ? (int)$_GET['reexam_rule_id'] : null
     ];
 
     // Detect available columns
@@ -48,6 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $placeholders = implode(", ", array_fill(0, count($data), "?"));
     
     try {
+        // Check if doctor is on approved leave
+        if ($doctor_id) {
+            $check_leave = $db->prepare("SELECT COUNT(*) FROM leave_requests WHERE user_id = ? AND status = 'approved' AND ? >= DATE(start_date) AND ? <= DATE(end_date)");
+            $check_leave->execute([$doctor_id, $_POST['appointment_date'], $_POST['appointment_date']]);
+            if ($check_leave->fetchColumn() > 0) {
+                set_flash('Nhân sự đang có lịch nghỉ được duyệt vào ngày này. Không thể đặt lịch.', 'error');
+                redirect('add.php');
+                exit;
+            }
+        }
+
         $stmt = $db->prepare("INSERT INTO appointments ($cols) VALUES ($placeholders)");
         $stmt->execute(array_values($data));
         
@@ -72,9 +81,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         set_flash(__('appointment.msg.add_success'));
-        redirect('index.php');
+        $redirect_url = $_SESSION['appointment_list_url'] ?? 'index.php';
+        redirect($redirect_url);
     } catch (Exception $e) {
-        die("Fatal Error during save: " . $e->getMessage());
+        // L4 FIX: Don't leak error details
+        error_log("Appointment save failed: " . $e->getMessage());
+        set_flash('Lỗi khi lưu lịch hẹn.', 'error');
+        redirect('add.php');
     }
 }
 
@@ -113,8 +126,8 @@ try {
 }
 
 
-$prefill_lead_id = $_GET['lead_id'] ?? null;
-$prefill_patient_id = $_GET['patient_id'] ?? null;
+$prefill_lead_id = isset($_GET['lead_id']) ? (int)$_GET['lead_id'] : null;
+$prefill_patient_id = isset($_GET['patient_id']) ? (int)$_GET['patient_id'] : null;
 
 // Add Select2 CSS
 ?>
@@ -204,9 +217,10 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
     </div>
 
     <form method="POST" id="appointmentForm" style="padding: 2.5rem;">
+        <?php echo csrf_field(); ?>
         <div class="form-group" style="margin-bottom: 2rem;">
             <label class="form-label" style="font-weight: 800; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.75rem;"><?php echo __('appointment.add.type_label'); ?> <span style="color: #ef4444;">*</span></label>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;">
                 <label class="type-btn">
                     <input type="radio" name="type" value="consultation" checked required>
                     <div class="type-content">
@@ -215,24 +229,31 @@ $prefill_patient_id = $_GET['patient_id'] ?? null;
                     </div>
                 </label>
                 <label class="type-btn">
-                    <input type="radio" name="type" value="treatment">
+                    <input type="radio" name="type" value="dong_y_60">
                     <div class="type-content">
-                        <i class="fas fa-hand-holding-medical"></i>
-                        <span><?php echo __('appointment.type.treatment'); ?></span>
+                        <i class="fas fa-leaf"></i>
+                        <span><?php echo __('appointment.type.dong_y_60'); ?></span>
                     </div>
                 </label>
                 <label class="type-btn">
-                    <input type="radio" name="type" value="re_exam">
+                    <input type="radio" name="type" value="dong_y_90">
                     <div class="type-content">
-                        <i class="fas fa-redo"></i>
-                        <span><?php echo __('appointment.type.re_exam'); ?></span>
+                        <i class="fas fa-seedling"></i>
+                        <span><?php echo __('appointment.type.dong_y_90'); ?></span>
                     </div>
                 </label>
                 <label class="type-btn">
-                    <input type="radio" name="type" value="adjustment">
+                    <input type="radio" name="type" value="chiro">
                     <div class="type-content">
-                        <i class="fas fa-tools"></i>
-                        <span><?php echo __('appointment.type.adjustment'); ?></span>
+                        <i class="fas fa-bone"></i>
+                        <span><?php echo __('appointment.type.chiro'); ?></span>
+                    </div>
+                </label>
+                <label class="type-btn">
+                    <input type="radio" name="type" value="support_other">
+                    <div class="type-content">
+                        <i class="fas fa-hands-helping"></i>
+                        <span><?php echo __('appointment.type.support_other'); ?></span>
                     </div>
                 </label>
             </div>
@@ -602,8 +623,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 afternoonLoad.style.color = data.afternoon_count > 8 ? '#dc2626' : (data.afternoon_count > 5 ? '#d97706' : '#64748b');
 
                 // Check doctor busy
-                if (data.doctor_busy) {
+                if (data.doctor_on_leave) {
                     doctorConflict.style.display = 'block';
+                    doctorConflict.innerHTML = '<i class="fas fa-exclamation-circle" style="margin-right: 0.25rem;"></i> Nhân sự đang nghỉ phép vào ngày này!';
+                } else if (data.doctor_busy) {
+                    doctorConflict.style.display = 'block';
+                    doctorConflict.innerHTML = '<i class="fas fa-exclamation-circle" style="margin-right: 0.25rem;"></i> <?php echo __('appointment.add.conflict_warning'); ?>';
                 } else {
                     doctorConflict.style.display = 'none';
                 }

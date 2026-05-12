@@ -17,12 +17,15 @@ $GLOBALS['_role_permissions'] = [
         'manage_medical', 'view_medical',
         'manage_leads', 'view_leads',
         'manage_sales', 'view_sales',
+        'manage_billing', 'view_billing',
         'manage_inventory', 'view_inventory',
         'manage_hr', 'view_hr',
         'view_reports', 'export_reports',
         'manage_users', 'manage_roles',
         'view_audit_logs',
         'manage_settings',
+        'view_finances', 'manage_checkout',
+        'view_cskh', 'manage_cskh',
     ],
     'manager' => [
         'manage_patients', 'view_patients',
@@ -30,11 +33,13 @@ $GLOBALS['_role_permissions'] = [
         'manage_medical', 'view_medical',
         'manage_leads', 'view_leads',
         'manage_sales', 'view_sales',
+        'manage_billing', 'view_billing',
         'manage_inventory', 'view_inventory',
         'manage_hr', 'view_hr',
         'view_reports', 'export_reports',
         'manage_users', 'manage_roles',
         'view_audit_logs',
+        'view_finances', 'manage_checkout',
     ],
     'doctor' => [
         'view_patients', 'manage_patients',
@@ -48,6 +53,8 @@ $GLOBALS['_role_permissions'] = [
         'view_medical',
         'manage_leads', 'view_leads',
         'manage_sales', 'view_sales',
+        'manage_billing', 'view_billing',
+        'manage_checkout',
     ],
     'technician' => [
         'view_patients',
@@ -58,13 +65,16 @@ $GLOBALS['_role_permissions'] = [
         'view_patients',
         'view_appointments',
         'manage_sales', 'view_sales',
+        'view_billing', 'manage_billing',
         'view_reports', 'export_reports',
+        'view_finances', 'manage_checkout',
     ],
     'cskh' => [
         'view_patients', 'manage_patients',
         'manage_appointments', 'view_appointments',
         'manage_leads', 'view_leads',
         'view_medical',
+        'view_cskh', 'manage_cskh',
     ],
 ];
 
@@ -154,5 +164,11 @@ function get_all_permissions() {
         'manage_roles'          => 'Quản lý Vai trò',
         'view_audit_logs'       => 'Xem Nhật ký hệ thống',
         'manage_settings'       => 'Quản lý Cài đặt',
+        'view_finances'         => 'Xem Tài chính Bệnh nhân',
+        'manage_checkout'       => 'Thanh toán sau điều trị',
+        'view_billing'          => 'Xem Phiếu Tính Tiền',
+        'manage_billing'        => 'Quản lý Phiếu Tính Tiền',
+        'view_cskh'             => 'Xem CSKH',
+        'manage_cskh'           => 'Quản lý CSKH',
     ];
 }

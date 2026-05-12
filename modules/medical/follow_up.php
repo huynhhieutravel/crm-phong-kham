@@ -1,14 +1,14 @@
 <?php
 // modules/medical/follow_up.php
-session_start();
+
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('manage_medical');
 
-$patient_id = isset($_GET['patient_id']) ? $_GET['patient_id'] : 0;
-$session_id = isset($_GET['session_id']) ? $_GET['session_id'] : null;
-$record_id = isset($_GET['id']) ? $_GET['id'] : null;
+$patient_id = (int)($_GET['patient_id'] ?? 0);
+$session_id = isset($_GET['session_id']) ? (int)$_GET['session_id'] : null;
+$record_id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $db = getDB();
 
 // Load existing data if editing
@@ -22,6 +22,7 @@ if ($record_id) {
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $soap_data = json_encode(isset($_POST['soap']) ? $_POST['soap'] : [], JSON_UNESCAPED_UNICODE);
     
     if ($record_id) {
@@ -33,11 +34,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES (?, ?, 'soap_note', ?, ?)
         ");
         $stmt->execute([$patient_id, $session_id, $soap_data, $_SESSION['user_id']]);
+        $new_id = $db->lastInsertId();
     }
     
     set_flash(__('medical.followup.msg_success'));
     
-    if ($session_id) {
+    if (!empty($_POST['lang_switch_autosave'])) {
+        $redir_url = $_SERVER['REQUEST_URI'];
+        if (!$record_id && isset($new_id)) {
+            $redir_url .= (strpos($redir_url, '?') !== false ? '&' : '?') . 'id=' . $new_id;
+        }
+        redirect($redir_url);
+    } elseif ($session_id) {
         redirect("session_view.php?id=$session_id");
     } else {
         redirect("../patients/view.php?id=$patient_id");
@@ -85,6 +93,7 @@ $joint_nodes = [
     </div>
 
     <form method="POST">
+        <?php echo csrf_field(); ?>
         <!-- 1. SUBJECTIVE (S) -->
         <div style="margin-bottom: 3rem;">
             <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">

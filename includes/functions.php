@@ -18,7 +18,7 @@ function e($string) {
  * Format currency
  */
 function format_money($amount) {
-    return number_format($amount, 0, ',', '.') . '₫';
+    return number_format((float)($amount ?? 0), 0, ',', '.') . '₫';
 }
 
 /**
@@ -33,7 +33,7 @@ function redirect($url) {
  * Set flash message
  */
 function set_flash($message, $type = 'success') {
-    if (session_status() === PHP_SESSION_NONE) session_start();
+
     $_SESSION['flash_message'] = $message;
     $_SESSION['flash_type'] = $type;
 }
@@ -62,6 +62,14 @@ function get_date_range($period = 'month', $start = null, $end = null) {
             $start_date = $sel_date . ' 00:00:00';
             $end_date = $sel_date . ' 23:59:59';
             $label = ($sel_date === $now->format('Y-m-d')) ? __('common.today') : __('common.day_prefix') . date('d/m/Y', strtotime($sel_date));
+            break;
+        case 'tomorrow':
+            $tomorrow = clone $now;
+            $tomorrow->modify('+1 day');
+            $tomorrow_date = $tomorrow->format('Y-m-d');
+            $start_date = $tomorrow_date . ' 00:00:00';
+            $end_date = $tomorrow_date . ' 23:59:59';
+            $label = __('common.tomorrow');
             break;
         case 'week':
             $week_date = new DateTime();
@@ -93,6 +101,9 @@ function get_date_range($period = 'month', $start = null, $end = null) {
             $label = __('common.year_prefix') . $sel_year . __('common.year_suffix');
             break;
         case 'custom':
+            // H3 FIX: Validate date format to prevent malformed queries
+            if ($start && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) $start = null;
+            if ($end && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) $end = null;
             $start_date = $start ? $start . ' 00:00:00' : $now->format('Y-m-01 00:00:00');
             $end_date = $end ? $end . ' 23:59:59' : $now->format('Y-m-d 23:59:59');
             $label = __('common.from') . ' ' . date('d/m/Y', strtotime($start_date)) . ' ' . __('common.to') . ' ' . date('d/m/Y', strtotime($end_date));
@@ -324,8 +335,7 @@ function get_patient_label_translation($label) {
  * Synchronize and get sticky appointment date
  */
 function get_sticky_appointment_date() {
-    if (session_status() === PHP_SESSION_NONE) session_start();
-    
+
     if (isset($_GET['date']) && !empty($_GET['date'])) {
         // Use provided date and save to session
         $_SESSION['last_appointment_date'] = $_GET['date'];

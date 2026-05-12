@@ -5,8 +5,10 @@ require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 require_permission('view_patients');
 
-error_reporting(0);
+// M2 FIX: Log errors but don't display
+error_reporting(E_ALL);
 ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 
 $db = getDB();
@@ -23,10 +25,12 @@ $params = [];
 $conditions = [];
 
 if ($search) {
+    // H3 FIX: Escape LIKE wildcards
+    $safe_search = addcslashes($search, '%_');
     $conditions[] = "(p.full_name LIKE ? OR p.phone LIKE ? OR p.customer_id LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
 }
 if ($label_filter) {
     $conditions[] = "p.label = ?";
@@ -59,29 +63,29 @@ $output = fopen('php://output', 'w');
 fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
 fputcsv($output, [
-    'Mã BN',
-    'Họ và Tên',
-    'Số điện thoại',
-    'Giới tính',
-    'Ngày sinh',
-    'Địa chỉ',
-    'Nhãn',
-    'Ghi chú',
-    'Ngày tạo'
-], ",", "\r", "");
+    __('patient.export.customer_id'),
+    __('patient.export.full_name'),
+    __('patient.export.phone'),
+    __('patient.export.gender'),
+    __('patient.export.birthday'),
+    __('patient.export.address'),
+    __('patient.export.label'),
+    __('patient.export.notes'),
+    __('patient.export.created_at')
+]);
 
 foreach ($patients as $p) {
     fputcsv($output, [
         $p['customer_id'],
         $p['full_name'],
         $p['phone'],
-        $p['gender'] === 'male' ? 'Nam' : ($p['gender'] === 'female' ? 'Nữ' : 'Khác'),
+        $p['gender'] === 'male' ? __('patient.gender.male') : ($p['gender'] === 'female' ? __('patient.gender.female') : __('common.other')),
         $p['birthday'],
         $p['address'],
         $p['label'],
         $p['notes'],
         $p['created_at']
-    ], ",", "\r", "");
+    ]);
 }
 
 fclose($output);

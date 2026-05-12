@@ -23,19 +23,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $stmt->fetch();
     
     if (!$user || !password_verify($current_password, $user['password'])) {
-        $error = 'Mật khẩu hiện tại không đúng.';
+        $error = __('password.current_incorrect');
     } elseif (strlen($new_password) < 6) {
-        $error = 'Mật khẩu mới phải có ít nhất 6 ký tự.';
+        $error = __('password.min_length');
     } elseif ($new_password !== $confirm_password) {
-        $error = 'Xác nhận mật khẩu không khớp.';
+        $error = __('password.confirm_mismatch');
     } else {
         $hashed = password_hash($new_password, PASSWORD_DEFAULT);
         $db->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$hashed, $user_id]);
-        $success = 'Đổi mật khẩu thành công!';
+        $success = __('password.change_success');
     }
 }
 
-$page_title = 'Đổi mật khẩu';
+$page_title = __('password.page_title');
 $current_page = 'change_password';
 require_once '../../templates/header.php';
 ?>
@@ -45,7 +45,7 @@ require_once '../../templates/header.php';
         <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
             <i class="fas fa-key" style="color: white; font-size: 1.5rem;"></i>
         </div>
-        <h2 style="margin: 0; font-weight: 800; color: var(--text-main);">ĐỔI MẬT KHẨU</h2>
+        <h2 style="margin: 0; font-weight: 800; color: var(--text-main); text-transform: uppercase;"><?php echo __('password.page_title'); ?></h2>
         <p style="color: var(--text-muted); margin-top: 0.5rem; font-size: 0.9rem;">
             <i class="fas fa-user-circle"></i> <?php echo e($_SESSION['full_name'] ?? $_SESSION['username']); ?>
         </p>
@@ -68,9 +68,9 @@ require_once '../../templates/header.php';
         
         <div class="form-group" style="margin-bottom: 1.25rem;">
             <label class="form-label" style="font-weight: 600; color: var(--text-main);">
-                <i class="fas fa-lock" style="color: var(--text-muted); width: 18px;"></i> Mật khẩu hiện tại <span style="color: red;">*</span>
+                <i class="fas fa-lock" style="color: var(--text-muted); width: 18px;"></i> <?php echo __('password.current'); ?> <span style="color: red;">*</span>
             </label>
-            <input type="password" name="current_password" class="form-input" placeholder="Nhập mật khẩu hiện tại" required 
+            <input type="password" name="current_password" class="form-input" placeholder="<?php echo __('password.current_placeholder'); ?>" required 
                    style="padding: 0.85rem 1rem; border-radius: 10px;">
         </div>
 
@@ -78,22 +78,22 @@ require_once '../../templates/header.php';
 
         <div class="form-group" style="margin-bottom: 1.25rem;">
             <label class="form-label" style="font-weight: 600; color: var(--text-main);">
-                <i class="fas fa-key" style="color: var(--text-muted); width: 18px;"></i> Mật khẩu mới <span style="color: red;">*</span>
+                <i class="fas fa-key" style="color: var(--text-muted); width: 18px;"></i> <?php echo __('password.new'); ?> <span style="color: red;">*</span>
             </label>
-            <input type="password" name="new_password" class="form-input" placeholder="Tối thiểu 6 ký tự" required minlength="6"
+            <input type="password" name="new_password" class="form-input" placeholder="<?php echo __('password.new_placeholder'); ?>" required minlength="6"
                    style="padding: 0.85rem 1rem; border-radius: 10px;">
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
             <label class="form-label" style="font-weight: 600; color: var(--text-main);">
-                <i class="fas fa-check-double" style="color: var(--text-muted); width: 18px;"></i> Xác nhận mật khẩu mới <span style="color: red;">*</span>
+                <i class="fas fa-check-double" style="color: var(--text-muted); width: 18px;"></i> <?php echo __('password.confirm'); ?> <span style="color: red;">*</span>
             </label>
-            <input type="password" name="confirm_password" class="form-input" placeholder="Nhập lại mật khẩu mới" required minlength="6"
+            <input type="password" name="confirm_password" class="form-input" placeholder="<?php echo __('password.confirm_placeholder'); ?>" required minlength="6"
                    style="padding: 0.85rem 1rem; border-radius: 10px;">
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-weight: 700; justify-content: center; border-radius: 12px; font-size: 1rem;">
-            <i class="fas fa-save"></i> ĐỔI MẬT KHẨU
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-weight: 700; justify-content: center; border-radius: 12px; font-size: 1rem; text-transform: uppercase;">
+            <i class="fas fa-save"></i> <?php echo __('password.change_btn'); ?>
         </button>
     </form>
 </div>
