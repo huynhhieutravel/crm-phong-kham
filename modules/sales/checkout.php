@@ -183,6 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'transfer' => 'Chuyển khoản (Cũ)', 
                 'transfer_personal' => 'CK Cá nhân', 
                 'transfer_company' => 'TK Công ty', 
+                'card' => 'Quẹt thẻ',
                 'package' => 'Gói dịch vụ'
             ];
             $db->prepare("
@@ -335,6 +336,12 @@ unset($pkg);
                     <div class="method-icon">🏢</div>
                     <div class="method-name">TK Công ty</div>
                     <div class="method-desc">Công ty TNHH</div>
+                </label>
+                <label class="method-card" onclick="selectMethod('card')">
+                    <input type="radio" name="method" value="card">
+                    <div class="method-icon">💳</div>
+                    <div class="method-name">Quẹt thẻ</div>
+                    <div class="method-desc">Thẻ qua máy POS</div>
                 </label>
                 <label class="method-card" onclick="selectMethod('package')">
                     <input type="radio" name="method" value="package">

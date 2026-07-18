@@ -12,3 +12,8 @@ brain/
 *.db
 uploads/*
 !uploads/.gitkeep
+meta_config.env
+*.tar.gz
+*.sql
+sessions/
+scratch/

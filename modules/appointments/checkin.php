@@ -18,6 +18,8 @@ verify_csrf('index.php');
 
 // C2 FIX: Đọc từ POST thay vì GET
 $id = (int)($_POST['appointment_id'] ?? 0);
+$force_merge = (int)($_POST['force_merge'] ?? 0);
+$force_new = (int)($_POST['force_new'] ?? 0);
 $db = getDB();
 
 if (!$id) {
@@ -43,12 +45,73 @@ try {
         throw new Exception(__('appointment.msg.checkin_invalid'));
     }
 
-    // 2. Smart Check: Find existing patient by lead_id or phone
-    $stmt = $db->prepare("SELECT id FROM patients WHERE lead_id = ? OR (phone = ? AND phone != '') LIMIT 1");
-    $stmt->execute([$appt['lead_id'], $appt['phone']]);
-    $existing_patient = $stmt->fetch();
+    $existing_patient = null;
 
-    if ($existing_patient) {
+    if (!$force_merge && !$force_new) {
+        // First check exact lead match
+        $stmt = $db->prepare("SELECT id, full_name, phone FROM patients WHERE lead_id = ? AND lead_id IS NOT NULL AND lead_id != 0 LIMIT 1");
+        $stmt->execute([$appt['lead_id']]);
+        $existing_patient_by_lead = $stmt->fetch();
+
+        if ($existing_patient_by_lead) {
+            $force_merge = 1;
+            $existing_patient = $existing_patient_by_lead;
+        } else {
+            // Smart Check: Find existing patient by phone
+            if (!empty($appt['phone'])) {
+                $stmt = $db->prepare("SELECT id, full_name, phone FROM patients WHERE phone = ? AND phone != '' LIMIT 1");
+                $stmt->execute([$appt['phone']]);
+                $existing_patient = $stmt->fetch();
+
+                if ($existing_patient) {
+                    // Render confirmation UI
+                    $db->rollBack();
+                    $page_title = "Xác nhận gộp hồ sơ";
+                    require_once '../../templates/header.php';
+                    ?>
+                    <div class="card shadow-sm" style="max-width: 600px; margin: 3rem auto; padding: 2rem; border-radius: 16px;">
+                        <h3 style="color: #ef4444; margin-bottom: 1rem;"><i class="fas fa-exclamation-triangle"></i> Phát hiện trùng số điện thoại</h3>
+                        <p>Khách hàng <strong><?php echo e($appt['full_name']); ?></strong> có số điện thoại <strong><?php echo e($appt['phone']); ?></strong> đã tồn tại trong hệ thống dưới tên bệnh nhân <strong><?php echo e($existing_patient['full_name']); ?></strong>.</p>
+                        <p>Bạn muốn tạo một hồ sơ bệnh nhân mới hoàn toàn, hay gộp thông tin vào hồ sơ đã có?</p>
+                        
+                        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                            <form method="POST" action="checkin.php" style="flex: 1;">
+                                <?php echo csrf_field(); ?>
+                                <input type="hidden" name="appointment_id" value="<?php echo $id; ?>">
+                                <input type="hidden" name="force_new" value="1">
+                                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; font-weight: 700; border-radius: 10px;">
+                                    <i class="fas fa-user-plus"></i> Tạo hồ sơ mới
+                                </button>
+                            </form>
+                            <form method="POST" action="checkin.php" style="flex: 1;">
+                                <?php echo csrf_field(); ?>
+                                <input type="hidden" name="appointment_id" value="<?php echo $id; ?>">
+                                <input type="hidden" name="force_merge" value="1">
+                                <button type="submit" class="btn" style="width: 100%; padding: 0.8rem; background: #f59e0b; color: white; font-weight: 700; border-radius: 10px;">
+                                    <i class="fas fa-link"></i> Gộp hồ sơ
+                                </button>
+                            </form>
+                        </div>
+                        <div style="margin-top: 1rem; text-align: center;">
+                            <?php $back_url = $_SESSION['appointment_list_url'] ?? 'index.php'; ?>
+                            <a href="<?php echo htmlspecialchars($back_url); ?>" class="btn btn-light" style="border-radius: 10px;">Hủy thao tác</a>
+                        </div>
+                    </div>
+                    <?php
+                    require_once '../../templates/footer.php';
+                    exit;
+                }
+            }
+        }
+    } else {
+        if ($force_merge) {
+            $stmt = $db->prepare("SELECT id, full_name, phone FROM patients WHERE phone = ? AND phone != '' LIMIT 1");
+            $stmt->execute([$appt['phone']]);
+            $existing_patient = $stmt->fetch();
+        }
+    }
+
+    if ($existing_patient && !$force_new) {
         $patient_id = $existing_patient['id'];
         // C3 FIX: Chỉ cập nhật các trường rỗng/NULL, không ghi đè dữ liệu đã có
         $stmt = $db->prepare("

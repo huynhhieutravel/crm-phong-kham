@@ -318,6 +318,10 @@ if ($expected_remaining > 0 && $package['status'] === 'exhausted') {
 }
 ?>
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <style>
 .pkg-hero {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -479,7 +483,7 @@ if ($expected_remaining > 0 && $package['status'] === 'exhausted') {
         <form method="POST" style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="action" value="add_user">
-            <select name="patient_id" class="form-input" required style="flex: 1; min-width: 250px;">
+            <select name="patient_id" id="sharedPatientSelect" class="form-input" required style="flex: 1; min-width: 250px;">
                 <option value="">-- Chọn bệnh nhân --</option>
                 <?php foreach ($patients as $p): ?>
                     <?php if ($p['id'] != $package['patient_id']): // Exclude owner ?>
@@ -491,6 +495,15 @@ if ($expected_remaining > 0 && $package['status'] === 'exhausted') {
                 <i class="fas fa-plus"></i> Thêm người dùng
             </button>
         </form>
+        <script>
+        $(document).ready(function() {
+            $('#sharedPatientSelect').select2({
+                placeholder: "-- Gõ tên hoặc SĐT để tìm --",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+        </script>
 
         <!-- List of shared users -->
         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">

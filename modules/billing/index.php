@@ -28,7 +28,9 @@ $stmt = $db->prepare("
         COUNT(*) as total_count,
         COALESCE(SUM(total_amount), 0) as total_revenue,
         COALESCE(SUM(cash_amount), 0) as total_cash,
-        COALESCE(SUM(transfer_amount), 0) as total_transfer,
+        COALESCE(SUM(transfer_personal_amount), 0) as total_transfer_personal,
+        COALESCE(SUM(transfer_company_amount), 0) as total_transfer_company,
+        COALESCE(SUM(card_amount), 0) as total_card,
         COALESCE(SUM(debt_amount), 0) as total_debt
     FROM invoices 
     WHERE created_at BETWEEN ? AND ? 
@@ -87,7 +89,8 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
 <style>
 .bill-outer { max-width: 1400px; width: 100%; }
 
-.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+.kpi-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1.25rem; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 0.5rem; }
+@media (max-width: 1200px) { .kpi-row { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 900px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
 .kpi-card {
     padding: 1.5rem; border-radius: 18px; color: white; position: relative; overflow: hidden;
@@ -213,35 +216,48 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
     </script>
 
     <!-- KPIs -->
-    <div class="kpi-row" style="grid-template-columns: repeat(5, 1fr);">
-        <div class="kpi-card" style="background:linear-gradient(135deg,#111827,#1e293b);">
+    <div class="kpi-row">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#111827,#1e293b); min-width: 140px;">
             <div class="kpi-icon">⭐</div>
             <div class="kpi-label">TỔNG THỰC THU</div>
-            <div class="kpi-val"><?php echo format_money($grand_total); ?></div>
-            <div style="font-size:0.75rem; opacity:0.6; margin-top:0.2rem;">Gói + Lẻ</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($grand_total); ?></div>
+            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Gói + Lẻ</div>
         </div>
-        <div class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6); min-width: 140px;">
             <div class="kpi-icon">📦</div>
-            <div class="kpi-label">THU BÁN GÓI</div>
-            <div class="kpi-val"><?php echo format_money($total_package_revenue); ?></div>
-            <div style="font-size:0.75rem; opacity:0.6; margin-top:0.2rem;"><?php echo count($pkg_transactions); ?> giao dịch</div>
+            <div class="kpi-label">BÁN GÓI</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($total_package_revenue); ?></div>
+            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;"><?php echo count($pkg_transactions); ?> giao dịch</div>
         </div>
-        <div class="kpi-card" style="background:linear-gradient(135deg,#10b981,#34d399);">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#10b981,#34d399); min-width: 140px;">
             <div class="kpi-icon">💵</div>
-            <div class="kpi-label"><?php echo __('billing.index.cash'); ?></div>
-            <div class="kpi-val"><?php echo format_money($stats['total_cash']); ?></div>
-            <div style="font-size:0.75rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
+            <div class="kpi-label">TIỀN MẶT</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_cash']); ?></div>
+            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
         </div>
-        <div class="kpi-card" style="background:linear-gradient(135deg,#3b82f6,#60a5fa);">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#3b82f6,#60a5fa); min-width: 140px;">
             <div class="kpi-icon">🏦</div>
-            <div class="kpi-label"><?php echo __('billing.index.transfer'); ?></div>
-            <div class="kpi-val"><?php echo format_money($stats['total_transfer']); ?></div>
-            <div style="font-size:0.75rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
+            <div class="kpi-label">CK CÁ NHÂN</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_transfer_personal']); ?></div>
+            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
         </div>
-        <div class="kpi-card" style="background:linear-gradient(135deg,#ef4444,#f87171);">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa); min-width: 140px;">
+            <div class="kpi-icon">🏢</div>
+            <div class="kpi-label">TK CÔNG TY</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_transfer_company']); ?></div>
+            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
+        </div>
+        <div class="kpi-card" style="background:linear-gradient(135deg,#f59e0b,#fbbf24); min-width: 140px;">
+            <div class="kpi-icon">💳</div>
+            <div class="kpi-label">QUẸT THẺ</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_card']); ?></div>
+            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
+        </div>
+        <div class="kpi-card" style="background:linear-gradient(135deg,#ef4444,#f87171); min-width: 140px;">
             <div class="kpi-icon">📝</div>
-            <div class="kpi-label"><?php echo __('billing.index.debt'); ?></div>
-            <div class="kpi-val"><?php echo format_money($stats['total_debt']); ?></div>
+            <div class="kpi-label">CÔNG NỢ</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_debt']); ?></div>
+            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Chưa thu đủ</div>
         </div>
     </div>
 

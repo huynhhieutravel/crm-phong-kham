@@ -45,7 +45,7 @@ $total_invoice = 0; // Phiếu lẻ
 foreach ($income_totals as $row) {
     if (in_array($row['category'], ['package', 'package_debt'])) {
         $total_package += (float)$row['total'];
-    } elseif ($row['category'] === 'invoice') {
+    } else {
         $total_invoice += (float)$row['total'];
     }
 }
@@ -78,7 +78,7 @@ $stmt = $db->prepare("
     LEFT JOIN users u ON t.created_by = u.id
     LEFT JOIN patient_packages pp ON t.reference_id = pp.id AND t.category IN ('package', 'package_debt')
     LEFT JOIN patients p1 ON pp.patient_id = p1.id
-    LEFT JOIN invoices i ON t.reference_id = i.id AND t.category = 'invoice'
+    LEFT JOIN invoices i ON t.reference_id = i.id AND t.category NOT IN ('package', 'package_debt') AND t.description LIKE 'Phiếu tính tiền%'
     LEFT JOIN patients p2 ON i.patient_id = p2.id
     WHERE t.transaction_date BETWEEN ? AND ? AND t.type = 'income'
     ORDER BY t.transaction_date DESC
@@ -194,7 +194,7 @@ $stmt = $db->prepare("SELECT t.*, u.full_name as creator_name,
     LEFT JOIN users u ON t.created_by = u.id 
     LEFT JOIN patient_packages pp ON t.reference_id = pp.id AND t.category IN ('package', 'package_debt')
     LEFT JOIN patients p1 ON pp.patient_id = p1.id
-    LEFT JOIN invoices i ON t.reference_id = i.id AND t.category = 'invoice'
+    LEFT JOIN invoices i ON t.reference_id = i.id AND t.category NOT IN ('package', 'package_debt') AND t.description LIKE 'Phiếu tính tiền%'
     LEFT JOIN patients p2 ON i.patient_id = p2.id
     WHERE $where_sql ORDER BY transaction_date DESC LIMIT $per_page OFFSET $offset");
 $stmt->execute($tx_params);

@@ -376,6 +376,9 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
             <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
                 <i class="fas fa-plus"></i> <?php echo __('appointment.book_btn'); ?>
             </a>
+            <button type="button" onclick="copyZaloSchedule()" class="btn btn-primary shadow-sm" style="padding: 0.5rem 1rem; font-weight: 700; font-size: 0.85rem; border-radius: 10px; white-space: nowrap; background: #0068ff; border-color: #0068ff;">
+                <i class="fas fa-copy"></i> Copy Lịch Zalo
+            </button>
             <div style="display: flex; gap: 0.4rem;">
                 <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('leads.index.export_csv'); ?>">
                     <i class="fas fa-file-export"></i> <?php echo __('common.export'); ?>
@@ -425,7 +428,13 @@ function setPeriod(event, p) {
                 </thead>
                 <tbody>
                     <?php foreach ($appointments as $a): ?>
-                        <tr class="appointment-row" style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
+                        <tr class="appointment-row" style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;"
+                            data-date="<?php echo date('Y-m-d', strtotime($a['appointment_date'])); ?>"
+                            data-time="<?php echo date('H\hi', strtotime($a['appointment_date'])); ?>"
+                            data-endtime="<?php echo !empty($a['appointment_end_time']) ? date('H\hi', strtotime($a['appointment_end_time'])) : ''; ?>"
+                            data-patient="<?php echo e($a['contact_name']); ?>"
+                            data-type="<?php echo $a['type'] ?: 'consultation'; ?>"
+                            data-doctor="<?php echo e($a['doctor_name'] ?? ''); ?>">
                             <td style="padding: 1.25rem 1.5rem;">
                                 <div style="font-weight: 700; color: var(--text-main); font-size: 1rem;">
                                     <?php 
@@ -764,6 +773,114 @@ function updateAppointment(select) {
         console.error('Error:', error);
         location.reload();
     });
+}
+
+function copyZaloSchedule() {
+    const rows = document.querySelectorAll('tr.appointment-row');
+    if (rows.length === 0) {
+        showToast('Không có lịch hẹn nào để copy!');
+        return;
+    }
+
+    const typeAbbr = {
+        'dong_y_60': 'ĐY 60',
+        'dong_y_90': 'ĐY 90',
+        'chiro': 'Chiro',
+        'consultation': 'TV',
+        'treatment': 'ĐT',
+        're_exam': 'Tái khám',
+        'adjustment': 'Nắn chỉnh',
+        'support_other': 'Khác'
+    };
+
+    const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    
+    // Group by date
+    const grouped = {};
+    
+    rows.forEach(row => {
+        const dateStr = row.getAttribute('data-date');
+        const timeStr = row.getAttribute('data-time').replace('h00', 'h00').replace('h', 'h'); 
+        const endTimeStr = row.getAttribute('data-endtime');
+        const patient = row.getAttribute('data-patient');
+        const typeStr = row.getAttribute('data-type');
+        
+        // Use the currently selected doctor from the dropdown if available, otherwise fallback to data attribute
+        const doctorSelect = row.querySelector('select[name="doctor_id"]');
+        let doctor = '';
+        if (doctorSelect) {
+            const selectedOpt = doctorSelect.options[doctorSelect.selectedIndex];
+            if (selectedOpt && selectedOpt.value) {
+                // Strip the role part "(Bác sĩ)"
+                doctor = selectedOpt.text.replace(/\s*\(.*\)$/, '');
+            }
+        }
+        if (!doctor) {
+            doctor = row.getAttribute('data-doctor') || '';
+        }
+
+        if (!grouped[dateStr]) grouped[dateStr] = [];
+        
+        const abbr = typeAbbr[typeStr] || typeStr;
+        let suffix = '';
+        if (doctor) {
+            suffix = `(${abbr}, ${doctor})`;
+        } else {
+            suffix = `(${abbr})`;
+        }
+
+        let displayTime = timeStr;
+        if (endTimeStr) {
+            displayTime += ' - ' + endTimeStr;
+        }
+
+        grouped[dateStr].push(`${displayTime} ${patient} ${suffix}`);
+    });
+
+    let finalStr = '';
+    const dateKeys = Object.keys(grouped).sort();
+    
+    dateKeys.forEach(dateStr => {
+        const d = new Date(dateStr);
+        const dayName = days[d.getDay()];
+        const dm = dateStr.split('-');
+        const shortDate = `${dm[2]}/${dm[1]}`;
+        
+        if (finalStr !== '') finalStr += '\n\n';
+        finalStr += `Lịch ${dayName.toLowerCase()}: ${shortDate}\n`;
+        
+        grouped[dateStr].forEach((item, idx) => {
+            finalStr += `${idx + 1}. ${item}\n`;
+        });
+    });
+
+    const textToCopy = finalStr.trim();
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showToast('Đã copy lịch Zalo vào clipboard!');
+        }).catch(err => {
+            fallbackCopy(textToCopy);
+        });
+    } else {
+        fallbackCopy(textToCopy);
+    }
+
+    function fallbackCopy(text) {
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = text;
+        tempTextArea.style.position = 'fixed';
+        tempTextArea.style.left = '-9999px';
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        try {
+            document.execCommand('copy');
+            showToast('Đã copy lịch Zalo vào clipboard!');
+        } catch (err) {
+            showToast('Lỗi: Không thể copy vào clipboard');
+        }
+        document.body.removeChild(tempTextArea);
+    }
 }
 </script>
 <?php include '../../includes/invoice_popup.php'; ?>

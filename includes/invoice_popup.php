@@ -82,7 +82,7 @@
         <div style="font-size:0.75rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.75rem;">
             <i class="fas fa-money-check-alt"></i> Thanh toán
         </div>
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.75rem;">
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.5rem;">
             <div>
                 <label style="font-size:0.75rem; font-weight:700; color:#10b981;">💵 Tiền mặt</label>
                 <input type="text" id="ipCash" value="0" style="width:100%; padding:0.5rem; border:1px solid #e2e8f0; border-radius:8px; font-weight:700; font-size:0.95rem;" oninput="formatMoneyInput(this); recalcPayment()">
@@ -94,6 +94,10 @@
             <div>
                 <label style="font-size:0.75rem; font-weight:700; color:#8b5cf6;">🏦 TK Công ty</label>
                 <input type="text" id="ipTransferCompany" value="0" style="width:100%; padding:0.5rem; border:1px solid #e2e8f0; border-radius:8px; font-weight:700; font-size:0.95rem;" oninput="formatMoneyInput(this); recalcPayment()">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; font-weight:700; color:#f59e0b;">💳 Quẹt thẻ</label>
+                <input type="text" id="ipCard" value="0" style="width:100%; padding:0.5rem; border:1px solid #e2e8f0; border-radius:8px; font-weight:700; font-size:0.95rem;" oninput="formatMoneyInput(this); recalcPayment()">
             </div>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem; padding:0.75rem; background:#fef2f2; border-radius:10px; border:1px solid #fecaca;">
@@ -175,6 +179,7 @@ function openInvoicePopup(opts) {
     document.getElementById('ipCash').value = '0';
     document.getElementById('ipTransferPersonal').value = '0';
     document.getElementById('ipTransferCompany').value = '0';
+    document.getElementById('ipCard').value = '0';
     document.getElementById('ipNote').value = '';
     document.getElementById('ipCreateMode').style.display = 'block';
     document.getElementById('ipViewMode').style.display = 'none';
@@ -471,7 +476,8 @@ function recalcInvoice() {
     var cash = getRawValue('ipCash');
     var transferPersonal = getRawValue('ipTransferPersonal');
     var transferCompany = getRawValue('ipTransferCompany');
-    if (cash === 0 && transferPersonal === 0 && transferCompany === 0) {
+    var card = getRawValue('ipCard');
+    if (cash === 0 && transferPersonal === 0 && transferCompany === 0 && card === 0) {
         document.getElementById('ipCash').value = formatMoneyOnly(total);
     }
     recalcPayment();
@@ -487,7 +493,8 @@ function recalcPayment() {
     var cash = getRawValue('ipCash');
     var transferPersonal = getRawValue('ipTransferPersonal');
     var transferCompany = getRawValue('ipTransferCompany');
-    var paid = cash + transferPersonal + transferCompany;
+    var card = getRawValue('ipCard');
+    var paid = cash + transferPersonal + transferCompany + card;
     var debt = total - paid;
     if (debt < 0) debt = 0;
     
@@ -514,8 +521,9 @@ function submitInvoice() {
     var cash = getRawValue('ipCash');
     var transferPersonal = getRawValue('ipTransferPersonal');
     var transferCompany = getRawValue('ipTransferCompany');
+    var card = getRawValue('ipCard');
     var transfer = transferPersonal + transferCompany;
-    var debt = total - cash - transfer;
+    var debt = total - cash - transfer - card;
     if (debt < 0) debt = 0;
     
     var btn = document.getElementById('ipSubmitBtn');
@@ -539,6 +547,7 @@ function submitInvoice() {
             transfer_amount: transfer,
             transfer_personal_amount: transferPersonal,
             transfer_company_amount: transferCompany,
+            card_amount: card,
             package_deduct: 0,
             debt_amount: debt,
             note: document.getElementById('ipNote').value,
@@ -626,6 +635,7 @@ function renderReceiptView(inv) {
     if (parseFloat(inv.cash_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>💵 Tiền mặt:</span><span style="font-weight:700;">' + formatVND(inv.cash_amount) + '</span></div>';
     if (parseFloat(inv.transfer_personal_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>🏦 CK Cá nhân:</span><span style="font-weight:700;">' + formatVND(inv.transfer_personal_amount) + '</span></div>';
     if (parseFloat(inv.transfer_company_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>🏦 TK Công ty:</span><span style="font-weight:700;">' + formatVND(inv.transfer_company_amount) + '</span></div>';
+    if (parseFloat(inv.card_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>💳 Quẹt thẻ:</span><span style="font-weight:700;">' + formatVND(inv.card_amount) + '</span></div>';
     if (parseFloat(inv.transfer_amount) > 0 && parseFloat(inv.transfer_personal_amount) == 0 && parseFloat(inv.transfer_company_amount) == 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>🏦 Chuyển khoản (Cũ):</span><span style="font-weight:700;">' + formatVND(inv.transfer_amount) + '</span></div>';
     if (parseFloat(inv.debt_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0; color:#dc2626;"><span>📝 Ghi nợ:</span><span style="font-weight:700;">' + formatVND(inv.debt_amount) + '</span></div>';
     html += '</div>';

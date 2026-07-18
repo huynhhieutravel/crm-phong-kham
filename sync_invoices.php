@@ -22,7 +22,7 @@ foreach ($invoices as $inv) {
            ->execute([$inv['cash_amount'], $invoice_id, "Phiếu tính tiền $invoice_no", $branch_id, $creator_id, $inv['created_at']]);
         $count++;
     }
-    if ($inv['transfer_amount'] > 0) {
+    if ($inv['transfer_amount'] > 0 && floatval($inv['transfer_personal_amount']) == 0 && floatval($inv['transfer_company_amount']) == 0) {
         $db->prepare("INSERT INTO transactions (type, category, amount, reference_id, description, branch_id, created_by, transaction_date) VALUES ('income', 'Chuyển khoản (Cũ)', ?, ?, ?, ?, ?, ?)")
            ->execute([$inv['transfer_amount'], $invoice_id, "Phiếu tính tiền $invoice_no", $branch_id, $creator_id, $inv['created_at']]);
         $count++;
