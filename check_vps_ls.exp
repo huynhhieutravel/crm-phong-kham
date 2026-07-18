@@ -1,0 +1,13 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+set password {&m5L9[eUv}
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S ls -la /var/www/crm_phong_kham/ && echo '&m5L9\[eUv' | sudo -S du -sh /var/www/crm_phong_kham/uploads"
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

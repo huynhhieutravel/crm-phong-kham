@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+set ip "112.78.15.2"
+set user "ubutu"
+set pass "&m5L9\[eUv"
+set remote_dir "/var/www/crm_phong_kham/"
+set source_dir "/Volumes/T7 Loki SS/WORK Hiếu/quan-ly-phong-kham/"
+set exclude_file "/Volumes/T7 Loki SS/WORK Hiếu/quan-ly-phong-kham/scratch/rsync_exclude.txt"
+
+# Get dry run flag from arguments
+set dry_run ""
+if {[llength $argv] > 0} {
+    set dry_run [lindex $argv 0]
+}
+
+puts "Starting rsync synchronization (Dry Run: $dry_run)..."
+
+spawn rsync -avzi $dry_run --delete \
+    --exclude-from=$exclude_file \
+    -e "ssh -o StrictHostKeyChecking=no" \
+    $source_dir $user@$ip:$remote_dir
+
+expect {
+    "password:" {
+        send "$pass\r"
+        exp_continue
+    }
+    eof
+}
+
+puts "Synchronization complete."
