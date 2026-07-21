@@ -133,11 +133,13 @@ $stmt->execute([$session_id]);
 $history_records = $stmt->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
 
 // Lấy Tiền sử bệnh Chiropractic của bệnh nhân (bất kể buổi khám nào)
-$stmt_chiro_hist = $db->prepare("SELECT id FROM medical_history WHERE patient_id = ? AND type = 'chiro_history' ORDER BY id DESC LIMIT 1");
+$stmt_chiro_hist = $db->prepare("SELECT id, type FROM medical_history WHERE patient_id = ? AND (type = 'chiro_history' OR type = 'chiro_history_v2') ORDER BY id DESC LIMIT 1");
 $stmt_chiro_hist->execute([$session['patient_id']]);
-$patient_chiro_history_id = $stmt_chiro_hist->fetchColumn();
-if ($patient_chiro_history_id && !isset($history_records['chiro_history'])) {
-    $history_records['chiro_history'] = ['id' => $patient_chiro_history_id];
+$patient_chiro_history = $stmt_chiro_hist->fetch(PDO::FETCH_ASSOC);
+if ($patient_chiro_history) {
+    if (!isset($history_records['chiro_history']) && !isset($history_records['chiro_history_v2'])) {
+        $history_records[$patient_chiro_history['type']] = ['id' => $patient_chiro_history['id']];
+    }
 }
 
 // Lấy Phiếu Đông Y gần nhất của bệnh nhân
@@ -227,11 +229,22 @@ require_once '../../templates/header.php';
 
             <!-- TIỀN SỬ BỆNH CHIROPRACTIC MÀU TÍM RIÊNG BIỆT -->
             <?php 
-                $has_history = isset($history_records['chiro_history']);
-                $history_id = $has_history ? $history_records['chiro_history']['id'] : null;
+                $has_history_v2 = isset($history_records['chiro_history_v2']);
+                $has_history = isset($history_records['chiro_history']) || $has_history_v2;
+                $history_id = null;
+                $history_type = 'chiro_history';
+                if ($has_history_v2) {
+                    $history_id = $history_records['chiro_history_v2']['id'];
+                    $history_type = 'chiro_history_v2';
+                } elseif (isset($history_records['chiro_history'])) {
+                    $history_id = $history_records['chiro_history']['id'];
+                }
+                
                 $history_create_url = "chiro_history.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id;
+                $history_create_v2_url = "chiro_history_v2.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id;
+                
                 if ($has_history) {
-                    $history_edit_url = "chiro_history.php?patient_id=" . $session['patient_id'] . "&id=" . $history_id;
+                    $history_edit_url = ($history_type === 'chiro_history_v2' ? 'chiro_history_v2.php' : 'chiro_history.php') . "?patient_id=" . $session['patient_id'] . "&id=" . $history_id;
                 } else {
                     $history_edit_url = $history_create_url;
                 }
@@ -266,9 +279,14 @@ require_once '../../templates/header.php';
                             <i class="fas fa-edit"></i> <?php echo __('common.edit'); ?>
                         </a>
                     <?php else: ?>
-                        <a href="<?php echo $history_create_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-weight: 600;">
-                            <i class="fas fa-plus-circle"></i> <?php echo __('medical.session.btn_create_history'); ?>
-                        </a>
+                        <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                            <a href="<?php echo $history_create_url; ?>" class="btn btn-sm btn-outline" style="border: 1px solid #a855f7; color: #a855f7; border-radius: 50px; font-weight: 600;">
+                                <i class="fas fa-plus"></i> Tạo Mẫu Cũ
+                            </a>
+                            <a href="<?php echo $history_create_v2_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-weight: 600;">
+                                <i class="fas fa-plus-circle"></i> Tạo Mẫu Mới (V2)
+                            </a>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>

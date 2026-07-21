@@ -1,0 +1,46 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+set password {&m5L9[eUv}
+
+puts "1. Cap nhat Database: Them cot is_under_one va relationship vao bang patients..."
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S mysql -e 'USE clinic_management; ALTER TABLE patients ADD COLUMN is_under_one TINYINT(1) DEFAULT 0 AFTER birthday; ALTER TABLE patients ADD COLUMN relationship VARCHAR(255) DEFAULT NULL AFTER is_under_one;'"
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+puts "2. Tai len file add.php..."
+spawn scp -o StrictHostKeyChecking=no modules/patients/add.php ubutu@112.78.15.2:/tmp/add.php
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+puts "2. Tai len file edit.php..."
+spawn scp -o StrictHostKeyChecking=no modules/patients/edit.php ubutu@112.78.15.2:/tmp/edit.php
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+puts "3. Copy file vao dung thu muc va set quyen..."
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S cp /tmp/add.php /var/www/crm_phong_kham/modules/patients/add.php && echo '&m5L9\[eUv' | sudo -S cp /tmp/edit.php /var/www/crm_phong_kham/modules/patients/edit.php && echo '&m5L9\[eUv' | sudo -S chown www-data:www-data /var/www/crm_phong_kham/modules/patients/add.php /var/www/crm_phong_kham/modules/patients/edit.php && rm /tmp/add.php /tmp/edit.php"
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+puts "✅ Deploy cap nhat Ho so Benh nhan hoan tat!"

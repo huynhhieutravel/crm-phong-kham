@@ -22,6 +22,10 @@ $stmt = $db->prepare("SELECT * FROM patients WHERE id = ?");
 $stmt->execute([$id]);
 $p = $stmt->fetch();
 
+// Lấy thông tin Lần khám cuối
+$last_visit_stmt = $db->prepare("SELECT appointment_date FROM appointments WHERE patient_id = ? AND status IN ('completed', 'arrived') ORDER BY appointment_date DESC LIMIT 1");
+$last_visit_stmt->execute([$id]);
+$last_visit = $last_visit_stmt->fetchColumn();
 if (!$p) {
     set_flash(__('patient.msg.not_found'), 'error');
     redirect('index.php');
@@ -35,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'full_name' => $_POST['full_name'] ?: '',
         'gender' => $_POST['gender'] ?: '',
         'birthday' => !empty($_POST['birthday']) ? $_POST['birthday'] : null,
+        'is_under_one' => isset($_POST['is_under_one']) ? 1 : 0,
+        'relationship' => $_POST['relationship'] ?: '',
         'phone' => $_POST['phone'] ?: '',
         'email' => $_POST['email'] ?: '',
         'address' => $_POST['address'] ?: '',
@@ -104,6 +110,17 @@ require_once '../../templates/header.php';
                     <input type="text" name="full_name" class="form-input" required value="<?php echo e($p['full_name']); ?>" style="font-size: 1.1rem; font-weight: 600;">
                 </div>
                 
+                <div class="form-group" style="grid-column: span 2; padding: 1rem; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <label class="form-label" style="color: #475569; margin-bottom: 0.5rem;"><i class="fas fa-history" style="color: #94a3b8; margin-right: 0.5rem;"></i> Lần khám cuối</label>
+                    <div style="font-weight: bold; font-size: 1.1rem; color: #3b82f6;">
+                        <?php if ($last_visit): ?>
+                            <?php echo date('d/m/Y H:i', strtotime($last_visit)); ?>
+                        <?php else: ?>
+                            <span class="badge" style="background: #e2e8f0; color: #64748b;">Lần đầu</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.phone'); ?> <span style="color: red;">*</span></label>
                     <input type="text" name="phone" class="form-input" required value="<?php echo e($p['phone']); ?>">
@@ -129,7 +146,13 @@ require_once '../../templates/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.dob'); ?></label>
-                    <input type="date" name="birthday" min="1900-01-01" max="<?php echo date('Y-m-d'); ?>" class="form-input" value="<?php echo e($p['birthday']); ?>">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <input type="date" name="birthday" id="birthday" min="1900-01-01" max="<?php echo date('Y-m-d'); ?>" class="form-input" value="<?php echo e($p['birthday']); ?>" style="flex: 1;">
+                        <label style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.9rem; cursor: pointer; white-space: nowrap; font-weight: bold; color: #db2777;">
+                            <input type="checkbox" name="is_under_one" id="is_under_one" value="1" <?php echo (isset($p['is_under_one']) && $p['is_under_one']) ? 'checked' : ''; ?>>
+                            Dưới 1 tuổi
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -157,7 +180,11 @@ require_once '../../templates/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form-group" style="grid-column: span 2;">
+                <div class="form-group">
+                    <label class="form-label">Mối quan hệ</label>
+                    <input type="text" name="relationship" class="form-input" value="<?php echo e($p['relationship'] ?? ''); ?>" placeholder="VD: Vợ/chồng, con, v.v...">
+                </div>
+                <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.label_desc'); ?></label>
                     <input type="text" name="label" class="form-input" value="<?php echo e($p['label']); ?>" placeholder="<?php echo __('patient.placeholder.label'); ?>">
                 </div>

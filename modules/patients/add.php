@@ -28,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'full_name' => $_POST['full_name'] ?: '',
         'gender' => $_POST['gender'] ?: '',
         'birthday' => !empty($_POST['birthday']) ? $_POST['birthday'] : null,
+        'is_under_one' => isset($_POST['is_under_one']) ? 1 : 0,
+        'relationship' => $_POST['relationship'] ?: '',
         'phone' => $_POST['phone'] ?: '',
         'email' => $_POST['email'] ?: '',
         'address' => $_POST['address'] ?: '',
@@ -125,7 +127,13 @@ require_once '../../templates/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.dob'); ?></label>
-                    <input type="date" name="birthday" min="1900-01-01" max="<?php echo date('Y-m-d'); ?>" class="form-input">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <input type="date" name="birthday" id="birthday" min="1900-01-01" max="<?php echo date('Y-m-d'); ?>" class="form-input" style="flex: 1;">
+                        <label style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.9rem; cursor: pointer; white-space: nowrap; font-weight: bold; color: #db2777;">
+                            <input type="checkbox" name="is_under_one" id="is_under_one" value="1">
+                            Dưới 1 tuổi
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -153,7 +161,11 @@ require_once '../../templates/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form-group" style="grid-column: span 2;">
+                <div class="form-group">
+                    <label class="form-label">Mối quan hệ</label>
+                    <input type="text" name="relationship" class="form-input" placeholder="VD: Vợ/chồng, con, v.v...">
+                </div>
+                <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.label_desc'); ?></label>
                     <input type="text" name="label" class="form-input" placeholder="<?php echo __('patient.placeholder.label'); ?>">
                 </div>

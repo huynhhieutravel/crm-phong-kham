@@ -107,6 +107,13 @@
         </div>
         <?php endif; ?>
 
+        <?php if (can('view_medical')): ?>
+        <a href="<?php echo $base_url; ?>modules/medical/demo_v2.php" class="nav-item <?php echo $current_page === 'demo_v2' ? 'active' : ''; ?>" style="background: #f0fdf4; border-left: 4px solid #16a34a; margin-top: 0.5rem;">
+            <i class="fas fa-flask" style="color: #16a34a;"></i>
+            <span style="color: #16a34a; font-weight: 700;">Demo Bệnh Án V2</span>
+        </a>
+        <?php endif; ?>
+
         <div class="nav-section-label" style="padding: 1.5rem 1.5rem 0.5rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;"><?php echo __('menu.management_label'); ?></div>
         
         <?php if (can('view_hr')): ?>

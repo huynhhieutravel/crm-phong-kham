@@ -44,6 +44,7 @@ if ($type === 'history') {
         
         $titles = [
             'chiro_history' => __('medical.type.chiro_history_full'),
+            'chiro_history_v2' => __('medical.type.chiro_history_full') . ' (V2)',
             'chiropractic' => __('medical.type.chiropractic'),
             'soap_note' => __('medical.type.chiropractic'),
             'initial_exam' => __('medical.type.chiropractic'),
@@ -266,8 +267,9 @@ $age = $patient['birthday'] ? date_diff(date_create($patient['birthday']), date_
                     if (!empty($data['p']['notes'])) echo "<p><strong>Kế hoạch (P):</strong> {$data['p']['notes']}</p>";
                     echo '</div>';
                 }
-            } elseif ($record_type === 'chiro_history') {
-                require 'forms/print_chiro_history.php';
+            } elseif ($record_type === 'chiro_history' || $record_type === 'chiro_history_v2') {
+                $print_file = $record_type === 'chiro_history_v2' ? 'forms/print_chiro_history_v2.php' : 'forms/print_chiro_history.php';
+                require $print_file;
             } elseif ($record_type === 'treatment') {
                 require 'forms/print_treatment.php';
             } else {

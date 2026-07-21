@@ -1,0 +1,31 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password {&m5L9[eUv}
+
+puts "Cap nhat Database: Them cot relationship vao bang patients..."
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S mysql -e 'USE clinic_management; ALTER TABLE patients ADD COLUMN relationship VARCHAR(255) DEFAULT NULL;'"
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+puts "Tai len file..."
+spawn scp -o StrictHostKeyChecking=no modules/patients/add.php modules/patients/edit.php ubutu@112.78.15.2:/tmp/
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+puts "Copy vao dung thu muc..."
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S cp /tmp/add.php /var/www/crm_phong_kham/modules/patients/add.php && echo '&m5L9\[eUv' | sudo -S cp /tmp/edit.php /var/www/crm_phong_kham/modules/patients/edit.php && echo '&m5L9\[eUv' | sudo -S chown www-data:www-data /var/www/crm_phong_kham/modules/patients/add.php /var/www/crm_phong_kham/modules/patients/edit.php && rm /tmp/add.php /tmp/edit.php"
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
