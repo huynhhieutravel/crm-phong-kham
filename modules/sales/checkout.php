@@ -4,15 +4,16 @@
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
+require_once '../../includes/coin_functions.php';
 require_permission('manage_checkout');
 
 $db = getDB();
 $treatment_id = isset($_GET['treatment_id']) ? (int)$_GET['treatment_id'] : 0;
 
-// Get treatment info
+// Get treatment info & service coin cost
 $stmt = $db->prepare("
     SELECT t.*, p.full_name as patient_name, p.phone as patient_phone, p.id as patient_id,
-           s.name as service_name, u.full_name as technician_name
+           s.name as service_name, s.coin_cost, u.full_name as technician_name
     FROM treatments t
     JOIN patients p ON t.patient_id = p.id
     LEFT JOIN services s ON t.service_id = s.id
@@ -25,6 +26,14 @@ $treatment = $stmt->fetch();
 if (!$treatment) {
     set_flash('Không tìm thấy buổi điều trị.', 'error');
     redirect('../medical/daily.php');
+}
+
+// Calculate coin cost based on service or name fallback
+$service_coin_cost = (int)($treatment['coin_cost'] ?? 1);
+if ($service_coin_cost <= 1 && $treatment['service_name']) {
+    $sname = mb_strtolower($treatment['service_name'], 'UTF-8');
+    if (mb_strpos($sname, '60') !== false) $service_coin_cost = 2;
+    elseif (mb_strpos($sname, '90') !== false || mb_strpos($sname, 'chiro') !== false || mb_strpos($sname, 'nắn chỉnh') !== false) $service_coin_cost = 3;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -41,7 +50,10 @@ if ($treatment['payment_status'] === 'paid') {
 
 $patient_id = $treatment['patient_id'];
 
-// Get available packages (own + shared)
+// Get patient coin balance
+$patient_coin_balance = get_patient_coin_balance($db, $patient_id);
+
+// Get available packages (own + shared active)
 $stmt = $db->prepare("
     SELECT pp.*, pkg.name as package_name, pkg.total_sessions, pkg.total_price,
            owner.full_name as owner_name, owner.id as owner_id
@@ -58,7 +70,20 @@ $stmt = $db->prepare("
 $stmt->execute([$patient_id, $patient_id]);
 $available_packages = $stmt->fetchAll();
 
-// Handle POST
+// Handle Quick Coin Top-Up POST
+if (isset($_POST['action']) && $_POST['action'] === 'topup_coins') {
+    verify_csrf();
+    $topup_amount = (float)($_POST['topup_amount'] ?? 0);
+    $topup_coins = (float)($_POST['topup_coins'] ?? 0);
+    if ($topup_coins > 0) {
+        topup_patient_coins($db, $patient_id, $topup_coins, $topup_amount, $_SESSION['user_id'], 'Nạp Coin trực tiếp tại màn hình Thanh toán');
+        set_flash("Nạp thành công $topup_coins Coins vào ví của bệnh nhân!", 'success');
+    }
+    header("Location: checkout.php?treatment_id=$treatment_id");
+    exit;
+}
+
+// Handle Payment POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $method = $_POST['method'];
@@ -76,7 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // ═══════════════════════════════════════════════════════════
         // GUARD #3: RE-CHECK IDEMPOTENCY inside transaction
-        // (prevents race between 2 concurrent POST requests)
         // ═══════════════════════════════════════════════════════════
         $stmt = $db->prepare("SELECT payment_status FROM treatments WHERE id = ? FOR UPDATE");
         $stmt->execute([$treatment_id]);
@@ -90,13 +114,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $payer_patient_id = null;
 
+        // If paying by Coins
+        if ($method === 'coins') {
+            $deduct_ok = deduct_patient_coins($db, $patient_id, $service_coin_cost, $treatment_id, $_SESSION['user_id'], $note);
+            if (!$deduct_ok) {
+                $db->rollBack();
+                $error = "Ví Coin không đủ số dư. Khách cần $service_coin_cost Coins nhưng hiện chỉ có $patient_coin_balance Coins. Vui lòng bấm 'Nạp Coin' bên dưới.";
+                goto render_page;
+            }
+            $amount = 0; // Paid by Coins
+        }
         // If paying by package
-        if ($method === 'package' && $patient_package_id) {
+        elseif ($method === 'package' && $patient_package_id) {
 
-            // ═══════════════════════════════════════════════════════
-            // GUARD #4: ROW LOCK — SELECT FOR UPDATE on package row
-            // Prevents sessions_remaining going negative
-            // ═══════════════════════════════════════════════════════
             $stmt = $db->prepare("
                 SELECT pp.*, pkg.total_price, pkg.total_sessions, pp.patient_id as owner_id
                 FROM patient_packages pp 
@@ -107,25 +137,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$patient_package_id]);
             $pkg = $stmt->fetch();
             
-            // Double-check remaining > 0 AFTER lock
             if (!$pkg || $pkg['sessions_remaining'] <= 0) {
                 $db->rollBack();
                 $error = 'Gói đã hết buổi. Vui lòng chọn phương thức khác.';
                 goto render_page;
             }
 
-            $amount = $pkg['total_price'] / $pkg['total_sessions']; // Per-session value
+            $amount = $pkg['total_price'] / $pkg['total_sessions'];
             $payer_patient_id = $pkg['owner_id'];
 
-            // Deduct session (safe after FOR UPDATE lock)
             $db->prepare("UPDATE patient_packages SET sessions_remaining = sessions_remaining - 1 WHERE id = ? AND sessions_remaining > 0")
                ->execute([$patient_package_id]);
             
-            // Check if exhausted
             $db->prepare("UPDATE patient_packages SET status = 'exhausted' WHERE id = ? AND sessions_remaining <= 0")
                ->execute([$patient_package_id]);
 
-            // Log usage
             $db->prepare("INSERT INTO package_usage_logs (patient_package_id, patient_id, treatment_id, used_at) VALUES (?, ?, ?, ?)")
                ->execute([$patient_package_id, $patient_id, $treatment_id, $payment_date]);
         }
@@ -343,6 +369,12 @@ unset($pkg);
                     <div class="method-name">Quẹt thẻ</div>
                     <div class="method-desc">Thẻ qua máy POS</div>
                 </label>
+                <label class="method-card" onclick="selectMethod('coins')">
+                    <input type="radio" name="method" value="coins">
+                    <div class="method-icon">🪙</div>
+                    <div class="method-name" style="color: #d97706;">Ví Coin (<?php echo $patient_coin_balance; ?> Coins)</div>
+                    <div class="method-desc">Cần <?php echo $service_coin_cost; ?> Coins cho buổi này</div>
+                </label>
                 <label class="method-card" onclick="selectMethod('package')">
                     <input type="radio" name="method" value="package">
                     <div class="method-icon">📦</div>
@@ -355,6 +387,31 @@ unset($pkg);
                     <div class="method-name">Ghi nợ</div>
                     <div class="method-desc">Thanh toán sau</div>
                 </label>
+            </div>
+
+            <!-- Coin section for wallet payments -->
+            <div class="coin-section" id="coinSection" style="display: none; margin-bottom: 1.5rem; background: #fffbebf5; padding: 1.25rem; border-radius: 16px; border: 1px solid #fef3c7;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="font-weight: 800; color: #b45309; font-size: 1.05rem;"><i class="fas fa-coins"></i> Thanh toán bằng Ví Coin</div>
+                        <div style="font-size: 0.85rem; color: #78350f; margin-top: 0.25rem;">
+                            Số dư hiện tại: <strong style="color: #d97706; font-size: 1rem;"><?php echo $patient_coin_balance; ?> Coins</strong> | 
+                            Yêu cầu buổi này: <strong style="color: #b91c1c; font-size: 1rem;"><?php echo $service_coin_cost; ?> Coins</strong>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm" onclick="document.getElementById('topupModal').style.display='flex';" style="background: #f59e0b; color: white; border-radius: 8px; font-weight: 700; padding: 0.5rem 1rem;">
+                        <i class="fas fa-plus-circle"></i> Nạp Coin Nhanh
+                    </button>
+                </div>
+                <?php if ($patient_coin_balance < $service_coin_cost): ?>
+                    <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #dc2626; font-weight: 600;">
+                        <i class="fas fa-exclamation-triangle"></i> Số dư Coin không đủ! Vui lòng bấm "Nạp Coin Nhanh" ở trên để bổ sung.
+                    </div>
+                <?php else: ?>
+                    <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #16a34a; font-weight: 600;">
+                        <i class="fas fa-check-circle"></i> Số dư đủ để thực hiện thanh toán!
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Amount input for cash/transfer/debt -->
@@ -421,6 +478,30 @@ unset($pkg);
     </div>
 </div>
 
+<!-- Quick Top-Up Modal -->
+<div id="topupModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 20px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <h3 style="margin-top: 0; font-weight: 800; color: #b45309;"><i class="fas fa-coins"></i> Nạp Coin Nhanh Cho Bệnh Nhân</h3>
+        <form method="POST">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="action" value="topup_coins">
+            <div style="margin-bottom: 1rem;">
+                <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số tiền nạp (VNĐ)</label>
+                <input type="number" name="topup_amount" class="form-input" placeholder="900000" style="margin-top: 0.25rem; font-size: 1rem; font-weight: 700;" oninput="document.getElementById('calcCoins').value = (this.value / 300000).toFixed(1).replace('.0','');">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số Coins quy đổi</label>
+                <input type="number" step="0.1" name="topup_coins" id="calcCoins" class="form-input" placeholder="3" style="margin-top: 0.25rem; font-size: 1.3rem; font-weight: 800; color: #d97706;" required>
+                <small style="color: #64748b; display: block; margin-top: 0.35rem;">Gợi ý: 900.000đ = 3 Coins, 600.000đ = 2 Coins (Trung bình 300.000đ/Coin)</small>
+            </div>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="button" onclick="document.getElementById('topupModal').style.display='none';" class="btn" style="background: #f1f5f9; color: #475569; font-weight: 600;">Hủy</button>
+                <button type="submit" class="btn" style="background: #f59e0b; color: white; font-weight: 800;">Xác Nhận Nạp</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════
 // GUARD #2 (Frontend): Disable button after first click
@@ -440,19 +521,27 @@ function handleSubmit(form) {
 
 function selectMethod(method) {
     document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('selected');
+    }
     
     const amountSection = document.getElementById('amountSection');
     const packageSection = document.getElementById('packageSection');
+    const coinSection = document.getElementById('coinSection');
     const amountInput = document.getElementById('amountInput');
     
+    // Reset displays
+    amountSection.style.display = 'none';
+    packageSection.style.display = 'none';
+    if (coinSection) coinSection.style.display = 'none';
+    amountInput.removeAttribute('required');
+
     if (method === 'package') {
-        amountSection.classList.remove('visible');
-        packageSection.classList.add('visible');
-        amountInput.removeAttribute('required');
+        packageSection.style.display = 'block';
+    } else if (method === 'coins') {
+        if (coinSection) coinSection.style.display = 'block';
     } else {
-        amountSection.classList.add('visible');
-        packageSection.classList.remove('visible');
+        amountSection.style.display = 'block';
         amountInput.setAttribute('required', 'required');
     }
 }

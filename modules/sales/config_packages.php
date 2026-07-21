@@ -13,9 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     if (isset($_POST['delete_id'])) {
         try {
-            $stmt = $db->prepare("DELETE FROM packages WHERE id = ?");
+            $stmt = $db->prepare("UPDATE packages SET status = 'hidden' WHERE id = ?");
             $stmt->execute([$_POST['delete_id']]);
-            set_flash(__('sales.config.delete_success'));
+            set_flash('Đã xoá/ẩn gói thành công!');
         } catch (PDOException $e) {
             set_flash(__('common.db_error') . $e->getMessage(), 'error');
         }
@@ -59,7 +59,7 @@ if (isset($_GET['edit_id'])) {
 
 require_once '../../templates/header.php';
 
-$packages = $db->query("SELECT p.* FROM packages p ORDER BY p.id DESC")->fetchAll();
+$packages = $db->query("SELECT p.* FROM packages p WHERE p.status = 'active' OR p.status IS NULL ORDER BY p.id DESC")->fetchAll();
 ?>
 
 

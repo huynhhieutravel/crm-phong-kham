@@ -26,6 +26,24 @@ if (!$patient) {
     exit;
 }
 
+// Handle Package -> Coin Conversion POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'convert_package_to_coins') {
+    verify_csrf();
+    $convert_pkg_id = (int)$_POST['patient_package_id'];
+    require_once '../../includes/coin_functions.php';
+    $coins_gained = convert_package_to_coins($db, $convert_pkg_id, $_SESSION['user_id']);
+    if ($coins_gained) {
+        set_flash("Đã quy đổi gói thành công! Bệnh nhân được cộng $coins_gained Coins vào Ví.", 'success');
+    } else {
+        set_flash("Quy đổi thất bại hoặc gói không còn hợp lệ.", 'error');
+    }
+    header("Location: view.php?id=$id");
+    exit;
+}
+
+require_once '../../includes/coin_functions.php';
+$patient_coin_balance = get_patient_coin_balance($db, $id);
+
 // Fetch medical sessions
 $stmt = $db->prepare("SELECT s.*, u.full_name as doctor_name FROM medical_sessions s JOIN users u ON s.doctor_id = u.id WHERE s.patient_id = ? ORDER BY s.session_date DESC");
 $stmt->execute([$id]);
@@ -181,20 +199,37 @@ $rules = $stmt->fetchAll();
                     </div>
                 </div>
             </div>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
+                <!-- Coin Wallet Display Card -->
+                <div style="background: linear-gradient(135deg, #fffbebf5, #fef3c7); border: 1px solid #fde68a; padding: 0.75rem 1rem; border-radius: 10px; min-width: 180px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: 800; color: #b45309; text-transform: uppercase;">Ví Coin Tích Điểm</div>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: #d97706;"><i class="fas fa-coins"></i> <?php echo $patient_coin_balance; ?> Coins</div>
+                    </div>
+                </div>
+
                 <?php foreach ($active_packages as $pkg): 
                     $used = max(0, $pkg['pkg_total_sessions'] - $pkg['sessions_remaining']);
                     $pct = $pkg['pkg_total_sessions'] > 0 ? min(100, round(($used / $pkg['pkg_total_sessions']) * 100)) : 0;
                     $bar_color = $pct >= 80 ? '#ef4444' : ($pct >= 50 ? '#f59e0b' : '#10b981');
                 ?>
-                <div style="background: white; border: 1px solid #bbf7d0; padding: 0.75rem 1rem; border-radius: 10px; min-width: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="background: white; border: 1px solid #bbf7d0; padding: 0.75rem 1rem; border-radius: 10px; min-width: 210px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; align-items: center;">
                         <span style="font-size: 0.85rem; font-weight: 800; color: #1e293b;"><?php echo e($pkg['package_name']); ?></span>
                         <span style="font-size: 0.8rem; font-weight: 800; color: <?php echo $bar_color; ?>;"><?php echo $pkg['sessions_remaining']; ?>/<?php echo $pkg['pkg_total_sessions']; ?></span>
                     </div>
-                    <div style="background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                    <div style="background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem;">
                         <div style="background: <?php echo $bar_color; ?>; height: 100%; width: <?php echo $pct; ?>%;"></div>
                     </div>
+                    <?php if ($pkg['sessions_remaining'] > 0): ?>
+                        <form method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn quy đổi các buổi còn lại của gói [<?php echo e($pkg['package_name']); ?>] sang Coins trong Ví không?');">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="action" value="convert_package_to_coins">
+                            <input type="hidden" name="patient_package_id" value="<?php echo $pkg['id']; ?>">
+                            <button type="submit" class="btn btn-sm" style="width: 100%; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem; background: #fffbebf5; color: #d97706; border: 1px solid #fde68a; border-radius: 6px;">
+                                <i class="fas fa-sync-alt"></i> Quy đổi ra Coins
+                            </button>
+                        </form>
+                    <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
             </div>
