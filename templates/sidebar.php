@@ -130,6 +130,9 @@
                 <span><?php echo __('menu.sales'); ?></span>
             </a>
             <div class="submenu">
+                <a href="<?php echo $base_url; ?>modules/sales/topup.php" class="submenu-item <?php echo ($current_page === 'sales' && strpos($_SERVER['PHP_SELF'], 'topup.php') !== false) ? 'active' : ''; ?>">
+                    <i class="fas fa-coins" style="color: #f59e0b;"></i> Quản lý Ví Coin / Nạp Coin
+                </a>
                 <a href="<?php echo $base_url; ?>modules/sales/index.php" class="submenu-item <?php echo ($current_page === 'sales' && strpos($_SERVER['PHP_SELF'], 'index.php') !== false) ? 'active' : ''; ?>">
                     <i class="fas fa-list"></i> <?php echo __('menu.sales.packages_list'); ?>
                 </a>
