@@ -1,18 +1,33 @@
 <?php
-require_once __DIR__ . '/includes/db.php';
-
+require_once 'includes/db.php';
+$db = getDB();
 try {
-    $db = getDB();
+    $db->exec("
+    CREATE TABLE IF NOT EXISTS `coin_tiers` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `name` VARCHAR(255) NOT NULL,
+        `price` DECIMAL(12,2) NOT NULL,
+        `coins_amount` DECIMAL(10,2) NOT NULL,
+        `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+        `display_order` INT NOT NULL DEFAULT 0,
+        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
     
-    // Check if column exists
-    $stmt = $db->query("SHOW COLUMNS FROM invoices LIKE 'card_amount'");
-    if ($stmt->rowCount() == 0) {
-        $db->exec("ALTER TABLE invoices ADD COLUMN card_amount DECIMAL(12,2) DEFAULT 0.00 AFTER transfer_company_amount");
-        echo "Successfully added 'card_amount' column to 'invoices' table.\n";
-    } else {
-        echo "Column 'card_amount' already exists in 'invoices' table.\n";
+    // Seed data
+    $stmt = $db->query("SELECT COUNT(*) FROM coin_tiers");
+    if ($stmt->fetchColumn() == 0) {
+        $db->exec("
+            INSERT INTO coin_tiers (name, price, coins_amount, display_order) VALUES
+            ('Gói Cơ Bản (2 Coins)', 600000, 2, 1),
+            ('Gói Phổ Thông (3 Coins)', 900000, 3, 2),
+            ('Gói Ưu Đãi (10 Coins)', 2800000, 10, 3);
+        ");
+        echo "Seeded coin_tiers.\n";
     }
     
+    echo "Migration successful.\n";
 } catch (Exception $e) {
-    echo "Migration failed: " . $e->getMessage() . "\n";
+    echo "Error: " . $e->getMessage() . "\n";
 }

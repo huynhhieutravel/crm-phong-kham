@@ -1,0 +1,508 @@
+
+            <!-- ============================================== -->
+            <!-- PHẦN 2: BỆNH LÝ HIỆN TẠI (AKTUELLE PATHOLOGIE) -->
+            <!-- ============================================== -->
+            <div style="margin-top: 3.5rem; margin-bottom: 2rem; border-top: 1px solid #e2e8f0; padding-top: 2.5rem;">
+                <h3 style="font-weight: 800; font-size: 1.15rem; color: #1d1d1f; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+                    <i class="fas fa-stethoscope" style="color: #3b82f6;"></i> PHẦN 2: BỆNH LÝ HIỆN TẠI (AKTUELLE PATHOLOGIE)
+                </h3>
+
+                <!-- Tabs Navigation -->
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; background: rgba(248,250,252,0.8); padding: 0.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <button type="button" class="tab-btn active" data-target="tab-kopf">Đầu (Kopf)</button>
+                    <button type="button" class="tab-btn" data-target="tab-hws">Cột sống cổ</button>
+                    <button type="button" class="tab-btn" data-target="tab-bws">CS ngực</button>
+                    <button type="button" class="tab-btn" data-target="tab-lws">CS thắt lưng</button>
+                    <button type="button" class="tab-btn" data-target="tab-schulter">Vai</button>
+                    <button type="button" class="tab-btn" data-target="tab-obere">Chi trên</button>
+                    <button type="button" class="tab-btn" data-target="tab-untere">Chi dưới</button>
+                    <button type="button" class="tab-btn" data-target="tab-fuss">Bàn & cổ chân</button>
+                </div>
+
+                <style>
+                    .tab-btn { background: transparent; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; color: #64748b; cursor: pointer; transition: all 0.2s; }
+                    .tab-btn:hover { background: #f1f5f9; color: #1d1d1f; }
+                    .tab-btn.active { background: white; color: #3b82f6; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+                    .tab-content { display: none; background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+                    .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+                    .path-table { width: 100%; border-collapse: collapse; }
+                    .path-table th { background: #f8fafc; padding: 0.8rem 1rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: #475569; border: 1px solid #e2e8f0; }
+                    .path-table td { padding: 1rem; border: 1px solid #e2e8f0; vertical-align: top; font-size: 0.9rem; color: #1e293b; }
+                    .path-table strong { color: #0f172a; display: block; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.95rem; }
+                    .path-table label { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; margin-bottom: 0.5rem; margin-right: 0.8rem; }
+                    .path-table input[type="checkbox"], .path-table input[type="radio"] { transform: scale(1.15); margin: 0; cursor: pointer; accent-color: #3b82f6; }
+                    .path-table input[type="text"] { border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.85rem; outline: none; transition: border 0.2s; background: #f8fafc; }
+                    .path-table input[type="text"]:focus { border-color: #3b82f6; background: white; }
+                    .path-table input[type="number"] { border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.85rem; outline: none; transition: border 0.2s; background: #f8fafc; width: 60px; text-align: center; }
+                    .path-table input[type="number"]:focus { border-color: #3b82f6; background: white; }
+                </style>
+
+                <div id="tab-kopf" class="tab-content active">
+                    <table class="path-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Triệu chứng / Vùng</th>
+                                <th style="width: 40%;">Tính chất / Vị trí</th>
+                                <th style="width: 40%;">Tần suất / Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Đầu</strong></td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <label><input type="checkbox" name="exam[akt_path][kopf][vitri][]" value="sau_csc" <?php echo checked_v('exam[akt_path][kopf][vitri]', 'sau_csc'); ?>> phía sau cột sống cổ</label>
+                                        <label><input type="checkbox" name="exam[akt_path][kopf][vitri][]" value="truoc_tran" <?php echo checked_v('exam[akt_path][kopf][vitri]', 'truoc_tran'); ?>> phía trước (trán)</label>
+                                        <div>một bên: <label><input type="checkbox" name="exam[akt_path][kopf][vitri][]" value="mot_ben_p" <?php echo checked_v('exam[akt_path][kopf][vitri]', 'mot_ben_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][kopf][vitri][]" value="mot_ben_t" <?php echo checked_v('exam[akt_path][kopf][vitri]', 'mot_ben_t'); ?>> T</label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="margin-bottom: 0.5rem; font-weight: 600;">Tần suất:</div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div style="display: flex; gap: 1rem;"><label><input type="checkbox" name="exam[akt_path][kopf][tansuat][]" value="hang_ngay" <?php echo checked_v('exam[akt_path][kopf][tansuat]', 'hang_ngay'); ?>> hằng ngày</label> <label><input type="checkbox" name="exam[akt_path][kopf][tansuat][]" value="2_3_lan_tuan" <?php echo checked_v('exam[akt_path][kopf][tansuat]', '2_3_lan_tuan'); ?>> 2-3 lần/tuần</label></div>
+                                        <div style="display: flex; gap: 1rem;"><label><input type="checkbox" name="exam[akt_path][kopf][tansuat][]" value="1_lan_tuan" <?php echo checked_v('exam[akt_path][kopf][tansuat]', '1_lan_tuan'); ?>> 1 lần/tuần</label> <label><input type="checkbox" name="exam[akt_path][kopf][tansuat][]" value="1_lan_thang" <?php echo checked_v('exam[akt_path][kopf][tansuat]', '1_lan_thang'); ?>> 1 lần/tháng</label></div>
+                                        <label><input type="checkbox" name="exam[akt_path][kopf][tansuat][]" value="thinh_thoang" <?php echo checked_v('exam[akt_path][kopf][tansuat]', 'thinh_thoang'); ?>> thỉnh thoảng</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Chóng mặt</strong></td>
+                                <td><input type="text" name="exam[akt_path][chongmat][vitri]" placeholder="Ghi chú vị trí..." value="<?php echo get_v('exam[akt_path][chongmat][vitri]'); ?>"></td>
+                                <td><input type="text" name="exam[akt_path][chongmat][tansuat]" placeholder="Ghi chú tần suất..." value="<?php echo get_v('exam[akt_path][chongmat][tansuat]'); ?>"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ù tai</strong></td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <label><input type="checkbox" name="exam[akt_path][utai][vitri][]" value="tieng_u" <?php echo checked_v('exam[akt_path][utai][vitri]', 'tieng_u'); ?>> tiếng ù (rào rào)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][utai][vitri][]" value="tieng_rit" <?php echo checked_v('exam[akt_path][utai][vitri]', 'tieng_rit'); ?>> tiếng rít (huýt)</label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">Từ khi nào: <input type="text" name="exam[akt_path][utai][tu_khi_nao]" placeholder="" value="<?php echo get_v('exam[akt_path][utai][tu_khi_nao]'); ?>"></div>
+                                    <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][utai][donvi][]" value="ngay" <?php echo checked_v('exam[akt_path][utai][donvi]', 'ngay'); ?>> ngày</label> <label><input type="checkbox" name="exam[akt_path][utai][donvi][]" value="tuan" <?php echo checked_v('exam[akt_path][utai][donvi]', 'tuan'); ?>> tuần</label> <label><input type="checkbox" name="exam[akt_path][utai][donvi][]" value="thang" <?php echo checked_v('exam[akt_path][utai][donvi]', 'thang'); ?>> tháng</label> <label><input type="checkbox" name="exam[akt_path][utai][donvi][]" value="nam" <?php echo checked_v('exam[akt_path][utai][donvi]', 'nam'); ?>> năm</label></div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <label><input type="checkbox" name="exam[akt_path][utai][trangthai][]" value="lien_tuc" <?php echo checked_v('exam[akt_path][utai][trangthai]', 'lien_tuc'); ?>> liên tục</label>
+                                        <label><input type="checkbox" name="exam[akt_path][utai][trangthai][]" value="luc_nhieu_luc_it" <?php echo checked_v('exam[akt_path][utai][trangthai]', 'luc_nhieu_luc_it'); ?>> lúc nhiều lúc ít</label>
+                                        <label><input type="checkbox" name="exam[akt_path][utai][trangthai][]" value="co_luc_het_han" <?php echo checked_v('exam[akt_path][utai][trangthai]', 'co_luc_het_han'); ?>> có lúc hết hẳn</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Khớp thái dương hàm<br>(TMJ)</strong></td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div>lục cục: <label><input type="checkbox" name="exam[akt_path][tmj][trieuchung][]" value="luc_cuc_p" <?php echo checked_v('exam[akt_path][tmj][trieuchung]', 'luc_cuc_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][tmj][trieuchung][]" value="luc_cuc_t" <?php echo checked_v('exam[akt_path][tmj][trieuchung]', 'luc_cuc_t'); ?>> T</label></div>
+                                        <div>đau: <label><input type="checkbox" name="exam[akt_path][tmj][trieuchung][]" value="dau_p" <?php echo checked_v('exam[akt_path][tmj][trieuchung]', 'dau_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][tmj][trieuchung][]" value="dau_t" <?php echo checked_v('exam[akt_path][tmj][trieuchung]', 'dau_t'); ?>> T</label></div>
+                                        <div>hạn chế vận động: <label><input type="checkbox" name="exam[akt_path][tmj][trieuchung][]" value="hc_p" <?php echo checked_v('exam[akt_path][tmj][trieuchung]', 'hc_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][tmj][trieuchung][]" value="hc_t" <?php echo checked_v('exam[akt_path][tmj][trieuchung]', 'hc_t'); ?>> T</label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">Từ khi nào: <input type="text" name="exam[akt_path][tmj][tu_khi_nao]" placeholder="" value="<?php echo get_v('exam[akt_path][tmj][tu_khi_nao]'); ?>"></div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <label><input type="checkbox" name="exam[akt_path][tmj][trangthai][]" value="dang_nieng" <?php echo checked_v('exam[akt_path][tmj][trangthai]', 'dang_nieng'); ?>> đang niềng răng</label>
+                                        <label><input type="checkbox" name="exam[akt_path][tmj][trangthai][]" value="da_tung" <?php echo checked_v('exam[akt_path][tmj][trangthai]', 'da_tung'); ?>> đã từng niềng răng</label>
+                                        <div style="display: flex; gap: 1rem;"><label><input type="checkbox" name="exam[akt_path][tmj][trangthai][]" value="cau_rang" <?php echo checked_v('exam[akt_path][tmj][trangthai]', 'cau_rang'); ?>> có cầu răng</label> <label><input type="checkbox" name="exam[akt_path][tmj][trangthai][]" value="mao_rang" <?php echo checked_v('exam[akt_path][tmj][trangthai]', 'mao_rang'); ?>> có mão răng</label></div>
+                                        <label><input type="checkbox" name="exam[akt_path][tmj][trangthai][]" value="cay_ghep" <?php echo checked_v('exam[akt_path][tmj][trangthai]', 'cay_ghep'); ?>> có cấy ghép răng</label>
+                                        <label><input type="checkbox" name="exam[akt_path][tmj][trangthai][]" value="dieu_tri_tuy" <?php echo checked_v('exam[akt_path][tmj][trangthai]', 'dieu_tri_tuy'); ?>> có răng đã điều trị tủy</label>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tab-hws" class="tab-content">
+                    <table class="path-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Vùng</th>
+                                <th style="width: 40%;">Triệu chứng & chi tiết</th>
+                                <th style="width: 40%;">Trạng thái / Lan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>CSC – Cột sống cổ</strong>
+                                    <div style="font-size: 0.8rem; color: #64748b;">Halswirbelsäule (HWS)</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="thang_tren" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'thang_tren'); ?>> </label> thang trên <input type="number" min="1" max="10" name="exam[akt_path][hws][thang_tren_val]" value="<?php echo get_v('akt_path.hws.thang_tren_val'); ?>">/10</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="thang_giua" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'thang_giua'); ?>> </label> thang giữa <input type="number" min="1" max="10" name="exam[akt_path][hws][thang_giua_val]" value="<?php echo get_v('akt_path.hws.thang_giua_val'); ?>">/10</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="thang_duoi" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'thang_duoi'); ?>> </label> thang dưới <input type="number" min="1" max="10" name="exam[akt_path][hws][thang_duoi_val]" value="<?php echo get_v('akt_path.hws.thang_duoi_val'); ?>">/10</div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem;"><label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="p" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="t" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 't'); ?>> T</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; align-items: center;">khi: <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="khi_vd" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'khi_vd'); ?>> vận động</label> <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="khi_nghi" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'khi_nghi'); ?>> nghỉ</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; flex-wrap: wrap;"><label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="dau_nhoi" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'dau_nhoi'); ?>> đau nhói</label> <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="dau_am_i" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'dau_am_i'); ?>> đau âm ỉ</label> <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="te_bi" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'te_bi'); ?>> tê bì</label> <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="liet" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'liet'); ?>> liệt</label></div>
+                                        <div style="display: flex; gap: 1rem; align-items: center;"><i class="fas fa-arrows-alt-h" style="color: #94a3b8;"></i> <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="yeu_co" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'yeu_co'); ?>> yếu cơ</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; align-items: center; font-style: italic;">Hạn chế vận động về phía: <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="hc_p" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'hc_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][hws][trieuchung][]" value="hc_t" <?php echo checked_v('exam[akt_path][hws][trieuchung]', 'hc_t'); ?>> T</label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][hws][trangthai][]" value="cap_tinh" <?php echo checked_v('exam[akt_path][hws][trangthai]', 'cap_tinh'); ?>> </label> cấp tính [từ <input type="text" name="exam[akt_path][hws][cap_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][hws][cap_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][hws][trangthai][]" value="man_tinh" <?php echo checked_v('exam[akt_path][hws][trangthai]', 'man_tinh'); ?>> </label> mạn tính [từ <input type="text" name="exam[akt_path][hws][man_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][hws][man_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][hws][trangthai][]" value="tai_phat" <?php echo checked_v('exam[akt_path][hws][trangthai]', 'tai_phat'); ?>> </label> tái phát [từ <input type="text" name="exam[akt_path][hws][tai_phat_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][hws][tai_phat_tu]'); ?>">]</div>
+                                        <div style="margin-top: 0.5rem; font-weight: 700;">Đau lan: <label><input type="checkbox" name="exam[akt_path][hws][lan][]" value="lan_p" <?php echo checked_v('exam[akt_path][hws][lan]', 'lan_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][hws][lan][]" value="lan_t" <?php echo checked_v('exam[akt_path][hws][lan]', 'lan_t'); ?>> T</label></div>
+                                        <div style="margin-left: 0.5rem;">- <label><input type="checkbox" name="exam[akt_path][hws][lan][]" value="lan_canh_tay" <?php echo checked_v('exam[akt_path][hws][lan]', 'lan_canh_tay'); ?>> </label> đến cánh tay trên</div>
+                                        <div style="margin-left: 0.5rem;">- <label><input type="checkbox" name="exam[akt_path][hws][lan][]" value="lan_ban_tay" <?php echo checked_v('exam[akt_path][hws][lan]', 'lan_ban_tay'); ?>> </label> đến bàn tay</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tab-bws" class="tab-content">
+                    <table class="path-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Vùng</th>
+                                <th style="width: 40%;">Triệu chứng & chi tiết</th>
+                                <th style="width: 40%;">Trạng thái / Lan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>CSN – Cột sống ngực</strong>
+                                    <div style="font-size: 0.8rem; color: #64748b;">Brustwirbelsäule (BWS)</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="thang_tren" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'thang_tren'); ?>> </label> thang trên <input type="number" min="1" max="10" name="exam[akt_path][bws][thang_tren_val]" value="<?php echo get_v('akt_path.bws.thang_tren_val'); ?>">/10</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="thang_giua" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'thang_giua'); ?>> </label> thang giữa <input type="number" min="1" max="10" name="exam[akt_path][bws][thang_giua_val]" value="<?php echo get_v('akt_path.bws.thang_giua_val'); ?>">/10</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="thang_duoi" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'thang_duoi'); ?>> </label> thang dưới <input type="number" min="1" max="10" name="exam[akt_path][bws][thang_duoi_val]" value="<?php echo get_v('akt_path.bws.thang_duoi_val'); ?>">/10</div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem;"><label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="p" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="t" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 't'); ?>> T</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; align-items: center;">khi: <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="khi_vd" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'khi_vd'); ?>> vận động</label> <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="khi_nghi" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'khi_nghi'); ?>> nghỉ</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; flex-wrap: wrap;"><label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="dau_nhoi" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'dau_nhoi'); ?>> đau nhói</label> <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="dau_am_i" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'dau_am_i'); ?>> đau âm ỉ</label> <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="te_bi" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'te_bi'); ?>> tê bì</label> <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="liet" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'liet'); ?>> liệt</label></div>
+                                        <div style="display: flex; gap: 1rem; align-items: center;"><i class="fas fa-arrows-alt-h" style="color: #94a3b8;"></i> <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="yeu_co" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'yeu_co'); ?>> yếu cơ</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; align-items: center; font-style: italic;">Hạn chế vận động về phía: <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="hc_p" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'hc_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][bws][trieuchung][]" value="hc_t" <?php echo checked_v('exam[akt_path][bws][trieuchung]', 'hc_t'); ?>> T</label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][bws][trangthai][]" value="cap_tinh" <?php echo checked_v('exam[akt_path][bws][trangthai]', 'cap_tinh'); ?>> </label> cấp tính [từ <input type="text" name="exam[akt_path][bws][cap_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][bws][cap_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][bws][trangthai][]" value="man_tinh" <?php echo checked_v('exam[akt_path][bws][trangthai]', 'man_tinh'); ?>> </label> mạn tính [từ <input type="text" name="exam[akt_path][bws][man_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][bws][man_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][bws][trangthai][]" value="tai_phat" <?php echo checked_v('exam[akt_path][bws][trangthai]', 'tai_phat'); ?>> </label> tái phát [từ <input type="text" name="exam[akt_path][bws][tai_phat_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][bws][tai_phat_tu]'); ?>">]</div>
+                                        <div style="margin-top: 0.5rem; font-weight: 700;">Đau lan: <label><input type="checkbox" name="exam[akt_path][bws][lan][]" value="lan_p" <?php echo checked_v('exam[akt_path][bws][lan]', 'lan_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][bws][lan][]" value="lan_t" <?php echo checked_v('exam[akt_path][bws][lan]', 'lan_t'); ?>> T</label></div>
+                                        <div style="margin-left: 0.5rem;">- <label><input type="checkbox" name="exam[akt_path][bws][lan][]" value="lan_canh_tay" <?php echo checked_v('exam[akt_path][bws][lan]', 'lan_canh_tay'); ?>> </label> đến cánh tay trên</div>
+                                        <div style="margin-left: 0.5rem;">- <label><input type="checkbox" name="exam[akt_path][bws][lan][]" value="lan_ban_tay" <?php echo checked_v('exam[akt_path][bws][lan]', 'lan_ban_tay'); ?>> </label> đến bàn tay</div>
+                                        <div style="margin-top: 0.5rem; font-weight: 700;">Đau TK liên sườn (ICN): <label><input type="checkbox" name="exam[akt_path][bws][lan][]" value="icn_p" <?php echo checked_v('exam[akt_path][bws][lan]', 'icn_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][bws][lan][]" value="icn_t" <?php echo checked_v('exam[akt_path][bws][lan]', 'icn_t'); ?>> T</label></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tab-lws" class="tab-content">
+                    <table class="path-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Vùng</th>
+                                <th style="width: 40%;">Triệu chứng & chi tiết</th>
+                                <th style="width: 40%;">Trạng thái / Lan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>CSTL – Cột sống thắt lưng</strong>
+                                    <div style="font-size: 0.8rem; color: #64748b;">Lendenwirbelsäule (LWS)</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="thang_tren" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'thang_tren'); ?>> </label> thang trên <input type="number" min="1" max="10" name="exam[akt_path][lws][thang_tren_val]" value="<?php echo get_v('akt_path.lws.thang_tren_val'); ?>">/10</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="thang_giua" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'thang_giua'); ?>> </label> thang giữa <input type="number" min="1" max="10" name="exam[akt_path][lws][thang_giua_val]" value="<?php echo get_v('akt_path.lws.thang_giua_val'); ?>">/10</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="thang_duoi" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'thang_duoi'); ?>> </label> thang dưới <input type="number" min="1" max="10" name="exam[akt_path][lws][thang_duoi_val]" value="<?php echo get_v('akt_path.lws.thang_duoi_val'); ?>">/10</div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem;"><label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="p" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="t" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 't'); ?>> T</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; align-items: center;">khi: <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="khi_vd" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'khi_vd'); ?>> vận động</label> <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="khi_nghi" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'khi_nghi'); ?>> nghỉ</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; flex-wrap: wrap;"><label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="dau_nhoi" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'dau_nhoi'); ?>> đau nhói</label> <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="dau_am_i" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'dau_am_i'); ?>> đau âm ỉ</label> <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="te_bi" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'te_bi'); ?>> tê bì</label> <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="liet" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'liet'); ?>> liệt</label></div>
+                                        <div style="display: flex; gap: 1rem; align-items: center;"><i class="fas fa-arrows-alt-h" style="color: #94a3b8;"></i> <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="yeu_co" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'yeu_co'); ?>> yếu cơ</label></div>
+                                        <div style="margin-top: 0.5rem; display: flex; gap: 1rem; align-items: center; font-style: italic;">Hạn chế vận động về phía: <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="hc_p" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'hc_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][lws][trieuchung][]" value="hc_t" <?php echo checked_v('exam[akt_path][lws][trieuchung]', 'hc_t'); ?>> T</label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="font-weight: 700;">Đau lan: <label><input type="checkbox" name="exam[akt_path][lws][lan][]" value="lan_p" <?php echo checked_v('exam[akt_path][lws][lan]', 'lan_p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][lws][lan][]" value="lan_t" <?php echo checked_v('exam[akt_path][lws][lan]', 'lan_t'); ?>> T</label></div>
+                                        <div style="display: flex; gap: 1rem; align-items: center;"><label><input type="checkbox" name="exam[akt_path][lws][lan][]" value="lan_ben" <?php echo checked_v('exam[akt_path][lws][lan]', 'lan_ben'); ?>> bên</label> / <label><input type="checkbox" name="exam[akt_path][lws][lan][]" value="lan_den_goi" <?php echo checked_v('exam[akt_path][lws][lan]', 'lan_den_goi'); ?>> đến gối</label></div>
+                                        <div style="display: flex; gap: 1rem; align-items: center;"><label><input type="checkbox" name="exam[akt_path][lws][lan][]" value="lan_phia_sau" <?php echo checked_v('exam[akt_path][lws][lan]', 'lan_phia_sau'); ?>> phía sau</label> / <label><input type="checkbox" name="exam[akt_path][lws][lan][]" value="lan_den_ban_chan" <?php echo checked_v('exam[akt_path][lws][lan]', 'lan_den_ban_chan'); ?>> đến bàn chân</label></div>
+                                        <div style="display: flex; gap: 1rem; align-items: center;"><label><input type="checkbox" name="exam[akt_path][lws][lan][]" value="lan_phia_trong" <?php echo checked_v('exam[akt_path][lws][lan]', 'lan_phia_trong'); ?>> phía trong</label> / <label><input type="checkbox" name="exam[akt_path][lws][lan][]" value="lan_phia_truoc" <?php echo checked_v('exam[akt_path][lws][lan]', 'lan_phia_truoc'); ?>> phía trước</label></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tab-schulter" class="tab-content">
+                    <table class="path-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Vùng</th>
+                                <th style="width: 40%;">Triệu chứng / Vị trí</th>
+                                <th style="width: 40%;">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Vai</strong></td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+                                            <label><input type="checkbox" name="exam[akt_path][vai][vitri][]" value="p" <?php echo checked_v('exam[akt_path][vai][vitri]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][vai][vitri][]" value="t" <?php echo checked_v('exam[akt_path][vai][vitri]', 't'); ?>> T</label> 
+                                            <span style="margin-left: 1rem;">Thang đau: 1 <input type="number" min="1" max="10" name="exam[akt_path][vai][thang_dau]" value="<?php echo get_v('akt_path.vai.thang_dau'); ?>"> /10</span>
+                                        </div>
+                                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                                            <label><input type="checkbox" name="exam[akt_path][vai][vitri][]" value="truoc" <?php echo checked_v('exam[akt_path][vai][vitri]', 'truoc'); ?>> phía trước (ventral)</label> <label><input type="checkbox" name="exam[akt_path][vai][vitri][]" value="sau" <?php echo checked_v('exam[akt_path][vai][vitri]', 'sau'); ?>> phía sau (dorsal)</label> <label><input type="checkbox" name="exam[akt_path][vai][vitri][]" value="ben_ngoai" <?php echo checked_v('exam[akt_path][vai][vitri]', 'ben_ngoai'); ?>> bên ngoài (lateral)</label>
+                                        </div>
+                                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+                                            khi: <label><input type="checkbox" name="exam[akt_path][vai][khi][]" value="vd" <?php echo checked_v('exam[akt_path][vai][khi]', 'vd'); ?>> vận động</label> <label><input type="checkbox" name="exam[akt_path][vai][khi][]" value="nghi" <?php echo checked_v('exam[akt_path][vai][khi]', 'nghi'); ?>> nghỉ</label> <label><input type="checkbox" name="exam[akt_path][vai][khi][]" value="lan" <?php echo checked_v('exam[akt_path][vai][khi]', 'lan'); ?>> lan theo hướng nhất định</label>
+                                        </div>
+                                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                            <label><input type="checkbox" name="exam[akt_path][vai][trieuchung][]" value="dau_nhoi" <?php echo checked_v('exam[akt_path][vai][trieuchung]', 'dau_nhoi'); ?>> đau nhói</label> <label><input type="checkbox" name="exam[akt_path][vai][trieuchung][]" value="dau_am_i" <?php echo checked_v('exam[akt_path][vai][trieuchung]', 'dau_am_i'); ?>> đau âm ỉ</label> <label><input type="checkbox" name="exam[akt_path][vai][trieuchung][]" value="te_bi" <?php echo checked_v('exam[akt_path][vai][trieuchung]', 'te_bi'); ?>> tê bì</label> <label><input type="checkbox" name="exam[akt_path][vai][trieuchung][]" value="yeu_co" <?php echo checked_v('exam[akt_path][vai][trieuchung]', 'yeu_co'); ?>> yếu cơ</label> <label><input type="checkbox" name="exam[akt_path][vai][trieuchung][]" value="liet" <?php echo checked_v('exam[akt_path][vai][trieuchung]', 'liet'); ?>> liệt</label>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][vai][trangthai][]" value="cap_tinh" <?php echo checked_v('exam[akt_path][vai][trangthai]', 'cap_tinh'); ?>> </label> cấp tính [từ <input type="text" name="exam[akt_path][vai][cap_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][vai][cap_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][vai][trangthai][]" value="man_tinh" <?php echo checked_v('exam[akt_path][vai][trangthai]', 'man_tinh'); ?>> </label> mạn tính [từ <input type="text" name="exam[akt_path][vai][man_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][vai][man_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][vai][trangthai][]" value="tai_phat" <?php echo checked_v('exam[akt_path][vai][trangthai]', 'tai_phat'); ?>> </label> tái phát [từ <input type="text" name="exam[akt_path][vai][tai_phat_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][vai][tai_phat_tu]'); ?>">]</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tab-obere" class="tab-content">
+                    <table class="path-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Khớp / Vùng</th>
+                                <th style="width: 40%;">Triệu chứng / Định khu</th>
+                                <th style="width: 40%;">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>Khuỷu tay</strong>
+                                    <div style="font-size: 0.8rem; color: #64748b;">Ellenbogen</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+                                        <label><input type="checkbox" name="exam[akt_path][khuyu][vitri][]" value="p" <?php echo checked_v('exam[akt_path][khuyu][vitri]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][khuyu][vitri][]" value="t" <?php echo checked_v('exam[akt_path][khuyu][vitri]', 't'); ?>> T</label> 
+                                        <span style="margin-left: 1rem;">Thang đau: 1 <input type="number" min="1" max="10" name="exam[akt_path][khuyu][thang_dau]" value="<?php echo get_v('akt_path.khuyu.thang_dau'); ?>"> /10</span>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <label><input type="checkbox" name="exam[akt_path][khuyu][loai][]" value="tennis" <?php echo checked_v('exam[akt_path][khuyu][loai]', 'tennis'); ?>> viêm lồi cầu ngoài – khuỷu tay tennis (TA)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][khuyu][loai][]" value="golf" <?php echo checked_v('exam[akt_path][khuyu][loai]', 'golf'); ?>> viêm lồi cầu trong – khuỷu tay golf (GA)</label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][khuyu][trangthai][]" value="cap_tinh" <?php echo checked_v('exam[akt_path][khuyu][trangthai]', 'cap_tinh'); ?>> </label> cấp tính [từ <input type="text" name="exam[akt_path][khuyu][cap_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][khuyu][cap_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][khuyu][trangthai][]" value="man_tinh" <?php echo checked_v('exam[akt_path][khuyu][trangthai]', 'man_tinh'); ?>> </label> mạn tính [từ <input type="text" name="exam[akt_path][khuyu][man_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][khuyu][man_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][khuyu][trangthai][]" value="tai_phat" <?php echo checked_v('exam[akt_path][khuyu][trangthai]', 'tai_phat'); ?>> </label> tái phát [từ <input type="text" name="exam[akt_path][khuyu][tai_phat_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][khuyu][tai_phat_tu]'); ?>">]</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Bàn tay & cổ tay</strong></td>
+                                <td>
+                                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.8rem;">
+                                        <label><input type="checkbox" name="exam[akt_path][ban_tay][vitri][]" value="p" <?php echo checked_v('exam[akt_path][ban_tay][vitri]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][vitri][]" value="t" <?php echo checked_v('exam[akt_path][ban_tay][vitri]', 't'); ?>> T</label> 
+                                        <span style="margin-left: 1rem;">Thang đau: 1 <input type="number" min="1" max="10" name="exam[akt_path][ban_tay][thang_dau]" value="<?php echo get_v('akt_path.ban_tay.thang_dau'); ?>"> /10</span>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="display: flex; align-items: center; flex-wrap: wrap;"><strong>Cổ tay:</strong> <label><input type="checkbox" name="exam[akt_path][ban_tay][cotay][]" value="mu" <?php echo checked_v('exam[akt_path][ban_tay][cotay]', 'mu'); ?>> mu</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][cotay][]" value="gan" <?php echo checked_v('exam[akt_path][ban_tay][cotay]', 'gan'); ?>> gan</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][cotay][]" value="ngoai" <?php echo checked_v('exam[akt_path][ban_tay][cotay]', 'ngoai'); ?>> bên ngoài</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][cotay][]" value="trong" <?php echo checked_v('exam[akt_path][ban_tay][cotay]', 'trong'); ?>> bên trong</label> (phía quay – phía ngón cái)</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><strong>Xương bàn tay (MTC):</strong> <label><input type="checkbox" name="exam[akt_path][ban_tay][mtc][]" value="2" <?php echo checked_v('exam[akt_path][ban_tay][mtc]', '2'); ?>> 2</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][mtc][]" value="3" <?php echo checked_v('exam[akt_path][ban_tay][mtc]', '3'); ?>> 3</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][mtc][]" value="4" <?php echo checked_v('exam[akt_path][ban_tay][mtc]', '4'); ?>> 4</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][mtc][]" value="5" <?php echo checked_v('exam[akt_path][ban_tay][mtc]', '5'); ?>> 5</label> (mặt gan)</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><strong>Ngón cái (Pollicis):</strong> <label><input type="checkbox" name="exam[akt_path][ban_tay][pollicis][]" value="sg" <?php echo checked_v('exam[akt_path][ban_tay][pollicis]', 'sg'); ?>> khớp yên (SG)</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][pollicis][]" value="gg" <?php echo checked_v('exam[akt_path][ban_tay][pollicis]', 'gg'); ?>> khớp bàn-ngón (GG)</label></div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><strong>Ngón tay (Digiti):</strong> <label><input type="checkbox" name="exam[akt_path][ban_tay][digiti][]" value="2" <?php echo checked_v('exam[akt_path][ban_tay][digiti]', '2'); ?>> 2</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][digiti][]" value="3" <?php echo checked_v('exam[akt_path][ban_tay][digiti]', '3'); ?>> 3</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][digiti][]" value="4" <?php echo checked_v('exam[akt_path][ban_tay][digiti]', '4'); ?>> 4</label> <label><input type="checkbox" name="exam[akt_path][ban_tay][digiti][]" value="5" <?php echo checked_v('exam[akt_path][ban_tay][digiti]', '5'); ?>> 5</label></div>
+                                        <div><strong>Hội chứng ống cổ tay (CTS):</strong> <label><input type="checkbox" name="exam[akt_path][ban_tay][cts][]" value="cts" <?php echo checked_v('exam[akt_path][ban_tay][cts]', 'cts'); ?>> </label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][ban_tay][trangthai][]" value="cap_tinh" <?php echo checked_v('exam[akt_path][ban_tay][trangthai]', 'cap_tinh'); ?>> </label> cấp tính [từ <input type="text" name="exam[akt_path][ban_tay][cap_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][ban_tay][cap_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][ban_tay][trangthai][]" value="man_tinh" <?php echo checked_v('exam[akt_path][ban_tay][trangthai]', 'man_tinh'); ?>> </label> mạn tính [từ <input type="text" name="exam[akt_path][ban_tay][man_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][ban_tay][man_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][ban_tay][trangthai][]" value="tai_phat" <?php echo checked_v('exam[akt_path][ban_tay][trangthai]', 'tai_phat'); ?>> </label> tái phát [từ <input type="text" name="exam[akt_path][ban_tay][tai_phat_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][ban_tay][tai_phat_tu]'); ?>">]</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tab-untere" class="tab-content">
+                    <table class="path-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Vùng</th>
+                                <th style="width: 40%;">Triệu chứng & phát hiện</th>
+                                <th style="width: 40%;">Hạn chế</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>Cẳng chân</strong>
+                                    <div style="font-size: 0.8rem; color: #64748b;">Bein</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+                                            <label><input type="checkbox" name="exam[akt_path][bein][vitri][]" value="p" <?php echo checked_v('exam[akt_path][bein][vitri]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][bein][vitri][]" value="t" <?php echo checked_v('exam[akt_path][bein][vitri]', 't'); ?>> T</label> 
+                                            <span style="margin-left: 1rem;">Thang đau: 1 <input type="number" min="1" max="10" name="exam[akt_path][bein][thang_dau]" value="<?php echo get_v('akt_path.bein.thang_dau'); ?>"> /10</span>
+                                        </div>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
+                                            <label><input type="checkbox" name="exam[akt_path][bein][huong][]" value="sau" <?php echo checked_v('exam[akt_path][bein][huong]', 'sau'); ?>> phía sau</label> <label><input type="checkbox" name="exam[akt_path][bein][huong][]" value="truoc" <?php echo checked_v('exam[akt_path][bein][huong]', 'truoc'); ?>> phía trước</label> <label><input type="checkbox" name="exam[akt_path][bein][huong][]" value="ngoai" <?php echo checked_v('exam[akt_path][bein][huong]', 'ngoai'); ?>> bên ngoài</label> <label><input type="checkbox" name="exam[akt_path][bein][huong][]" value="trong" <?php echo checked_v('exam[akt_path][bein][huong]', 'trong'); ?>> bên trong</label>
+                                        </div>
+                                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+                                            <label><input type="checkbox" name="exam[akt_path][bein][khi][]" value="nghi" <?php echo checked_v('exam[akt_path][bein][khi]', 'nghi'); ?>> khi nghỉ</label> <label><input type="checkbox" name="exam[akt_path][bein][khi][]" value="vd" <?php echo checked_v('exam[akt_path][bein][khi]', 'vd'); ?>> khi vận động</label>
+                                        </div>
+                                        <div style="font-weight: 700; margin-top: 0.5rem;">Chênh lệch chiều dài chân đã biết:</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">chân ngắn: <label><input type="checkbox" name="exam[akt_path][bein][chenh_lech][]" value="p" <?php echo checked_v('exam[akt_path][bein][chenh_lech]', 'p'); ?>> P</label> / <label><input type="checkbox" name="exam[akt_path][bein][chenh_lech][]" value="t" <?php echo checked_v('exam[akt_path][bein][chenh_lech]', 't'); ?>> T</label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][bein][trangthai][]" value="cap_tinh" <?php echo checked_v('exam[akt_path][bein][trangthai]', 'cap_tinh'); ?>> </label> cấp tính [từ <input type="text" name="exam[akt_path][bein][cap_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][bein][cap_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][bein][trangthai][]" value="man_tinh" <?php echo checked_v('exam[akt_path][bein][trangthai]', 'man_tinh'); ?>> </label> mạn tính [từ <input type="text" name="exam[akt_path][bein][man_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][bein][man_tinh_tu]'); ?>">]</div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][bein][trangthai][]" value="tai_phat" <?php echo checked_v('exam[akt_path][bein][trangthai]', 'tai_phat'); ?>> </label> tái phát [từ <input type="text" name="exam[akt_path][bein][tai_phat_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][bein][tai_phat_tu]'); ?>">]</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Khớp gối</strong>
+                                    <div style="font-size: 0.8rem; color: #64748b;">Knie</div>
+                                </td>
+                                <td colspan="2">
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][knie][vitri][]" value="p" <?php echo checked_v('exam[akt_path][knie][vitri]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][knie][vitri][]" value="t" <?php echo checked_v('exam[akt_path][knie][vitri]', 't'); ?>> T</label></div>
+                                        <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+                                            <label><input type="checkbox" name="exam[akt_path][knie][vung][]" value="trong" <?php echo checked_v('exam[akt_path][knie][vung]', 'trong'); ?>> trong (sụn chêm trong)</label> <label><input type="checkbox" name="exam[akt_path][knie][vung][]" value="ngoai" <?php echo checked_v('exam[akt_path][knie][vung]', 'ngoai'); ?>> ngoài (sụn chêm ngoài)</label>
+                                        </div>
+                                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                                            <label><input type="checkbox" name="exam[akt_path][knie][vung][]" value="mac" <?php echo checked_v('exam[akt_path][knie][vung]', 'mac'); ?>> xương mác (Fibula)</label> <label><input type="checkbox" name="exam[akt_path][knie][vung][]" value="sun_chem" <?php echo checked_v('exam[akt_path][knie][vung]', 'sun_chem'); ?>> sụn chêm</label> <label><input type="checkbox" name="exam[akt_path][knie][vung][]" value="toan_bo" <?php echo checked_v('exam[akt_path][knie][vung]', 'toan_bo'); ?>> toàn bộ</label> <label><input type="checkbox" name="exam[akt_path][knie][vung][]" value="sau" <?php echo checked_v('exam[akt_path][knie][vung]', 'sau'); ?>> phía sau</label>
+                                        </div>
+                                        <div style="font-weight: 700; margin-top: 0.5rem;">Hạn chế vận động:</div>
+                                        <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+                                            - <label><input type="checkbox" name="exam[akt_path][knie][han_che][]" value="dau" <?php echo checked_v('exam[akt_path][knie][han_che]', 'dau'); ?>> do đau</label>  - <label><input type="checkbox" name="exam[akt_path][knie][han_che][]" value="ket" <?php echo checked_v('exam[akt_path][knie][han_che]', 'ket'); ?>> do kẹt khớp</label>
+                                        </div>
+                                        <div style="font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center;">Phù nề (Ödem) <label><input type="checkbox" name="exam[akt_path][knie][phu_ne][]" value="co" <?php echo checked_v('exam[akt_path][knie][phu_ne]', 'co'); ?>> </label></div>
+                                        <div style="font-weight: 700; margin-top: 0.5rem;">Khó khăn khi:</div>
+                                        <div style="display: flex; gap: 1rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][knie][kho_khan][]" value="len_cau" <?php echo checked_v('exam[akt_path][knie][kho_khan]', 'len_cau'); ?>> lên cầu thang</label> / <label><input type="checkbox" name="exam[akt_path][knie][kho_khan][]" value="xuong_cau" <?php echo checked_v('exam[akt_path][knie][kho_khan]', 'xuong_cau'); ?>> xuống cầu thang</label></div>
+                                        <div style="display: flex; gap: 1rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][knie][kho_khan][]" value="di" <?php echo checked_v('exam[akt_path][knie][kho_khan]', 'di'); ?>> đi</label> / <label><input type="checkbox" name="exam[akt_path][knie][kho_khan][]" value="dung" <?php echo checked_v('exam[akt_path][knie][kho_khan]', 'dung'); ?>> đứng</label> / <label><input type="checkbox" name="exam[akt_path][knie][kho_khan][]" value="ngoi" <?php echo checked_v('exam[akt_path][knie][kho_khan]', 'ngoi'); ?>> ngồi</label></div>
+                                        <div style="display: flex; gap: 1rem; margin-bottom: 0.2rem;"><label><input type="checkbox" name="exam[akt_path][knie][kho_khan][]" value="nghi" <?php echo checked_v('exam[akt_path][knie][kho_khan]', 'nghi'); ?>> khi nghỉ</label> / <label><input type="checkbox" name="exam[akt_path][knie][kho_khan][]" value="vd" <?php echo checked_v('exam[akt_path][knie][kho_khan]', 'vd'); ?>> khi vận động</label></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tab-fuss" class="tab-content">
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                        <strong>Bàn chân:</strong> <label><input type="checkbox" name="exam[akt_path][fuss][vitri][]" value="p" <?php echo checked_v('exam[akt_path][fuss][vitri]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][fuss][vitri][]" value="t" <?php echo checked_v('exam[akt_path][fuss][vitri]', 't'); ?>> T</label> 
+                        <span style="margin-left: 1rem;">Thang đau: 1 <input type="number" min="1" max="10" name="exam[akt_path][fuss][thang_dau]" value="<?php echo get_v('akt_path.fuss.thang_dau'); ?>"> /10</span>
+                    </div>
+                    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px dashed #cbd5e1;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][fuss][trangthai][]" value="cap_tinh" <?php echo checked_v('exam[akt_path][fuss][trangthai]', 'cap_tinh'); ?>> </label> cấp tính [từ <input type="text" name="exam[akt_path][fuss][cap_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][fuss][cap_tinh_tu]'); ?>">]</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][fuss][trangthai][]" value="man_tinh" <?php echo checked_v('exam[akt_path][fuss][trangthai]', 'man_tinh'); ?>> </label> mạn tính [từ <input type="text" name="exam[akt_path][fuss][man_tinh_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][fuss][man_tinh_tu]'); ?>">]</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][fuss][trangthai][]" value="tai_phat" <?php echo checked_v('exam[akt_path][fuss][trangthai]', 'tai_phat'); ?>> </label> tái phát [từ <input type="text" name="exam[akt_path][fuss][tai_phat_tu]" placeholder="" value="<?php echo get_v('exam[akt_path][fuss][tai_phat_tu]'); ?>">]</div>
+                    </div>
+                    <table class="path-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 33%;">Hình ảnh lâm sàng</th>
+                                <th style="width: 33%;">Định khu & giải phẫu</th>
+                                <th style="width: 34%;">Biến dạng bàn chân</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <strong>Gai gót chân (Fersensporn)</strong>
+                                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;"><label><input type="checkbox" name="exam[akt_path][fuss][gai][]" value="gan" <?php echo checked_v('exam[akt_path][fuss][gai]', 'gan'); ?>> mặt gan (plantar)</label> / <label><input type="checkbox" name="exam[akt_path][fuss][gai][]" value="mu" <?php echo checked_v('exam[akt_path][fuss][gai]', 'mu'); ?>> mặt mu (dorsal)</label></div>
+                                        
+                                        <strong>Ngón cái vẹo ngoài (Hallux valgus):</strong>
+                                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;"><label><input type="checkbox" name="exam[akt_path][fuss][hallux][]" value="p" <?php echo checked_v('exam[akt_path][fuss][hallux]', 'p'); ?>> P</label> <label><input type="checkbox" name="exam[akt_path][fuss][hallux][]" value="t" <?php echo checked_v('exam[akt_path][fuss][hallux]', 't'); ?>> T</label></div>
+                                        
+                                        <strong>U thần kinh Morton (Morton Neurom)</strong>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">Ngón: <label><input type="checkbox" name="exam[akt_path][fuss][morton][]" value="1" <?php echo checked_v('exam[akt_path][fuss][morton]', '1'); ?>> 1</label> <label><input type="checkbox" name="exam[akt_path][fuss][morton][]" value="2" <?php echo checked_v('exam[akt_path][fuss][morton]', '2'); ?>> 2</label> <label><input type="checkbox" name="exam[akt_path][fuss][morton][]" value="3" <?php echo checked_v('exam[akt_path][fuss][morton]', '3'); ?>> 3</label> <label><input type="checkbox" name="exam[akt_path][fuss][morton][]" value="4" <?php echo checked_v('exam[akt_path][fuss][morton]', '4'); ?>> 4</label> <label><input type="checkbox" name="exam[akt_path][fuss][morton][]" value="5" <?php echo checked_v('exam[akt_path][fuss][morton]', '5'); ?>> 5</label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][dinhkhu][]" value="mu" <?php echo checked_v('exam[akt_path][fuss][dinhkhu]', 'mu'); ?>> mặt mu (dorsal)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][dinhkhu][]" value="gan" <?php echo checked_v('exam[akt_path][fuss][dinhkhu]', 'gan'); ?>> mặt gan (plantar)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][dinhkhu][]" value="gan_proximal" <?php echo checked_v('exam[akt_path][fuss][dinhkhu]', 'gan_proximal'); ?>> gần (proximal)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][dinhkhu][]" value="xa" <?php echo checked_v('exam[akt_path][fuss][dinhkhu]', 'xa'); ?>> xa (distal)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][dinhkhu][]" value="trong" <?php echo checked_v('exam[akt_path][fuss][dinhkhu]', 'trong'); ?>> phía trong (medial)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][dinhkhu][]" value="ngoai" <?php echo checked_v('exam[akt_path][fuss][dinhkhu]', 'ngoai'); ?>> phía ngoài (lateral)</label>
+                                        <div style="display: flex; gap: 0.5rem;"><label><input type="checkbox" name="exam[akt_path][fuss][dinhkhu][]" value="nghi" <?php echo checked_v('exam[akt_path][fuss][dinhkhu]', 'nghi'); ?>> khi nghỉ</label> / <label><input type="checkbox" name="exam[akt_path][fuss][dinhkhu][]" value="vd" <?php echo checked_v('exam[akt_path][fuss][dinhkhu]', 'vd'); ?>> khi vận động</label></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][bien_dang][]" value="bet" <?php echo checked_v('exam[akt_path][fuss][bien_dang]', 'bet'); ?>> Bàn chân bẹt (Plattfuß)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][bien_dang][]" value="lom" <?php echo checked_v('exam[akt_path][fuss][bien_dang]', 'lom'); ?>> Bàn chân lõm/vòm cao (Hohlfuß)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][bien_dang][]" value="liem" <?php echo checked_v('exam[akt_path][fuss][bien_dang]', 'liem'); ?>> Bàn chân hình liềm (Sichelfuß)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][bien_dang][]" value="sup" <?php echo checked_v('exam[akt_path][fuss][bien_dang]', 'sup'); ?>> Sụp vòm (Senkfuß)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][bien_dang][]" value="xoe" <?php echo checked_v('exam[akt_path][fuss][bien_dang]', 'xoe'); ?>> Bàn chân xòe/bè (Spreizfuß)</label>
+                                        <label><input type="checkbox" name="exam[akt_path][fuss][bien_dang][]" value="veo" <?php echo checked_v('exam[akt_path][fuss][bien_dang]', 'veo'); ?>> Bàn chân vẹo (Knickfuß)</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Khớp cổ chân (Sprunggelenk)</strong></td>
+                                <td colspan="2">
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><strong>Khớp cổ chân trên (OSG)</strong> <label><input type="checkbox" name="exam[akt_path][fuss][khop][]" value="osg" <?php echo checked_v('exam[akt_path][fuss][khop]', 'osg'); ?>> </label></div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;"><strong>Khớp cổ chân dưới (USG):</strong> <label><input type="checkbox" name="exam[akt_path][fuss][khop][]" value="usg_ngua" <?php echo checked_v('exam[akt_path][fuss][khop]', 'usg_ngua'); ?>> xoay ngửa (sup)</label> / <label><input type="checkbox" name="exam[akt_path][fuss][khop][]" value="usg_sap" <?php echo checked_v('exam[akt_path][fuss][khop]', 'usg_sap'); ?>> xoay sấp (pron)</label></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 700; color: #1e293b;">Ô ghi chú chung Bệnh lý hiện tại:</label>
+                    <textarea name="exam[akt_path][notes]" class="form-premium-input" rows="3" placeholder="Nhập ghi chú thêm cho phần Bệnh sử..."><?php echo get_v('akt_path.notes'); ?></textarea>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.4rem; font-style: italic;">Ghi chú trong phần Bệnh sử sẽ được gom hiển thị lại trên các bản Tái khám (Follow-Up) về sau.</div>
+                </div>
+            </div>
+            
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const tabBtns = document.querySelectorAll('.tab-btn');
+                const tabContents = document.querySelectorAll('.tab-content');
+                
+                tabBtns.forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        // Xóa active
+                        tabBtns.forEach(b => b.classList.remove('active'));
+                        tabContents.forEach(c => c.classList.remove('active'));
+                        
+                        // Active tab được chọn
+                        this.classList.add('active');
+                        const targetId = this.getAttribute('data-target');
+                        const targetContent = document.getElementById(targetId);
+                        if(targetContent) {
+                            targetContent.classList.add('active');
+                        }
+                    });
+                });
+            });
+            </script>

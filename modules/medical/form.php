@@ -1195,12 +1195,12 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
             </div>
 
         <?php elseif ($type === 'chiropractic' || $type === 'initial_exam'): ?>
-            <!-- Chiropractic / V2 Form (New Table design) -->
-            <?php require_once 'forms/chiropractic_v2.php'; ?>
-
-        <?php elseif ($type === 'chiropractic_v1'): ?>
             <!-- Chiropractic / V1 Form (Old Flex Layout Backup) -->
             <?php require_once 'forms/chiropractic_v1.php'; ?>
+
+        <?php elseif ($type === 'chiropractic_v2'): ?>
+            <!-- Chiropractic / V2 Form (New Table design) -->
+            <?php require_once 'forms/chiropractic_v2.php'; ?>
 
         <?php else: ?>
             <!-- Fallback Generic Sections -->

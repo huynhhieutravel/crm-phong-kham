@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password {&m5L9[eUv}
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S ls -l /var/www/crm_phong_kham/modules/billing/search_coin_patients_api.php"
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

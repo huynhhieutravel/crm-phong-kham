@@ -98,6 +98,17 @@
                 input.value = data[key];
                 form.appendChild(input);
             }
+            
+            // Tự động nhúng CSRF token
+            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (csrfMeta && !data['_csrf_token']) {
+                var csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_csrf_token';
+                csrfInput.value = csrfMeta.getAttribute('content');
+                form.appendChild(csrfInput);
+            }
+            
             document.body.appendChild(form);
             form.submit();
         });

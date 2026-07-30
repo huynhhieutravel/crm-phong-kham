@@ -10,6 +10,14 @@ $current_page = 'patients';
 require_once '../../templates/header.php';
 
 $db = getDB();
+
+// Auto-run migration for customer_group
+try {
+    $db->exec("ALTER TABLE patients ADD COLUMN customer_group VARCHAR(255) NULL AFTER label");
+} catch (Exception $e) {
+    // Ignore if exists
+}
+
 $search = $_GET['search'] ?? '';
 $label = $_GET['label'] ?? '';
 $gender_filter = $_GET['gender'] ?? '';
@@ -27,7 +35,12 @@ $params = [];
 if ($search) {
     // H3 FIX: Escape LIKE wildcards
     $safe_search = addcslashes($search, '%_');
-    $where[] = "(p.full_name LIKE ? OR p.phone LIKE ? OR p.customer_id LIKE ?)";
+    $where[] = "(p.full_name LIKE ? OR p.phone LIKE ? OR p.customer_id LIKE ? OR p.customer_group LIKE ? OR p.label LIKE ? OR p.notes LIKE ? OR p.relationship LIKE ? OR p.guardian_name LIKE ?)";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
+    $params[] = "%$safe_search%";
     $params[] = "%$safe_search%";
     $params[] = "%$safe_search%";
     $params[] = "%$safe_search%";

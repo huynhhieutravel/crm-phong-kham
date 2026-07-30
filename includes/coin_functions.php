@@ -19,7 +19,7 @@ if (!defined('COIN_FUNCTIONS_LOADED')) {
      * Top-up coins for a patient (Cash to Coins)
      * Must be called inside or will start a PDO Transaction
      */
-    function topup_patient_coins($db, $patient_id, $coins, $price_paid, $created_by, $note = '') {
+    function topup_patient_coins($db, $patient_id, $coins, $price_paid, $created_by, $note = '', $payment_method = 'cash') {
         $in_transaction = $db->inTransaction();
         if (!$in_transaction) $db->beginTransaction();
 
@@ -28,12 +28,55 @@ if (!defined('COIN_FUNCTIONS_LOADED')) {
             $stmt = $db->prepare("INSERT INTO patient_wallets (patient_id, coin_balance) VALUES (?, ?) ON DUPLICATE KEY UPDATE coin_balance = coin_balance + VALUES(coin_balance)");
             $stmt->execute([$patient_id, $coins]);
 
-            // Log transaction
+            // Create Invoice
+            $today = date('Ymd');
+            $stmt = $db->prepare("SELECT COUNT(*) FROM invoices WHERE invoice_no LIKE ?");
+            $stmt->execute(["PTT-$today-%"]);
+            $count = (int)$stmt->fetchColumn() + 1;
+            $invoice_no = sprintf("PTT-%s-%03d", $today, $count);
+            
+            $items = [
+                ['name' => "Nạp $coins Coins vào Ví", 'price' => $price_paid, 'qty' => 1]
+            ];
+            
+            $category_map = [
+                'cash' => 'Tiền mặt', 
+                'transfer' => 'Chuyển khoản (Cũ)', 
+                'transfer_personal' => 'CK Cá nhân', 
+                'transfer_company' => 'TK Công ty', 
+                'card' => 'Quẹt thẻ'
+            ];
+            
+            $cash_amount = ($payment_method === 'cash') ? $price_paid : 0;
+            $transfer_amount = ($payment_method === 'transfer') ? $price_paid : 0; // Legacy
+            $transfer_personal_amount = ($payment_method === 'transfer_personal') ? $price_paid : 0;
+            $transfer_company_amount = ($payment_method === 'transfer_company') ? $price_paid : 0;
+            $card_amount = ($payment_method === 'card') ? $price_paid : 0;
+            
+            $stmt = $db->prepare("
+                INSERT INTO invoices (invoice_no, patient_id, items, subtotal, total_amount, cash_amount, transfer_amount, transfer_personal_amount, transfer_company_amount, card_amount, status, note, created_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', ?, ?)
+            ");
+            $stmt->execute([
+                $invoice_no, $patient_id, json_encode($items, JSON_UNESCAPED_UNICODE), $price_paid, $price_paid, $cash_amount, $transfer_amount, $transfer_personal_amount, $transfer_company_amount, $card_amount, $note, $created_by
+            ]);
+            $invoice_id = $db->lastInsertId();
+
+            // Log transaction with reference to invoice
             $stmt_log = $db->prepare("
                 INSERT INTO coin_transactions (patient_id, amount, price_paid, transaction_type, reference_id, note, created_by, created_at)
-                VALUES (?, ?, ?, 'topup', NULL, ?, ?, NOW())
+                VALUES (?, ?, ?, 'topup', ?, ?, ?, NOW())
             ");
-            $stmt_log->execute([$patient_id, $coins, $price_paid, $note, $created_by]);
+            $stmt_log->execute([$patient_id, $coins, $price_paid, $invoice_id, $note, $created_by]);
+            
+            // Log Financial Transaction
+            $branch_id = $_SESSION['branch_id'] ?? 1;
+            $tx_category = $category_map[$payment_method] ?? 'Khác';
+            
+            if ($price_paid > 0) {
+                $db->prepare("INSERT INTO transactions (type, category, amount, reference_id, description, branch_id, created_by) VALUES ('income', ?, ?, ?, ?, ?, ?)")
+                   ->execute([$tx_category, $price_paid, $invoice_id, "Phiếu tính tiền $invoice_no (Nạp Ví Coin)", $branch_id, $created_by]);
+            }
 
             if (!$in_transaction) $db->commit();
             return true;
@@ -90,7 +133,7 @@ if (!defined('COIN_FUNCTIONS_LOADED')) {
         try {
             // Lock package row
             $stmt = $db->prepare("
-                SELECT pp.*, pkg.name as package_name 
+                SELECT pp.*, pkg.name as package_name, pkg.coin_cost
                 FROM patient_packages pp
                 JOIN packages pkg ON pp.package_id = pkg.id
                 WHERE pp.id = ? FOR UPDATE
@@ -107,11 +150,10 @@ if (!defined('COIN_FUNCTIONS_LOADED')) {
             $sessions_left = (int)$pkg['sessions_remaining'];
             $pkg_name = mb_strtolower($pkg['package_name'], 'UTF-8');
 
-            // Calculate coins per session based on rules
-            $rate = 2; // Default DY60 = 2 coins
-            if (mb_strpos($pkg_name, '90') !== false || mb_strpos($pkg_name, 'chiro') !== false || mb_strpos($pkg_name, 'nắn chỉnh') !== false) {
-                $rate = 3;
-            }
+            // Calculate coins per session based on package config
+            $rate = isset($pkg['coin_cost']) ? (float)$pkg['coin_cost'] : 2.0;
+            if ($rate <= 0) $rate = 2.0; // Fallback
+
 
             $total_coins_converted = $sessions_left * $rate;
 

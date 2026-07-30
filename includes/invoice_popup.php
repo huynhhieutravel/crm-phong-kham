@@ -82,6 +82,53 @@
         <div style="font-size:0.75rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.75rem;">
             <i class="fas fa-money-check-alt"></i> Thanh toán
         </div>
+        
+        <!-- Coin Payment Area -->
+        <div style="background:linear-gradient(to right, #fefce8, #fffbeb); border:1px solid #fde047; border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 4px 6px -1px rgba(250, 204, 21, 0.1);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; border-bottom:1px dashed #fde047; padding-bottom:0.5rem;">
+                <label style="font-size:0.9rem; font-weight:800; color:#b45309; display:flex; align-items:center; gap:0.4rem;">
+                    <i class="fas fa-coins" style="color:#eab308; font-size:1.1rem;"></i> Trừ Ví Coin
+                </label>
+                <a href="<?php echo $base_url ?? '/'; ?>modules/sales/topup.php" target="_blank" style="font-size:0.75rem; font-weight:700; color:#b45309; background:#fef08a; border:1px solid #fde047; padding:0.3rem 0.75rem; border-radius:8px; text-decoration:none; display:flex; align-items:center; gap:0.25rem; transition:0.2s;" onmouseover="this.style.background='#fde047'" onmouseout="this.style.background='#fef08a'">
+                    <i class="fas fa-plus-circle"></i> Nạp nhanh
+                </a>
+            </div>
+            <style>
+                .ip-coin-select-wrap .select2-container--default .select2-selection--single {
+                    border: 2px solid #fde047; border-radius: 8px; height: 39px; display: flex; align-items: center; background: white;
+                }
+                .ip-coin-select-wrap .select2-container--default.select2-container--focus .select2-selection--single {
+                    border-color: #eab308;
+                }
+                .ip-coin-select-wrap .select2-container--default .select2-selection--single .select2-selection__arrow { height: 37px; }
+            </style>
+            <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
+                <div style="flex:2; min-width:200px;">
+                    <label style="font-size:0.75rem; color:#b45309; font-weight:700; display:block; margin-bottom:0.35rem;">Khách hàng bị trừ</label>
+                    <div class="ip-coin-select-wrap">
+                        <select id="ipCoinPatientId" style="width:100%; border:2px solid #fde047; border-radius:8px; height:39px; background:white; color:#b45309; font-weight:600; padding:0 0.5rem; outline:none;">
+                            <option value="">-- Chọn khách hàng --</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                        <label style="font-size:0.75rem; color:#b45309; font-weight:700;">Số Coin trừ</label>
+                    </div>
+                    <div style="display:flex; gap:0.25rem; margin-bottom:0.35rem;">
+                        <button type="button" onclick="setIpCoinFast(2, 600000)" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Đông Y 60 phút - 2 Coins">ĐY60</button>
+                        <button type="button" onclick="setIpCoinFast(3, 900000)" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Đông Y 90 phút - 3 Coins">ĐY90</button>
+                        <button type="button" onclick="setIpCoinFast(3, 900000)" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Chiropractic - 3 Coins">Chiro</button>
+                    </div>
+                    <input type="number" id="ipCoinCount" value="0" min="0" step="0.1" style="width:100%; padding:0.45rem; border:2px solid #fde047; border-radius:8px; font-weight:800; font-size:1.05rem; color:#b45309; text-align:center; background:white; outline:none; transition:border-color 0.2s; box-sizing:border-box; height:39px;" onfocus="this.style.borderColor='#eab308'" onblur="this.style.borderColor='#fde047'">
+                </div>
+                <div style="flex:1; min-width:120px;">
+                    <label style="font-size:0.75rem; color:#b45309; font-weight:700; display:block; margin-bottom:0.35rem;">Quy đổi (VNĐ)</label>
+                    <input type="text" id="ipCoinAmount" value="0" style="width:100%; padding:0.45rem; border:2px solid #fde047; border-radius:8px; font-weight:800; font-size:1.05rem; color:#b45309; text-align:right; background:white; outline:none; transition:border-color 0.2s; box-sizing:border-box; height:39px;" onfocus="this.style.borderColor='#eab308'" onblur="this.style.borderColor='#fde047'" oninput="formatMoneyInput(this); recalcPayment()">
+                </div>
+            </div>
+        </div>
+
         <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.5rem;">
             <div>
                 <label style="font-size:0.75rem; font-weight:700; color:#10b981;">💵 Tiền mặt</label>
@@ -170,11 +217,122 @@ var ipCartItems = [];
 var ipCurrentTab = 'services';
 var ipBaseUrl = '<?php echo $base_url ?? '/'; ?>';
 
+function loadSelect2AndInitCoin() {
+    if (typeof jQuery === 'undefined') {
+        console.warn('jQuery is missing. Loading dynamically...');
+        var jqScript = document.createElement('script');
+        jqScript.src = 'https://code.jquery.com/jquery-3.7.1.min.js';
+        jqScript.onload = function() { loadSelect2Scripts(); };
+        document.head.appendChild(jqScript);
+    } else {
+        loadSelect2Scripts();
+    }
+}
+
+function loadSelect2Scripts() {
+    if (typeof jQuery.fn.select2 === 'undefined') {
+        var cssId = 'select2-css';
+        if (!document.getElementById(cssId)) {
+            var head  = document.getElementsByTagName('head')[0];
+            var link  = document.createElement('link');
+            link.id   = cssId;
+            link.rel  = 'stylesheet';
+            link.href = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css';
+            head.appendChild(link);
+        }
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js';
+        script.onload = function() { initCoinSelect2(); };
+        document.head.appendChild(script);
+    } else {
+        initCoinSelect2();
+    }
+}
+
+function initCoinSelect2() {
+    var $coinSel2 = jQuery('#ipCoinPatientId');
+    if ($coinSel2.length === 0) return;
+    
+    // Destroy if already exists to ensure clean state
+    if ($coinSel2.hasClass("select2-hidden-accessible")) {
+        $coinSel2.select2('destroy');
+    }
+    
+    $coinSel2.select2({
+        width: '100%',
+        dropdownParent: jQuery('#invoiceModal'),
+        placeholder: '-- Gõ tên hoặc SĐT để tìm --',
+        allowClear: true,
+        ajax: {
+            url: (ipBaseUrl || '/') + 'modules/billing/search_coin_patients_api.php',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) { return { q: params.term || '', current_patient_id: document.getElementById('ipPatientId').value }; },
+            processResults: function (data) { return { results: data.results }; },
+            cache: true
+        },
+        templateSelection: function(data) {
+            if (!data.id) return data.text;
+            return jQuery('<span style="font-size: 0.85rem; font-weight: 600;">' + data.text + '</span>');
+        },
+        templateResult: function(data) {
+            if (!data.id) return data.text;
+            return jQuery('<span style="font-size: 0.85rem; font-weight: 600;">' + data.text + '</span>');
+        }
+    });
+}
+
+function prefillCoinPatient(id, name) {
+    if (!id || !name) return;
+    var select = document.getElementById('ipCoinPatientId');
+    if (!select) return;
+
+    fetch((typeof ipBaseUrl !== 'undefined' ? ipBaseUrl : '/') + 'modules/billing/search_coin_patients_api.php?current_patient_id=' + id)
+    .then(r => r.json())
+    .then(data => {
+        var balance = 0;
+        if (data.results && data.results.length > 0) {
+            balance = data.results[0].coin_balance;
+        }
+        var text = name + ' (Dư: ' + balance + ' Coins)';
+        var optionExists = Array.from(select.options).some(function(opt) { return opt.value == id; });
+        if (!optionExists) {
+            var newOption = new Option(text, id, true, true);
+            select.appendChild(newOption);
+        } else {
+            select.options[select.selectedIndex].text = text;
+            select.value = id;
+        }
+        if (typeof jQuery !== 'undefined' && jQuery(select).data('select2')) {
+            jQuery(select).trigger('change');
+        }
+    }).catch(e => {
+        var optionExists = Array.from(select.options).some(function(opt) { return opt.value == id; });
+        if (!optionExists) {
+            var newOption = new Option(name + ' (Khách đang chọn)', id, true, true);
+            select.appendChild(newOption);
+        } else {
+            select.value = id;
+        }
+        if (typeof jQuery !== 'undefined' && jQuery(select).data('select2')) {
+            jQuery(select).trigger('change');
+        }
+    });
+}
+
 function openInvoicePopup(opts) {
     opts = opts || {};
     ipCartItems = [];
     
     document.getElementById('ipDiscountAmount').value = '0';
+    document.getElementById('ipCoinAmount').value = '0';
+    document.getElementById('ipCoinCount').value = '0';
+    if (typeof $ !== 'undefined' && $('#ipCoinPatientId').data('select2')) {
+        $('#ipCoinPatientId').val(null).trigger('change');
+    } else {
+        var c = document.getElementById('ipCoinPatientId');
+        if(c) c.innerHTML = '<option value="">-- Chọn khách hàng --</option>';
+    }
     document.getElementById('ipDiscountNote').value = '';
     document.getElementById('ipCash').value = '0';
     document.getElementById('ipTransferPersonal').value = '0';
@@ -196,6 +354,9 @@ function openInvoicePopup(opts) {
         document.getElementById('ipCustomerName').textContent = opts.patient_name || '—';
         document.getElementById('ipCustomerStatic').style.display = 'flex';
         document.getElementById('ipCustomerSelect').style.display = 'none';
+        
+        prefillCoinPatient(opts.patient_id, opts.patient_name);
+        
         loadCatalog();
     } else if (opts.inline_select) {
         // Inline select mode (from billing page)
@@ -232,6 +393,7 @@ function openInvoicePopup(opts) {
                     var pname = $(this).find(':selected').attr('data-name') || '';
                     document.getElementById('ipPatientId').value = pid;
                     document.getElementById('ipCustomerName').textContent = pname;
+                    prefillCoinPatient(pid, pname);
                     loadCatalog();
                 }
             });
@@ -240,6 +402,9 @@ function openInvoicePopup(opts) {
         // Show empty catalog message
         document.getElementById('ipCatalog').innerHTML = '<div style="padding:1.5rem; text-align:center; color:#94a3b8; font-size:0.85rem;"><i class="fas fa-user-plus" style="margin-right:0.5rem;"></i>Chọn khách hàng để xem bảng giá</div>';
     }
+    
+    // Init Select2 for Coin Patient with dynamic loader
+    loadSelect2AndInitCoin();
     
     // Prefill items
     if (opts.prefill_items && opts.prefill_items.length) {
@@ -458,6 +623,12 @@ function formatMoneyInput(el) {
     el.value = formatMoneyOnly(val);
 }
 
+function setIpCoinFast(coins, amount) {
+    document.getElementById('ipCoinCount').value = coins;
+    document.getElementById('ipCoinAmount').value = formatMoneyOnly(amount);
+    recalcPayment();
+}
+
 function recalcInvoice() {
     var subtotal = 0;
     ipCartItems.forEach(function(item) { subtotal += item.qty * item.price; });
@@ -494,7 +665,8 @@ function recalcPayment() {
     var transferPersonal = getRawValue('ipTransferPersonal');
     var transferCompany = getRawValue('ipTransferCompany');
     var card = getRawValue('ipCard');
-    var paid = cash + transferPersonal + transferCompany + card;
+    var coinVal = getRawValue('ipCoinAmount');
+    var paid = cash + transferPersonal + transferCompany + card + coinVal;
     var debt = total - paid;
     if (debt < 0) debt = 0;
     
@@ -522,8 +694,9 @@ function submitInvoice() {
     var transferPersonal = getRawValue('ipTransferPersonal');
     var transferCompany = getRawValue('ipTransferCompany');
     var card = getRawValue('ipCard');
+    var coinVal = getRawValue('ipCoinAmount');
     var transfer = transferPersonal + transferCompany;
-    var debt = total - cash - transfer - card;
+    var debt = total - cash - transfer - card - coinVal;
     if (debt < 0) debt = 0;
     
     var btn = document.getElementById('ipSubmitBtn');
@@ -548,7 +721,9 @@ function submitInvoice() {
             transfer_personal_amount: transferPersonal,
             transfer_company_amount: transferCompany,
             card_amount: card,
-            package_deduct: 0,
+            package_deduct: coinVal,
+            coin_deduct_patient_id: document.getElementById('ipCoinPatientId').value,
+            coin_deduct_count: parseFloat(document.getElementById('ipCoinCount').value) || 0,
             debt_amount: debt,
             note: document.getElementById('ipNote').value,
             treatment_id: ctx.treatment_id,

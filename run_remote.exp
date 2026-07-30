@@ -1,0 +1,25 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2
+expect "password:"
+send "&m5L9\[eUv\r"
+expect "$ "
+send "echo '&m5L9\[eUv' | sudo -S bash -c '\n"
+send "    if grep -q client_max_body_size /etc/nginx/nginx.conf; then\n"
+send "        sed -i \"s/client_max_body_size.*/client_max_body_size 50M;/g\" /etc/nginx/nginx.conf\n"
+send "    else\n"
+send "        sed -i \"/http {/a \\    client_max_body_size 50M;\" /etc/nginx/nginx.conf\n"
+send "    fi\n"
+send "    PHP_INI=\$(find /etc/php -name php.ini | grep fpm | head -n 1)\n"
+send "    if \[ -n \"\$PHP_INI\" \]; then\n"
+send "        sed -i \"s/upload_max_filesize.*/upload_max_filesize = 50M/g\" \$PHP_INI\n"
+send "        sed -i \"s/post_max_size.*/post_max_size = 50M/g\" \$PHP_INI\n"
+send "        echo \"Updated PHP FPM config: \$PHP_INI\"\n"
+send "    fi\n"
+send "    systemctl restart nginx\n"
+send "    systemctl restart php*-fpm.service\n"
+send "    echo ALL_DONE\n"
+send "'\r"
+expect "ALL_DONE"
+send "exit\r"
+expect eof

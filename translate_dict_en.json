@@ -1,0 +1,1487 @@
+[
+    {
+        "vi": "Bàn chân bẹt (Plattfuß)",
+        "de": "Plattfuß",
+        "en": "Flat Foot"
+    },
+    {
+        "vi": "ngửa (sup)",
+        "de": "sup",
+        "en": "Supination (sup)"
+    },
+    {
+        "vi": "Vùng (Bereich)",
+        "de": "Bereich",
+        "en": "Area"
+    },
+    {
+        "vi": "Cơ trên gai (Supraspinatus)",
+        "de": "Supraspinatus",
+        "en": "Supraspinatus"
+    },
+    {
+        "vi": "Triệu chứng & phát hiện (Symptome & Befunde)",
+        "de": "Symptome & Befunde",
+        "en": "Symptoms & Findings"
+    },
+    {
+        "vi": "Cơ thắt lưng chậu",
+        "de": "Iliopsoas",
+        "en": "Iliopsoas"
+    },
+    {
+        "vi": "lúc nhiều lúc ít",
+        "de": "intermittierend / wechselhaft",
+        "en": "Intermittent / Variable"
+    },
+    {
+        "vi": "hằng ngày",
+        "de": "täglich",
+        "en": "Daily"
+    },
+    {
+        "vi": "đến cánh tay trên",
+        "de": "bis Oberarm",
+        "en": "To upper arm"
+    },
+    {
+        "vi": "thỉnh thoảng",
+        "de": "sporadisch",
+        "en": "Sporadic"
+    },
+    {
+        "vi": "hạn chế vận động",
+        "de": "eingeschränkt",
+        "en": "Restricted Movement"
+    },
+    {
+        "vi": "xuống cầu thang",
+        "de": "Treppe abwärts",
+        "en": "Stairs Down"
+    },
+    {
+        "vi": "Khớp cổ chân dưới (USG)",
+        "de": "USG",
+        "en": "Lower Ankle Joint (USG)"
+    },
+    {
+        "vi": "lên cầu thang",
+        "de": "Treppe aufwärts",
+        "en": "Stairs Up"
+    },
+    {
+        "vi": "Khu vực / Chi tiết gãy xương",
+        "de": "Bereich",
+        "en": "Area"
+    },
+    {
+        "vi": "cấp tính [từ",
+        "de": "akut seit",
+        "en": "Acute since"
+    },
+    {
+        "vi": "tái phát [từ",
+        "de": "wiederkehrend seit",
+        "en": "Recurrent since"
+    },
+    {
+        "vi": "đến gối",
+        "de": "bis Knie",
+        "en": "To knee"
+    },
+    {
+        "vi": "Khớp cổ chân trên (OSG):",
+        "de": "OSG:",
+        "en": "Upper Ankle Joint (OSG):"
+    },
+    {
+        "vi": "Tải ảnh lên",
+        "de": "Hochladen",
+        "en": "Upload"
+    },
+    {
+        "vi": "Chóng mặt",
+        "de": "Schwindel",
+        "en": "Dizziness"
+    },
+    {
+        "vi": "khi nghỉ",
+        "de": "in Ruhe",
+        "en": "At rest"
+    },
+    {
+        "vi": "Bàn chân vẹo (Knickfuß)",
+        "de": "Knickfuß",
+        "en": "Valgus Foot"
+    },
+    {
+        "vi": "Bàn chân",
+        "de": "Fuß",
+        "en": "Foot"
+    },
+    {
+        "vi": "Sụp vòm (Senkfuß)",
+        "de": "Senkfuß",
+        "en": "Fallen Arches"
+    },
+    {
+        "vi": "Khó khăn khi",
+        "de": "Schwierigkeiten beim",
+        "en": "Difficulty with"
+    },
+    {
+        "vi": "Đã từng phẫu thuật",
+        "de": "Hatte Operation",
+        "en": "Had Surgery"
+    },
+    {
+        "vi": "Diễn tiến so với lần trước:",
+        "de": "Verlauf im Vergleich zur letzten Behandlung:",
+        "en": "Progress compared to last treatment:"
+    },
+    {
+        "vi": "Vị trí",
+        "de": "Position",
+        "en": "Position"
+    },
+    {
+        "vi": "sấp (pron)",
+        "de": "pron",
+        "en": "Pronation (pron)"
+    },
+    {
+        "vi": "Hội chứng ống cổ tay (Carpaltunnelsyndrom - CTS)",
+        "de": "Carpaltunnelsyndrom - CTS",
+        "en": "Carpal Tunnel Syndrome (CTS)"
+    },
+    {
+        "vi": "< 1T",
+        "de": "< 1J",
+        "en": "< 1Y"
+    },
+    {
+        "vi": "bên ngoài",
+        "de": "außen - Ulnarseite",
+        "en": "Outside - Ulnar side"
+    },
+    {
+        "vi": "Cấu trúc / Khớp (Struktur / Gelenk)",
+        "de": "Struktur / Gelenk",
+        "en": "Structure / Joint"
+    },
+    {
+        "vi": "P",
+        "de": "re",
+        "en": "R"
+    },
+    {
+        "vi": "Quy ước 5 vòng tròn mức độ đau:",
+        "de": "LEGENDE ZUR SCHMERZINTENSITÄT (5 KREISE):",
+        "en": "PAIN INTENSITY LEGEND (5 CIRCLES):"
+    },
+    {
+        "vi": "Ngón cái (Daumen):",
+        "de": "Daumen:",
+        "en": "Thumb:"
+    },
+    {
+        "vi": "1 lần/tháng",
+        "de": "1x/M",
+        "en": "1x/Month"
+    },
+    {
+        "vi": "có cầu răng",
+        "de": "hat Brücken",
+        "en": "Has Bridges"
+    },
+    {
+        "vi": "Triệu chứng & chi tiết (Symptome & Details)",
+        "de": "Symptome & Details",
+        "en": "Symptoms & Details"
+    },
+    {
+        "vi": "đã từng niềng răng",
+        "de": "hatte Zahnspange",
+        "en": "Had Braces"
+    },
+    {
+        "vi": "Nhấn để xem lớn",
+        "de": "Klicken zum Vergrößern",
+        "en": "Click to Enlarge"
+    },
+    {
+        "vi": "xoay sấp (pron)",
+        "de": "pron",
+        "en": "Pronation (pron)"
+    },
+    {
+        "vi": "Trước - T",
+        "de": "Ventral - li",
+        "en": "Ventral - L"
+    },
+    {
+        "vi": "phần giữa",
+        "de": "mittlere",
+        "en": "Middle"
+    },
+    {
+        "vi": "Chọn tệp",
+        "de": "Datei auswählen",
+        "en": "Choose file"
+    },
+    {
+        "vi": "Hình ảnh lâm sàng (Klinisches Bild)",
+        "de": "Klinisches Bild",
+        "en": "Clinical Picture"
+    },
+    {
+        "vi": "đã đỡ nhiều.",
+        "de": "Deutlich verbessert.",
+        "en": "Significantly improved."
+    },
+    {
+        "vi": "Khớp thái dương hàm (TMJ)",
+        "de": "Kiefergelenk",
+        "en": "Temporomandibular Joint (TMJ)"
+    },
+    {
+        "vi": "Lưu ý: Các ô <strong style=\"color: #94a3b8;\">màu xám</strong> là các vị trí đã được nắn chỉnh trong lần điều trị gần nhất. Bạn có thể check đè lên để cập nhật cho lần này.",
+        "de": "Hinweis: Grau markierte Felder wurden in der letzten Sitzung behandelt. Sie können diese überschreiben, um sie für dieses Mal zu aktualisieren.",
+        "en": "Note: Gray highlighted fields were treated in the last session. You can overwrite them to update for this time."
+    },
+    {
+        "vi": "Xương sườn (Rippen)",
+        "de": "Rippen",
+        "en": "Ribs"
+    },
+    {
+        "vi": "Họ Tên",
+        "de": "Name",
+        "en": "Full Name"
+    },
+    {
+        "vi": "trong (med)",
+        "de": "med",
+        "en": "Medial"
+    },
+    {
+        "vi": "Phải",
+        "de": "re",
+        "en": "R"
+    },
+    {
+        "vi": "Khớp háng (Hüftgelenk)",
+        "de": "Hüftgelenk",
+        "en": "Hip Joint"
+    },
+    {
+        "vi": "phía trước (ventral)",
+        "de": "ventral",
+        "en": "Ventral"
+    },
+    {
+        "vi": "đỡ ít hơn.",
+        "de": "Leicht verbessert.",
+        "en": "Slightly improved."
+    },
+    {
+        "vi": "Lần trước",
+        "de": "Vorheriges Bild",
+        "en": "Previous Image"
+    },
+    {
+        "vi": "Mỏm quạ (Proc. coracoideus)",
+        "de": "Proc. coracoideus",
+        "en": "Coracoid Process"
+    },
+    {
+        "vi": "Triệu chứng / Vùng (Symptom / Bereich)",
+        "de": "Symptom / Bereich",
+        "en": "Symptom / Area"
+    },
+    {
+        "vi": "có răng đã điều trị tủy",
+        "de": "hat wurzelbehandelte Zähne",
+        "en": "Has Root Canal Treated Teeth"
+    },
+    {
+        "vi": "có mão răng",
+        "de": "hat Kronen",
+        "en": "Has Crowns"
+    },
+    {
+        "vi": "Bàn tay & cổ tay",
+        "de": "Hand & Handgelenk",
+        "en": "Hand & Wrist"
+    },
+    {
+        "vi": "Tính chất / Vị trí (Eigenschaften / Ort)",
+        "de": "Eigenschaften / Ort",
+        "en": "Characteristics / Location"
+    },
+    {
+        "vi": "phía trong (medial)",
+        "de": "medial",
+        "en": "Medial"
+    },
+    {
+        "vi": "Sườn",
+        "de": "Rippe",
+        "en": "Rib"
+    },
+    {
+        "vi": "ngoài (lat)",
+        "de": "lat",
+        "en": "Lateral"
+    },
+    {
+        "vi": "Xương bàn chân (Metatarsalia - MTT):",
+        "de": "Metatarsalia (MTT):",
+        "en": "Metatarsals (MTT):"
+    },
+    {
+        "vi": "Ngón cái",
+        "de": "Daumen/Pollicis",
+        "en": "Thumb (Pollicis)"
+    },
+    {
+        "vi": "tuần",
+        "de": "Wochen",
+        "en": "Weeks"
+    },
+    {
+        "vi": "Định khu & giải phẫu (Lokalisation & Anatomie)",
+        "de": "Lokalisation & Anatomie",
+        "en": "Localization & Anatomy"
+    },
+    {
+        "vi": "Nhập ghi chú hoặc thông tin bổ sung tại đây...",
+        "de": "Hier Anmerkungen oder zusätzliche Informationen eingeben...",
+        "en": "Enter notes or additional information here..."
+    },
+    {
+        "vi": "Vòng 1:",
+        "de": "Ring 1 (hellblau):",
+        "en": "Ring 1 (Light Blue):"
+    },
+    {
+        "vi": "Đỡ ít hơn",
+        "de": "Leicht verbessert",
+        "en": "Slightly improved"
+    },
+    {
+        "vi": "Tần suất / Trạng thái (Häufigkeit / Status)",
+        "de": "Häufigkeit / Status",
+        "en": "Frequency / Status"
+    },
+    {
+        "vi": "Đau lan:",
+        "de": "Ausstrahlung:",
+        "en": "Radiation:"
+    },
+    {
+        "vi": "Từ khi nào:",
+        "de": "seit wann:",
+        "en": "Since when:"
+    },
+    {
+        "vi": "Danh sách điều trị – Chi trên (Behandlungsliste – Obere Extremitäten)",
+        "de": "Behandlungsliste – Obere Extremitäten",
+        "en": "Treatment List - Upper Extremities"
+    },
+    {
+        "vi": "CS thắt lưng (LWS)",
+        "de": "LWS",
+        "en": "Lumbar Spine"
+    },
+    {
+        "vi": "Không có tệp nào được chọn",
+        "de": "Keine Datei ausgewählt",
+        "en": "No file chosen"
+    },
+    {
+        "vi": "Ù tai",
+        "de": "Ohrgeräusch",
+        "en": "Tinnitus"
+    },
+    {
+        "vi": "Triệu chứng / Định khu (Symptome / Lokalisation)",
+        "de": "Symptome / Lokalisation",
+        "en": "Symptoms / Localization"
+    },
+    {
+        "vi": "Quy ước 5 vòng tròn mức độ đau:",
+        "de": "Legende zur Schmerzintensität (5 Kreise):",
+        "en": "Pain Intensity Legend (5 Circles):"
+    },
+    {
+        "vi": "đau âm ỉ",
+        "de": "dumpf",
+        "en": "Dull"
+    },
+    {
+        "vi": "Sau",
+        "de": "Weiter",
+        "en": "Next"
+    },
+    {
+        "vi": "Sau",
+        "de": "Dorsal",
+        "en": "Dorsal"
+    },
+    {
+        "vi": "Khớp mu (Symphyse):",
+        "de": "Symphyse:",
+        "en": "Symphysis:"
+    },
+    {
+        "vi": "Vòng thứ 5 (đỏ)",
+        "de": "Ring 5 (rot)",
+        "en": "Ring 5 (Red)"
+    },
+    {
+        "vi": "ngoài (laterale)",
+        "de": "laterale",
+        "en": "Lateral"
+    },
+    {
+        "vi": "Khớp cổ chân trên (OSG)",
+        "de": "OSG",
+        "en": "Upper Ankle Joint (OSG)"
+    },
+    {
+        "vi": "Vòng 3:",
+        "de": "Ring 3 (gelb):",
+        "en": "Ring 3 (Yellow):"
+    },
+    {
+        "vi": "Vùng nắn chỉnh - Cột sống cổ",
+        "de": "Justierungsbereich - HWS",
+        "en": "Adjustment Area - Cervical Spine"
+    },
+    {
+        "vi": "Trước - P",
+        "de": "Ventral - re",
+        "en": "Ventral - R"
+    },
+    {
+        "vi": "Đốt trục (Axis C2)",
+        "de": "Axis (C2)",
+        "en": "Axis (C2)"
+    },
+    {
+        "vi": "Xoá ảnh này",
+        "de": "Dieses Bild löschen",
+        "en": "Delete this Image"
+    },
+    {
+        "vi": "T | P",
+        "de": "li | re",
+        "en": "L | R"
+    },
+    {
+        "vi": "Xương sườn 1 (Rippe 1)",
+        "de": "Rippe 1",
+        "en": "Rib 1"
+    },
+    {
+        "vi": "PHẦN 2 – BỆNH LÝ HIỆN TẠI",
+        "de": "TEIL 2 – AKTUELLE BESCHWERDEN",
+        "en": "PART 2 - CURRENT COMPLAINTS"
+    },
+    {
+        "vi": "có cấy ghép răng",
+        "de": "hat Implantate",
+        "en": "Has Implants"
+    },
+    {
+        "vi": "Giới Tính",
+        "de": "Geschlecht",
+        "en": "Gender"
+    },
+    {
+        "vi": "phía trong",
+        "de": "medial/innen",
+        "en": "Medial/Inside"
+    },
+    {
+        "vi": "đau hơn nhiều.",
+        "de": "Deutlich verschlechtert.",
+        "en": "Significantly worsened."
+    },
+    {
+        "vi": "gan (plantar)",
+        "de": "plantar",
+        "en": "Plantar"
+    },
+    {
+        "vi": "có lúc hết hẳn",
+        "de": "phasenweise beschwerdefrei",
+        "en": "Intermittently pain-free"
+    },
+    {
+        "vi": "tê bì",
+        "de": "Taubheit",
+        "en": "Numbness"
+    },
+    {
+        "vi": "Vòng thứ 1 (xanh da trời)",
+        "de": "Ring 1 (hellblau)",
+        "en": "Ring 1 (Light Blue)"
+    },
+    {
+        "vi": "Vòng thứ 4 (cam)",
+        "de": "Ring 4 (orange)",
+        "en": "Ring 4 (Orange)"
+    },
+    {
+        "vi": "Xương cổ tay / Hội chứng ống cổ tay (Handwurzelknochen / CTS)",
+        "de": "Handwurzelknochen / CTS",
+        "en": "Carpal Bones / CTS"
+    },
+    {
+        "vi": "gần (proximal)",
+        "de": "proximal",
+        "en": "Proximal"
+    },
+    {
+        "vi": "Bản thân",
+        "de": "Selbst",
+        "en": "Self"
+    },
+    {
+        "vi": "mặt gan (plantar)",
+        "de": "plantar",
+        "en": "Plantar"
+    },
+    {
+        "vi": "Triệu chứng / Vị trí (Symptome / Ort)",
+        "de": "Symptome / Ort",
+        "en": "Symptoms / Location"
+    },
+    {
+        "vi": "Vùng nắn chỉnh - Cột sống thắt lưng (LWS)",
+        "de": "Justierungsbereich - LWS",
+        "en": "Adjustment Area - Lumbar Spine"
+    },
+    {
+        "vi": "Lần này",
+        "de": "Aktuelles Bild",
+        "en": "Current Image"
+    },
+    {
+        "vi": "bên trong",
+        "de": "medial/innen",
+        "en": "Medial/Inside"
+    },
+    {
+        "vi": "Ngày Sinh",
+        "de": "Geburtsdatum",
+        "en": "Date of Birth"
+    },
+    {
+        "vi": "Khớp cùng đòn (ACG)",
+        "de": "ACG",
+        "en": "AC Joint (ACG)"
+    },
+    {
+        "vi": "đi",
+        "de": "Gehen",
+        "en": "Walking"
+    },
+    {
+        "vi": "Gai gót chân (Fersensporn)",
+        "de": "Fersensporn",
+        "en": "Heel Spur"
+    },
+    {
+        "vi": "Ngón",
+        "de": "Zehe",
+        "en": "Toe"
+    },
+    {
+        "vi": "Ngón tay",
+        "de": "Finger/Digiti",
+        "en": "Fingers (Digiti)"
+    },
+    {
+        "vi": "Viêm lồi cầu trong (Golferarm - GA):",
+        "de": "Golferarm (GA):",
+        "en": "Golfer's Elbow (GA):"
+    },
+    {
+        "vi": "Vùng nắn chỉnh - Cột sống ngực (BWS)",
+        "de": "Justierungsbereich - BWS",
+        "en": "Adjustment Area - Thoracic Spine"
+    },
+    {
+        "vi": "Giữ nguyên",
+        "de": "Unverändert",
+        "en": "Unchanged"
+    },
+    {
+        "vi": "phía sau",
+        "de": "dorsal/hinten",
+        "en": "Dorsal/Back"
+    },
+    {
+        "vi": "phía ngoài (lateral)",
+        "de": "lateral",
+        "en": "Lateral"
+    },
+    {
+        "vi": "Danh sách điều trị – Chi dưới (Behandlungsliste – Untere Extremitäten)",
+        "de": "Behandlungsliste – Untere Extremitäten",
+        "en": "Treatment List - Lower Extremities"
+    },
+    {
+        "vi": "liệt",
+        "de": "Lähmung",
+        "en": "Paralysis"
+    },
+    {
+        "vi": "lan theo hướng nhất định",
+        "de": "Ausstrahlung in eine bestimmte Richtung",
+        "en": "Radiation in specific direction"
+    },
+    {
+        "vi": "Viêm lồi cầu ngoài (Tennisarm - TA):",
+        "de": "Tennisarm (TA):",
+        "en": "Tennis Elbow (TA):"
+    },
+    {
+        "vi": "bên ngoài",
+        "de": "lateral/außen",
+        "en": "Lateral/Outside"
+    },
+    {
+        "vi": "2-3 lần/tuần",
+        "de": "2-3x/W",
+        "en": "2-3x/Week"
+    },
+    {
+        "vi": "do kẹt khớp",
+        "de": "Gelenkblockade",
+        "en": "Joint Blockage"
+    },
+    {
+        "vi": "tiếng ù",
+        "de": "rauschen",
+        "en": "Rushing"
+    },
+    {
+        "vi": "Tạo mới",
+        "de": "Neu erstellen",
+        "en": "Create New"
+    },
+    {
+        "vi": "1 lần/tuần",
+        "de": "1x/W",
+        "en": "1x/Week"
+    },
+    {
+        "vi": "phần dưới",
+        "de": "untere",
+        "en": "Lower"
+    },
+    {
+        "vi": "Ô ghi chú:",
+        "de": "Notizen:",
+        "en": "Notes:"
+    },
+    {
+        "vi": "khớp bàn–ngón",
+        "de": "Grundgelenk - GG",
+        "en": "Metacarpophalangeal Joint - MCP"
+    },
+    {
+        "vi": "Nhập ghi chú thêm cho phần Bệnh sử...",
+        "de": "Weitere Notizen zur Anamnese eingeben...",
+        "en": "Enter additional anamnesis notes..."
+    },
+    {
+        "vi": "Vòng 5:",
+        "de": "Ring 5 (rot):",
+        "en": "Ring 5 (Red):"
+    },
+    {
+        "vi": "Xương cùng (Sacrum)",
+        "de": "Sacrum",
+        "en": "Sacrum"
+    },
+    {
+        "vi": "Khớp cổ chân dưới (USG):",
+        "de": "USG:",
+        "en": "Lower Ankle Joint (USG):"
+    },
+    {
+        "vi": "Nữ",
+        "de": "Weiblich",
+        "en": "Female"
+    },
+    {
+        "vi": "xa (distal)",
+        "de": "distal",
+        "en": "Distal"
+    },
+    {
+        "vi": "Ghi chú Bệnh sử",
+        "de": "Anamnese-Notizen",
+        "en": "Anamnesis Notes"
+    },
+    {
+        "vi": "toàn bộ",
+        "de": "gesamt",
+        "en": "Total"
+    },
+    {
+        "vi": "mạn tính [từ",
+        "de": "chronisch seit",
+        "en": "Chronic since"
+    },
+    {
+        "vi": "Tần suất:",
+        "de": "wie oft:",
+        "en": "How often:"
+    },
+    {
+        "vi": "(Đánh dấu O vàng lên hình trên)",
+        "de": "(Gelbes O auf dem Bild oben markieren)",
+        "en": "(Mark Yellow O on the image above)"
+    },
+    {
+        "vi": "vẫn đau như lần trước, không thay đổi.",
+        "de": "Unverändert (Schmerzen wie zuvor).",
+        "en": "Unchanged (Pain as before)."
+    },
+    {
+        "vi": "Tốt lên",
+        "de": "Verbessert",
+        "en": "Improved"
+    },
+    {
+        "vi": "Khớp gối (Knie)",
+        "de": "Knie",
+        "en": "Knee"
+    },
+    {
+        "vi": "Năm Sinh",
+        "de": "Geburtsjahr",
+        "en": "Birth Year"
+    },
+    {
+        "vi": "Đốt sống",
+        "de": "Wirbel",
+        "en": "Vertebra"
+    },
+    {
+        "vi": "Khớp / Vùng (Gelenk / Bereich)",
+        "de": "Gelenk / Bereich",
+        "en": "Joint / Area"
+    },
+    {
+        "vi": "Khác",
+        "de": "Andere",
+        "en": "Other"
+    },
+    {
+        "vi": "Chênh lệch chiều dài chân đã biết",
+        "de": "Bekannte Beinlängendifferenz",
+        "en": "Known Leg Length Discrepancy"
+    },
+    {
+        "vi": "Bàn & cổ chân (Fuß & Sprunggelenk)",
+        "de": "Fuß & Sprunggelenk",
+        "en": "Foot & Ankle"
+    },
+    {
+        "vi": "Xương chêm (Ossa cuneiformia):",
+        "de": "Ossa cuneiformia:",
+        "en": "Cuneiform Bones:"
+    },
+    {
+        "vi": "Chưa có",
+        "de": "Nicht vorhanden",
+        "en": "Not available"
+    },
+    {
+        "vi": "hội chứng khuỷu tay tennis",
+        "de": "Tennisarm - TA",
+        "en": "Tennis Elbow (TA)"
+    },
+    {
+        "vi": "bên hông (lateral)",
+        "de": "lateral",
+        "en": "Lateral"
+    },
+    {
+        "vi": "Di động xương bánh chè (Patellamobilität)",
+        "de": "Patellamobilität",
+        "en": "Patellar Mobility"
+    },
+    {
+        "vi": "Ô ghi chú",
+        "de": "Notizfeld",
+        "en": "Note Field"
+    },
+    {
+        "vi": "Sau khi bấm Lưu, ghi chú này sẽ được gom và hiển thị chung với phần ghi chú ở trên. Ghi chú trong phần Bệnh sử sẽ được hiển thị lại trên các bản Tái khám (Follow-Up) về sau.",
+        "de": "Nach dem Speichern werden diese Notizen zusammengefasst und gemeinsam mit den obigen Notizen angezeigt. Notizen aus der Anamnese werden auf den späteren Follow-Up-Bögen erneut angezeigt.",
+        "en": "After saving, these notes will be combined and displayed with the above notes. Notes from the Anamnesis will be displayed again on later Follow-Up forms."
+    },
+    {
+        "vi": "Hạn chế vận động về phía:",
+        "de": "Bewegung eingeschränkt nach:",
+        "en": "Movement restricted to:"
+    },
+    {
+        "vi": "yếu cơ",
+        "de": "Schwäche",
+        "en": "Weakness"
+    },
+    {
+        "vi": "Trạng thái (Status)",
+        "de": "Status",
+        "en": "Status"
+    },
+    {
+        "vi": "chân ngắn",
+        "de": "kurzes Bein",
+        "en": "Short Leg"
+    },
+    {
+        "vi": "Chi trên (Obere Extr.)",
+        "de": "Obere Extr.",
+        "en": "Upper Extr."
+    },
+    {
+        "vi": "hội chứng khuỷu tay golf",
+        "de": "Golferarm - GA",
+        "en": "Golfer's Elbow (GA)"
+    },
+    {
+        "vi": "Chọn ảnh, nhấn <strong>Tải ảnh lên</strong>, sau đó nhấn <strong>Lưu Bệnh Án</strong> ở cuối trang để hoàn tất.",
+        "de": "Bild auswählen, auf <strong>Hochladen</strong> klicken, dann am Ende der Seite auf <strong>Speichern</strong> klicken, um abzuschließen.",
+        "en": "Select image, click <strong>Upload</strong>, then click <strong>Save</strong> at the bottom of the page to complete."
+    },
+    {
+        "vi": "vận động",
+        "de": "Bewegung",
+        "en": "Movement"
+    },
+    {
+        "vi": "Hủy",
+        "de": "Abbrechen",
+        "en": "Cancel"
+    },
+    {
+        "vi": "Xương hộp (Os cuboideum)",
+        "de": "Os cuboideum",
+        "en": "Cuboid Bone"
+    },
+    {
+        "vi": "Vòng 2:",
+        "de": "Ring 2 (grün):",
+        "en": "Ring 2 (Green):"
+    },
+    {
+        "vi": "Quan Hệ",
+        "de": "Beziehung",
+        "en": "Relationship"
+    },
+    {
+        "vi": "Trước",
+        "de": "Ventral",
+        "en": "Ventral"
+    },
+    {
+        "vi": "lục cục",
+        "de": "Knacken",
+        "en": "Cracking"
+    },
+    {
+        "vi": "-- Chọn khách hàng --",
+        "de": "-- Patient wählen --",
+        "en": "-- Select Patient --"
+    },
+    {
+        "vi": "Danh sách Điều trị & Nắn chỉnh",
+        "de": "Behandlungs- & Justierungsliste",
+        "en": "Treatment & Adjustment List"
+    },
+    {
+        "vi": "đau nhói",
+        "de": "stechend",
+        "en": "Sharp"
+    },
+    {
+        "vi": "đau",
+        "de": "Schmerzen",
+        "en": "Pain"
+    },
+    {
+        "vi": "nghỉ",
+        "de": "Ruhe",
+        "en": "Rest"
+    },
+    {
+        "vi": "ra trước (ventral)",
+        "de": "ventral",
+        "en": "Ventral"
+    },
+    {
+        "vi": "xoay ngửa (sup)",
+        "de": "sup",
+        "en": "Supination (sup)"
+    },
+    {
+        "vi": "mu (dorsal)",
+        "de": "dorsal",
+        "en": "Dorsal"
+    },
+    {
+        "vi": "Lần đầu",
+        "de": "Erster Besuch",
+        "en": "First Visit"
+    },
+    {
+        "vi": "Khớp gối (Kniegelenk)",
+        "de": "Kniegelenk",
+        "en": "Knee Joint"
+    },
+    {
+        "vi": "Khớp cổ chân",
+        "de": "Sprunggelenk",
+        "en": "Ankle"
+    },
+    {
+        "vi": "Hình ảnh chụp bệnh nhân (Tối đa 4 ảnh)",
+        "de": "Patientenbilder (max. 4 Bilder)",
+        "en": "Patient Images (max 4 images)"
+    },
+    {
+        "vi": "Chi dưới (Untere Extr.)",
+        "de": "Untere Extr.",
+        "en": "Lower Extr."
+    },
+    {
+        "vi": "phía trước",
+        "de": "ventral/vorne",
+        "en": "Ventral/Front"
+    },
+    {
+        "vi": "Đã từng gãy xương",
+        "de": "Hatte Fraktur",
+        "en": "Had Fracture"
+    },
+    {
+        "vi": "Xương bàn tay (Metacarpalia):",
+        "de": "Metacarpalia:",
+        "en": "Metacarpals:"
+    },
+    {
+        "vi": "Khu vực / Chi tiết phẫu thuật",
+        "de": "Bereich",
+        "en": "Area"
+    },
+    {
+        "vi": "ngồi",
+        "de": "Sitzen",
+        "en": "Sitting"
+    },
+    {
+        "vi": "Cơ chóp xoay (Rotatorenmanschette)",
+        "de": "Rotatorenmanschette",
+        "en": "Rotator Cuff"
+    },
+    {
+        "vi": "Hội chứng ống cổ tay (CTS)",
+        "de": "CTS",
+        "en": "CTS"
+    },
+    {
+        "vi": "bên hông",
+        "de": "Leiste/Flanke",
+        "en": "Groin/Flank"
+    },
+    {
+        "vi": "đứng",
+        "de": "Stehen",
+        "en": "Standing"
+    },
+    {
+        "vi": "liên tục",
+        "de": "permanent",
+        "en": "Permanent"
+    },
+    {
+        "vi": "đang niềng răng",
+        "de": "hat Zahnspange",
+        "en": "Has Braces"
+    },
+    {
+        "vi": "phía bên ngoài (lateral)",
+        "de": "lateral",
+        "en": "Lateral"
+    },
+    {
+        "vi": "Xương bàn tay",
+        "de": "Metacarpalia - MTC",
+        "en": "Metacarpals (MTC)"
+    },
+    {
+        "vi": "Xương chẩm (Occiput)",
+        "de": "Occiput",
+        "en": "Occiput"
+    },
+    {
+        "vi": "khi:",
+        "de": "bei:",
+        "en": "During:"
+    },
+    {
+        "vi": "phía sau (dorsal)",
+        "de": "dorsal",
+        "en": "Dorsal"
+    },
+    {
+        "vi": "Trọng lượng phần chân (kg)",
+        "de": "Beinbelastung (kg)",
+        "en": "Leg Load (kg)"
+    },
+    {
+        "vi": "T",
+        "de": "li",
+        "en": "L"
+    },
+    {
+        "vi": "Chỉ xem lại lịch sử, không cho sửa.",
+        "de": "Nur Historie ansehen, keine Bearbeitung.",
+        "en": "View History Only, No Editing."
+    },
+    {
+        "vi": "Thang đau:",
+        "de": "Schmerzskala:",
+        "en": "Pain Scale:"
+    },
+    {
+        "vi": "Ghi chú điều trị HÔM NAY",
+        "de": "Behandlungsnotizen HEUTE",
+        "en": "Treatment Notes TODAY"
+    },
+    {
+        "vi": "Đầu (Kopf)",
+        "de": "Kopf",
+        "en": "Head"
+    },
+    {
+        "vi": "xuống dưới (caudal)",
+        "de": "caudal",
+        "en": "Caudal"
+    },
+    {
+        "vi": "tháng",
+        "de": "Monate",
+        "en": "Months"
+    },
+    {
+        "vi": "Nếu chưa có hình lần trước thì lấy từ Bệnh sử. Hình lần trước chỉ được xem, không được sửa. Hình lần này vẫn kế thừa các đánh dấu phẫu thuật và gãy xương của lần trước. Ở đây chỉ dùng 5 mức độ đau.",
+        "de": "Wenn kein vorheriges Bild vorhanden ist, wird das aus der Anamnese übernommen. Das vorherige Bild kann nur angesehen, nicht bearbeitet werden. Das aktuelle Bild übernimmt die Operations- und Frakturmarkierungen des vorherigen. Hier werden nur die 5 Schmerzstufen verwendet.",
+        "en": "If no previous image exists, it's taken from the anamnesis. The previous image can only be viewed, not edited. The current image inherits the surgery and fracture marks of the previous one. Only the 5 pain levels are used here."
+    },
+    {
+        "vi": "trong (mediale)",
+        "de": "mediale",
+        "en": "Medial"
+    },
+    {
+        "vi": "Khớp cùng-chậu (ISG) & Khung chậu (Becken)",
+        "de": "ISG & Becken",
+        "en": "Sacroiliac Joint (SIJ) & Pelvis"
+    },
+    {
+        "vi": "Cổ tay",
+        "de": "Handgelenk",
+        "en": "Wrist"
+    },
+    {
+        "vi": "Khớp ức đòn (SCG)",
+        "de": "SCG",
+        "en": "SC Joint (SCG)"
+    },
+    {
+        "vi": "gan",
+        "de": "palmar",
+        "en": "Palmar"
+    },
+    {
+        "vi": "khớp yên (Sattelgelenk)",
+        "de": "Sattelgelenk",
+        "en": "Saddle Joint"
+    },
+    {
+        "vi": "Đốt đội (Atlas C1)",
+        "de": "Atlas (C1)",
+        "en": "Atlas (C1)"
+    },
+    {
+        "vi": "Hình vẽ so sánh: Hình lần trước ↔ Hình lần này",
+        "de": "Vergleichsskizzen: Vorheriges Bild ↔ Aktuelles Bild",
+        "en": "Comparison sketches: Previous Image ↔ Current Image"
+    },
+    {
+        "vi": "Follow-up V2 (Mẫu Mới)",
+        "de": "Follow-up V2 (Neu)",
+        "en": "Follow-up V2 (New)"
+    },
+    {
+        "vi": "Nam",
+        "de": "Männlich",
+        "en": "Male"
+    },
+    {
+        "vi": "CS ngực (BWS)",
+        "de": "BWS",
+        "en": "Thoracic Spine"
+    },
+    {
+        "vi": "Nhập ghi chú cho buổi điều trị này...",
+        "de": "Notizen für diese Behandlung eingeben...",
+        "en": "Enter notes for this treatment..."
+    },
+    {
+        "vi": "khi vận động",
+        "de": "bei Bewegung",
+        "en": "On movement"
+    },
+    {
+        "vi": "Cột sống cổ (HWS)",
+        "de": "HWS",
+        "en": "Cervical Spine"
+    },
+    {
+        "vi": "Tệ đi",
+        "de": "Verschlechtert",
+        "en": "Worsened"
+    },
+    {
+        "vi": "do đau",
+        "de": "schmerzbedingt",
+        "en": "Due to pain"
+    },
+    {
+        "vi": "bên trong",
+        "de": "innen - Daumenseite",
+        "en": "Inside - Thumb side"
+    },
+    {
+        "vi": "Phù nề (Ödem)",
+        "de": "Ödem",
+        "en": "Edema"
+    },
+    {
+        "vi": "Ngón cái vẹo ngoài (Hallux valgus)",
+        "de": "Hallux valgus",
+        "en": "Hallux Valgus"
+    },
+    {
+        "vi": "ngoài",
+        "de": "sụn chêm ngoài - Außenmeniskus",
+        "en": "Lateral Meniscus"
+    },
+    {
+        "vi": "một bên",
+        "de": "einseitig",
+        "en": "Unilateral"
+    },
+    {
+        "vi": "Điều Trị Gần Nhất",
+        "de": "Letzte Behandlung",
+        "en": "Last Treatment"
+    },
+    {
+        "vi": "Đã đỡ nhiều",
+        "de": "Deutlich verbessert",
+        "en": "Significantly improved"
+    },
+    {
+        "vi": "đến bàn chân",
+        "de": "bis Fuß",
+        "en": "To foot"
+    },
+    {
+        "vi": "Khớp thái dương hàm (TMJ)",
+        "de": "Kiefergelenk (TMJ)",
+        "en": "TMJ (Temporomandibular Joint)"
+    },
+    {
+        "vi": "Hạn chế (Einschränkungen)",
+        "de": "Einschränkungen",
+        "en": "Limitations"
+    },
+    {
+        "vi": "Lưu Follow-Up",
+        "de": "Speichern",
+        "en": "Save"
+    },
+    {
+        "vi": "Lần điều trị gần nhất",
+        "de": "Letzte Behandlung",
+        "en": "Last Treatment"
+    },
+    {
+        "vi": "khớp bàn ngón (Grundgelenk)",
+        "de": "Grundgelenk",
+        "en": "Metacarpophalangeal Joint"
+    },
+    {
+        "vi": "Tiền sử phẫu thuật/chấn thương",
+        "de": "Operations- und Trauma-Anamnese",
+        "en": "Surgical and Trauma History"
+    },
+    {
+        "vi": "Đau hơn cũ",
+        "de": "Leicht verschlechtert",
+        "en": "Slightly worsened"
+    },
+    {
+        "vi": "phần trên",
+        "de": "obere",
+        "en": "Upper"
+    },
+    {
+        "vi": "Cơ nhị đầu (Bizeps)",
+        "de": "Bizeps",
+        "en": "Biceps"
+    },
+    {
+        "vi": "sụn chêm",
+        "de": "Meniskus",
+        "en": "Meniscus"
+    },
+    {
+        "vi": "tệp được chọn",
+        "de": "Dateien ausgewählt",
+        "en": "files chosen"
+    },
+    {
+        "vi": "năm",
+        "de": "Jahre",
+        "en": "Years"
+    },
+    {
+        "vi": "tiếng rít",
+        "de": "pfeifen",
+        "en": "Tinnitus (whistling)"
+    },
+    {
+        "vi": "Trạng thái / Lan (Status / Ausstrahlung)",
+        "de": "Status / Ausstrahlung",
+        "en": "Status / Radiation"
+    },
+    {
+        "vi": "Bàn chân lõm/vòm cao (Hohlfuß)",
+        "de": "Hohlfuß",
+        "en": "Cavus Foot"
+    },
+    {
+        "vi": "Cẳng chân (Bein)",
+        "de": "Bein",
+        "en": "Leg"
+    },
+    {
+        "vi": "Trước",
+        "de": "Zurück",
+        "en": "Back"
+    },
+    {
+        "vi": "Đau hơn nhiều",
+        "de": "Deutlich verschlechtert",
+        "en": "Significantly worsened"
+    },
+    {
+        "vi": "phía sau cột sống cổ (dorsal von HWS)",
+        "de": "dorsal von HWS",
+        "en": "Dorsal of Cervical Spine"
+    },
+    {
+        "vi": "Bàn chân hình liềm (Sichelfuß)",
+        "de": "Sichelfuß",
+        "en": "Skew Foot"
+    },
+    {
+        "vi": "Chưa rõ",
+        "de": "Unbekannt",
+        "en": "Unknown"
+    },
+    {
+        "vi": "Trái",
+        "de": "li",
+        "en": "L"
+    },
+    {
+        "vi": "Ghi chú thoải mái...",
+        "de": "Notizen...",
+        "en": "Notes..."
+    },
+    {
+        "vi": "trong",
+        "de": "sụn chêm trong - Innenmeniskus",
+        "en": "Medial Meniscus"
+    },
+    {
+        "vi": "Không thay đổi",
+        "de": "Unverändert",
+        "en": "Unchanged"
+    },
+    {
+        "vi": "Sau - P",
+        "de": "Dorsal - re",
+        "en": "Dorsal - R"
+    },
+    {
+        "vi": "phía trước (frontal)",
+        "de": "frontal",
+        "en": "Frontal"
+    },
+    {
+        "vi": "Phải...",
+        "de": "re...",
+        "en": "Right..."
+    },
+    {
+        "vi": "U thần kinh Morton (Morton Neurom)",
+        "de": "Morton Neurom",
+        "en": "Morton's Neuroma"
+    },
+    {
+        "vi": "sau (post)",
+        "de": "post",
+        "en": "Posterior"
+    },
+    {
+        "vi": "đến bàn tay",
+        "de": "bis Hand",
+        "en": "To hand"
+    },
+    {
+        "vi": "trước (ant)",
+        "de": "ant",
+        "en": "Anterior"
+    },
+    {
+        "vi": "Xương ghe (Os naviculare)",
+        "de": "Os naviculare",
+        "en": "Navicular Bone"
+    },
+    {
+        "vi": "Bàn chân xòe/bè (Spreizfuß)",
+        "de": "Spreizfuß",
+        "en": "Splay Foot"
+    },
+    {
+        "vi": "Đau TK liên sườn:",
+        "de": "ICN:",
+        "en": "Intercostal Neuralgia (ICN):"
+    },
+    {
+        "vi": "Vòng thứ 2 (xanh lá cây)",
+        "de": "Ring 2 (grün)",
+        "en": "Ring 2 (Green)"
+    },
+    {
+        "vi": "Vòng 4:",
+        "de": "Ring 4 (orange):",
+        "en": "Ring 4 (Orange):"
+    },
+    {
+        "vi": "Biến dạng bàn chân (Fußdeformitäten)",
+        "de": "Fußdeformitäten",
+        "en": "Foot Deformities"
+    },
+    {
+        "vi": "Niềng răng / Trồng răng",
+        "de": "Trägt Zahnspange / Zahnimplantate",
+        "en": "Wears Braces / Dental Implants"
+    },
+    {
+        "vi": "đau hơn cũ một chút.",
+        "de": "Leicht verschlechtert.",
+        "en": "Slightly worsened."
+    },
+    {
+        "vi": "khớp yên",
+        "de": "Sattelgelenk - SG",
+        "en": "Saddle Joint - SG"
+    },
+    {
+        "vi": "Vòng thứ 3 (vàng)",
+        "de": "Ring 3 (gelb)",
+        "en": "Ring 3 (Yellow)"
+    },
+    {
+        "vi": "xương mác (Fibula)",
+        "de": "Fibula",
+        "en": "Fibula"
+    },
+    {
+        "vi": "Vai (Schulter)",
+        "de": "Schulter",
+        "en": "Shoulder"
+    },
+    {
+        "vi": "lên trên (cranial)",
+        "de": "cranial",
+        "en": "Cranial"
+    },
+    {
+        "vi": "Sau - T",
+        "de": "Dorsal - li",
+        "en": "Dorsal - L"
+    },
+    {
+        "vi": "ngày",
+        "de": "Tage",
+        "en": "Days"
+    },
+    {
+        "vi": "Trái...",
+        "de": "li...",
+        "en": "Left..."
+    },
+    {
+        "vi": "Sau khi bấm Lưu, ghi chú này sẽ được gom và hiển thị chung với phần ghi chú ở trên. Ghi chú trong phần Bệnh sử sẽ được hiển thị lại trên các bản Tái khám (Follow-Up) về sau.",
+        "de": "Nach dem Speichern wird diese Notiz mit den obigen Notizen zusammengefasst. Notizen in der Anamnese werden in zukünftigen Follow-Ups wieder angezeigt.",
+        "en": "After saving, this note will be merged with the above notes. Notes in the Anamnesis will be displayed in future Follow-ups."
+    },
+    {
+        "vi": "giữa (intermedium)",
+        "de": "intermedium",
+        "en": "Intermediate"
+    },
+    {
+        "vi": "Lần Khám",
+        "de": "Besuch",
+        "en": "Visit"
+    },
+    {
+        "vi": "Xương cụt (Os coccygis):",
+        "de": "Os coccygis:",
+        "en": "Coccyx (Os coccygis):"
+    },
+    {
+        "vi": "Thời gian",
+        "de": "Zeitpunkt",
+        "en": "Time"
+    },
+    {
+        "vi": "Khung chậu (Becken)",
+        "de": "Becken",
+        "en": "Pelvis"
+    },
+    {
+        "vi": "(Đánh dấu X đỏ lên hình trên)",
+        "de": "(Rotes X auf dem Bild oben markieren)",
+        "en": "(Mark red X on the image above)"
+    }
+]

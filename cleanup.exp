@@ -1,0 +1,21 @@
+#!/usr/bin/expect -f
+set timeout 10
+set password {&m5L9[eUv}
+
+spawn scp -o StrictHostKeyChecking=no cleanup_test.php ubutu@112.78.15.2:/tmp/
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S bash -c 'cd /var/www/crm_phong_kham && php /tmp/cleanup_test.php && rm /tmp/cleanup_test.php'"
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

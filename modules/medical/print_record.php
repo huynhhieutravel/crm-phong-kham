@@ -268,7 +268,7 @@ $age = $patient['birthday'] ? date_diff(date_create($patient['birthday']), date_
                     echo '</div>';
                 }
             } elseif ($record_type === 'chiro_history' || $record_type === 'chiro_history_v2') {
-                $print_file = $record_type === 'chiro_history_v2' ? 'forms/print_chiro_history_v2.php' : 'forms/print_chiro_history.php';
+                $print_file = 'forms/print_chiro_history.php'; // V2 history print not implemented yet, fallback to V1
                 require $print_file;
             } elseif ($record_type === 'treatment') {
                 require 'forms/print_treatment.php';

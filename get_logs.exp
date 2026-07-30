@@ -1,0 +1,9 @@
+#!/usr/bin/expect -f
+set password "&m5L9[eUv"
+set user "ubutu"
+set host "112.78.15.2"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host "echo '$password' | sudo -S tail -n 50 /var/log/nginx/error.log"
+expect "*assword:*"
+send "$password\r"
+expect eof

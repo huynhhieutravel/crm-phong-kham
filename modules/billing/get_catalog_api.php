@@ -14,7 +14,7 @@ $db = getDB();
 try {
     $services = $db->query("SELECT id, name, price, category FROM services ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
     $products = $db->query("SELECT id, name, price, category FROM products WHERE status = 'active' ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
-    $packages = $db->query("SELECT id, name, total_price as price, total_sessions FROM packages ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+    $packages = $db->query("SELECT id, name, total_price as price, total_sessions FROM packages WHERE status = 'active' OR status IS NULL ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 
     $active_packages = [];
     if (!empty($_GET['patient_id'])) {

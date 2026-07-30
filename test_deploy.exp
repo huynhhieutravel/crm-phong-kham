@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+set timeout 10
+set password {&m5L9[eUv}
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S ls -l /var/www/crm_phong_kham/modules/medical/chiro_history_v2.php"
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

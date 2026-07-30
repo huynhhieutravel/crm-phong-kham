@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set timeout -1
+set pass "&m5L9\[eUv"
+spawn scp deploy_colors.tar.gz ubutu@112.78.15.2:/tmp/
+expect {
+    "password:" {
+        send "$pass\r"
+        exp_continue
+    }
+    eof
+}
+
+spawn ssh ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S tar -xzvf /tmp/deploy_colors.tar.gz -C /var/www/crm_phong_kham/ && echo '&m5L9\[eUv' | sudo -S chown www-data:www-data /var/www/crm_phong_kham/modules/medical/follow_up_v2.php /var/www/crm_phong_kham/modules/medical/chiro_history_v2.php /var/www/crm_phong_kham/assets/js/medical_marking.js && rm /tmp/deploy_colors.tar.gz"
+expect {
+    "password:" {
+        send "$pass\r"
+        exp_continue
+    }
+    eof
+}

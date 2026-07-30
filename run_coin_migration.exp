@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password {&m5L9[eUv}
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S mysql -e \"USE clinic_management; CREATE TABLE IF NOT EXISTS coin_tiers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(15,2) NOT NULL,
+    coins_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('active', 'hidden') DEFAULT 'active',
+    display_order INT DEFAULT 0
+);\""
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

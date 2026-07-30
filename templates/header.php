@@ -24,7 +24,7 @@ if (!isset($base_url)) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="<?php echo $base_url; ?>assets/js/confirm-modal.js"></script>
+    <script src="<?php echo $base_url; ?>assets/js/confirm-modal.js?v=1.1"></script>
 </head>
 <body>
     <div class="app-container">

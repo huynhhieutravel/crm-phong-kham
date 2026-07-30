@@ -3,6 +3,7 @@
 
 require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/coin_functions.php';
 header('Content-Type: application/json');
 
 if (false) { // bypassed auth
@@ -42,6 +43,8 @@ $patient_package_id = !empty($input['patient_package_id']) ? (int)$input['patien
 $technician_id = !empty($input['technician_id']) ? (int)$input['technician_id'] : null;
 $payment_id = !empty($input['payment_id']) ? (int)$input['payment_id'] : null;
 
+$coin_deduct_patient_id = (int)($input['coin_deduct_patient_id'] ?? 0);
+$coin_deduct_count = (float)($input['coin_deduct_count'] ?? 0);
 if (!$patient_id || empty($items)) {
     echo json_encode(['success' => false, 'error' => 'Thiếu thông tin khách hàng hoặc sản phẩm']);
     exit;
@@ -62,6 +65,21 @@ try {
     $status = 'paid';
     
     $db->beginTransaction();
+
+    // Process Coin Deduction first if applicable
+    if ($coin_deduct_patient_id > 0 && $coin_deduct_count > 0 && $package_deduct > 0) {
+        $coin_note = "Thanh toán hoá đơn $invoice_no";
+        if ($coin_deduct_patient_id !== $patient_id) {
+            $p_stmt = $db->prepare("SELECT full_name FROM patients WHERE id = ?");
+            $p_stmt->execute([$patient_id]);
+            $p_name = $p_stmt->fetchColumn() ?: '';
+            $coin_note .= " (Cho khách: $p_name - BN-$patient_id)";
+        }
+        $deduct_ok = deduct_patient_coins($db, $coin_deduct_patient_id, $coin_deduct_count, $treatment_id ?: 0, $_SESSION['user_id'], $coin_note);
+        if (!$deduct_ok) {
+            throw new Exception('Số dư Coin không đủ để thanh toán!');
+        }
+    }
 
     $stmt = $db->prepare("
         INSERT INTO invoices (invoice_no, patient_id, treatment_id, patient_package_id, payment_id,

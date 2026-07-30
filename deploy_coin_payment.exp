@@ -1,0 +1,23 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password {&m5L9[eUv}
+
+puts "Tai len file..."
+spawn scp -o StrictHostKeyChecking=no includes/invoice_popup.php ubutu@112.78.15.2:/tmp/
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+puts "Copy vao dung thu muc..."
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S cp /tmp/invoice_popup.php /var/www/crm_phong_kham/includes/invoice_popup.php && echo '&m5L9\[eUv' | sudo -S chown www-data:www-data /var/www/crm_phong_kham/includes/invoice_popup.php && rm /tmp/invoice_popup.php"
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+puts "Xong!"

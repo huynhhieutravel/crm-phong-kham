@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password {&m5L9[eUv}
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S mysql -e \"USE clinic_management; SHOW TABLES LIKE '%coin%'; SHOW TABLES LIKE '%wallet%';\""
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

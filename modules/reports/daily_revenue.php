@@ -61,8 +61,40 @@ foreach ($pkg_pays as $pp) {
     }
 }
 
+// Thực thu CHỈ tính Tiền mặt + Chuyển khoản thực tế + Tiền nạp Coin
+// Lấy doanh thu nạp ví Coin trong kỳ
+$stmt = $db->prepare("
+    SELECT SUM(price_paid) as total_topup
+    FROM coin_transactions
+    WHERE transaction_type = 'topup' AND created_at BETWEEN ? AND ?
+");
+$stmt->execute($params);
+$total_coin_topup = (float)$stmt->fetchColumn();
+
+// Tính giá trị Coin trung bình (Toàn thời gian)
+$stmt = $db->query("
+    SELECT SUM(price_paid) as total_cash_in, SUM(amount) as total_coins_minted
+    FROM coin_transactions
+    WHERE transaction_type = 'topup'
+");
+$coin_stats = $stmt->fetch();
+$avg_coin_value = ($coin_stats['total_coins_minted'] > 0) ? ($coin_stats['total_cash_in'] / $coin_stats['total_coins_minted']) : 0;
+
+// Tính số Coin đã tiêu hao trong kỳ
+$stmt = $db->prepare("
+    SELECT SUM(ABS(amount)) as total_coins_used
+    FROM coin_transactions
+    WHERE transaction_type = 'usage' AND created_at BETWEEN ? AND ?
+");
+$stmt->execute($params);
+$coins_used_today = (float)$stmt->fetchColumn();
+
+$total_coin_usage_revenue = $coins_used_today * $avg_coin_value;
+
 // Thực thu CHỈ tính Tiền mặt + Chuyển khoản thực tế
+// (Tiền Nạp Coin đã được cộng tự động vào Tiền mặt / Chuyển khoản thông qua Phiếu tính tiền)
 $total_revenue = $total_cash + $total_transfer; 
+
 
 // 3. Chi Tiết Nợ Phát Sinh (Invoices có debt_amount > 0)
 $stmt = $db->prepare("
@@ -123,9 +155,10 @@ $all_invoices = $stmt->fetchAll();
 <style>
 .rev-outer { max-width: 1400px; width: 100%; }
 
-.rev-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
-@media (max-width: 1024px) { .rev-stats { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px) { .rev-stats { grid-template-columns: 1fr; } }
+.rev-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+@media (max-width: 1200px) { .rev-stats { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px) { .rev-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .rev-stats { grid-template-columns: 1fr; } }
 
 .rev-card {
     padding: 2rem; border-radius: 20px; color: white; position: relative; overflow: hidden;
@@ -244,21 +277,26 @@ $all_invoices = $stmt->fetchAll();
 
         <!-- Revenue KPIs -->
         <div class="rev-stats">
+            <div class="rev-card" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
+                <div class="rev-icon">🪙</div>
+                <div class="rev-label">Nạp Ví Coin</div>
+                <div class="rev-val"><?php echo format_money($total_coin_topup); ?></div>
+            </div>
             <div class="rev-card" style="background: linear-gradient(135deg, #10b981, #34d399);">
                 <div class="rev-icon">💵</div>
-                <div class="rev-label">Tiền Mặt</div>
+                <div class="rev-label">Bán Gói Lẻ (Tiền mặt)</div>
                 <div class="rev-val"><?php echo format_money($total_cash); ?></div>
             </div>
             <div class="rev-card" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">
                 <div class="rev-icon">🏦</div>
-                <div class="rev-label">Chuyển Khoản</div>
+                <div class="rev-label">Bán Gói Lẻ (Chuyển Khoản)</div>
                 <div class="rev-val"><?php echo format_money($total_transfer); ?></div>
             </div>
             <div class="rev-card" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
-                <div class="rev-icon">📦</div>
-                <div class="rev-label">Gói Cấn Trừ (Chỉ số)</div>
-                <div class="rev-val"><?php echo format_money($total_package); ?></div>
-                <div class="rev-sub">Không tính vào Thực Thu</div>
+                <div class="rev-icon">📈</div>
+                <div class="rev-label">Doanh Thu Thực Hiện (Coin + Gói)</div>
+                <div class="rev-val"><?php echo format_money($total_package + $total_coin_usage_revenue); ?></div>
+                <div class="rev-sub">Khách đã dùng <?php echo $coins_used_today; ?> Coins hôm nay</div>
             </div>
             <div class="rev-card" style="background: linear-gradient(135deg, #ef4444, #f87171);">
                 <div class="rev-icon">📝</div>
@@ -268,9 +306,22 @@ $all_invoices = $stmt->fetchAll();
         </div>
 
         <!-- Total Summary -->
-        <div class="section-card" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; text-align: center; padding: 2.5rem;">
-            <div style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; color: #38bdf8;">TỔNG THỰC THU (Mặt + CK)</div>
-            <div style="font-size: 3.5rem; font-weight: 800; margin-top: 0.5rem; color: #38bdf8; text-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);"><?php echo format_money($total_revenue); ?></div>
+        <div class="section-card" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 2.5rem; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 2rem;">
+            <div style="text-align: center;">
+                <div style="font-size: 0.95rem; font-weight: 700; text-transform: uppercase; opacity: 0.8; letter-spacing: 1px; color: #10b981;">DOANH THU NHẬN TRƯỚC (THỰC THU)</div>
+                <div style="font-size: 3.5rem; font-weight: 800; margin-top: 0.5rem; color: #10b981; text-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);"><?php echo format_money($total_revenue); ?></div>
+                <div style="margin-top: 1rem; color: #94a3b8; font-size: 0.85rem;">
+                    Tiền nạp Coin + Khách mua dịch vụ trả thẳng (Tiền vào quỹ)
+                </div>
+            </div>
+            <div style="background: rgba(255,255,255,0.1); width: 1px; height: 100%;"></div>
+            <div style="text-align: center;">
+                <div style="font-size: 0.95rem; font-weight: 700; text-transform: uppercase; opacity: 0.8; letter-spacing: 1px; color: #38bdf8;">DOANH THU THỰC HIỆN</div>
+                <div style="font-size: 3.5rem; font-weight: 800; margin-top: 0.5rem; color: #38bdf8; text-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);"><?php echo format_money($total_package + $total_coin_usage_revenue); ?></div>
+                <div style="margin-top: 1rem; color: #94a3b8; font-size: 0.85rem;">
+                    Giá trị trung bình 1 Coin hiện tại: <strong style="color: white;"><?php echo format_money($avg_coin_value); ?></strong>
+                </div>
+            </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">

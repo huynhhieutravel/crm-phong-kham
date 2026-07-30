@@ -13,13 +13,11 @@ class MedicalMarking {
         this.readOnly = readOnly;
         
         this.markers = [];
-        this.currentIntensity = 'M5';
+        this.currentIntensity = 'M3';
         this.isEraser = false;
         
         this.colors = {
-            'M1': '#d9f99d', 'M2': '#84cc16', 'M3': '#22c55e', 'M4': '#15803d',
-            'M5': '#60a5fa', 'M6': '#2563eb', 
-            'M7': '#fca5a5', 'M8': '#f97316', 'M9': '#ef4444', 'M10': '#b91c1c'
+            'M1': '#38bdf8', 'M2': '#4ade80', 'M3': '#fbbf24', 'M4': '#fb923c', 'M5': '#ef4444'
         };
 
         this.init();

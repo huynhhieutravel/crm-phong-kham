@@ -23,6 +23,12 @@ if (!$record) {
     redirect('index.php');
 }
 
+// Redirect chiro_history_v2 to its own rich UI form
+if ($record['type'] === 'chiro_history_v2') {
+    redirect("chiro_history_v2.php?patient_id=" . $record['patient_id'] . "&id=" . $record['id'] . "&session_id=" . $record['session_id']);
+    exit;
+}
+
 $data = json_decode($record['history_data'], true) ?: [];
 $type_map_list = [
     'chiropractic'  => 'Theo dõi SOAP',

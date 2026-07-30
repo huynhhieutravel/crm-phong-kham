@@ -39,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'source' => $_POST['source'] ?: '',
         'consultant_id' => $_POST['consultant_id'] ?: null,
         'label' => $_POST['label'] ?: '',
+        'customer_group' => $_POST['customer_group'] ?: '',
         'zalo_number' => $_POST['zalo_number'] ?: '',
         'facebook_link' => $_POST['facebook_link'] ?: '',
         'instagram_link' => $_POST['instagram_link'] ?: '',
@@ -168,6 +169,10 @@ require_once '../../templates/header.php';
                 <div class="form-group">
                     <label class="form-label"><?php echo __('patient.info.label_desc'); ?></label>
                     <input type="text" name="label" class="form-input" placeholder="<?php echo __('patient.placeholder.label'); ?>">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tên Nhóm Khách hàng</label>
+                    <input type="text" name="customer_group" class="form-input" placeholder="VD: Nhóm Công ty ABC, Gia đình XYZ...">
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label"><?php echo __('patient.info.occupation_desc'); ?></label>

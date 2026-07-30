@@ -101,7 +101,7 @@ $current_page = 'sales';
 require_once '../../templates/header.php';
 
 $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_name ASC")->fetchAll();
-$packages = $db->query("SELECT * FROM packages ORDER BY name ASC")->fetchAll();
+$packages = $db->query("SELECT * FROM packages WHERE status = 'active' OR status IS NULL ORDER BY name ASC")->fetchAll();
 
 // Fetch Changelog (Log Hạch Toán)
 $recent_sales = $db->query("

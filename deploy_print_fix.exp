@@ -1,0 +1,17 @@
+#!/usr/bin/expect -f
+set password "&m5L9\[eUv"
+set user "ubutu"
+set host "112.78.15.2"
+
+spawn tar -czvf print_fix.tar.gz modules/medical/print_record.php
+expect eof
+
+spawn scp -o StrictHostKeyChecking=no print_fix.tar.gz $user@$host:/tmp/print_fix.tar.gz
+expect "*assword:*"
+send "$password\r"
+expect eof
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host "echo '$password' | sudo -S tar -xzvf /tmp/print_fix.tar.gz -C /var/www/crm_phong_kham/ && echo '$password' | sudo -S chown -R www-data:www-data /var/www/crm_phong_kham/"
+expect "*assword:*"
+send "$password\r"
+expect eof

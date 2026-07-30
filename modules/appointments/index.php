@@ -823,16 +823,16 @@ function copyZaloSchedule() {
         
         const abbr = typeAbbr[typeStr] || typeStr;
         let suffix = '';
-        if (doctor) {
-            suffix = `(${abbr}, ${doctor})`;
-        } else {
+
+        if (typeStr === 'chiro') {
+            suffix = doctor ? `(${doctor})` : `(Chiro)`;
+        } else if (typeStr.startsWith('dong_y')) {
             suffix = `(${abbr})`;
+        } else {
+            suffix = doctor ? `(${abbr}) (${doctor})` : `(${abbr})`;
         }
 
         let displayTime = timeStr;
-        if (endTimeStr) {
-            displayTime += ' - ' + endTimeStr;
-        }
 
         grouped[dateStr].push(`${displayTime} ${patient} ${suffix}`);
     });
@@ -847,7 +847,7 @@ function copyZaloSchedule() {
         const shortDate = `${dm[2]}/${dm[1]}`;
         
         if (finalStr !== '') finalStr += '\n\n';
-        finalStr += `Lịch ${dayName.toLowerCase()}: ${shortDate}\n`;
+        finalStr += `Lịch ${dayName.toLowerCase()}: ${shortDate} update\n`;
         
         grouped[dateStr].forEach((item, idx) => {
             finalStr += `${idx + 1}. ${item}\n`;

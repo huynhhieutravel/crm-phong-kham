@@ -220,8 +220,7 @@ require_once '../../templates/header.php';
 
             <?php
                 $components = [
-                    // 'chiropractic_v1' => ['label' => 'Phiếu khám Chiropractic (V1 Cũ)', 'url' => 'form.php?type=chiropractic_v1', 'icon' => 'fa-history'],
-                    'chiropractic' => ['label' => 'Phiếu khám Chiropractic (V2)', 'url' => 'form.php?type=chiropractic', 'icon' => 'fa-notes-medical'],
+                    'chiropractic' => ['label' => 'Phiếu khám Chiropractic', 'url' => 'form.php?type=chiropractic', 'icon' => 'fa-notes-medical'],
                     'dong_y'        => ['label' => __('medical.type.dong_y_full'), 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
                     'treatment'     => ['label' => __('medical.type.treatment_full'), 'url' => 'add_treatment.php', 'icon' => 'fa-file-signature']
                 ];
@@ -279,14 +278,9 @@ require_once '../../templates/header.php';
                             <i class="fas fa-edit"></i> <?php echo __('common.edit'); ?>
                         </a>
                     <?php else: ?>
-                        <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-                            <a href="<?php echo $history_create_url; ?>" class="btn btn-sm btn-outline" style="border: 1px solid #a855f7; color: #a855f7; border-radius: 50px; font-weight: 600;">
-                                <i class="fas fa-plus"></i> Tạo Mẫu Cũ
-                            </a>
-                            <a href="<?php echo $history_create_v2_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-weight: 600;">
-                                <i class="fas fa-plus-circle"></i> Tạo Mẫu Mới (V2)
-                            </a>
-                        </div>
+                        <a href="<?php echo $history_create_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-weight: 600;">
+                            <i class="fas fa-plus"></i> Khai báo tiền sử
+                        </a>
                     <?php endif; ?>
                 </div>
             </div>

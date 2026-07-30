@@ -1,0 +1,11 @@
+#!/usr/bin/expect -f
+set timeout -1
+set pass "&m5L9\[eUv"
+spawn ssh ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S tail -n 30 /var/log/php8.4-fpm.log"
+expect {
+    "password:" {
+        send "$pass\r"
+        exp_continue
+    }
+    eof
+}

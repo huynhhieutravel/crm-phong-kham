@@ -1,0 +1,88 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn node -e "
+const fs = require('fs');
+let code = fs.readFileSync('includes/invoice_popup.php', 'utf8');
+
+// 1. Modify prefillCoinPatient
+const oldPrefill = \`function prefillCoinPatient(id, name) {
+    if (!id || !name) return;
+    var select = document.getElementById('ipCoinPatientId');
+    if (!select) return;
+
+    var optionExists = Array.from(select.options).some(function(opt) { return opt.value == id; });
+    if (!optionExists) {
+        var newOption = new Option(name + ' (Khách đang chọn)', id, true, true);
+        select.appendChild(newOption);
+    } else {
+        select.value = id;
+    }
+    
+    if (typeof jQuery !== 'undefined' && jQuery(select).data('select2')) {
+        jQuery(select).trigger('change');
+    }
+}\`;
+
+const newPrefill = \`function prefillCoinPatient(id, name) {
+    if (!id || !name) return;
+    var select = document.getElementById('ipCoinPatientId');
+    if (!select) return;
+
+    fetch((typeof ipBaseUrl !== 'undefined' ? ipBaseUrl : '/') + 'modules/billing/search_coin_patients_api.php?current_patient_id=' + id)
+    .then(r => r.json())
+    .then(data => {
+        var balance = 0;
+        if (data.results && data.results.length > 0) {
+            balance = data.results[0].coin_balance;
+        }
+        var text = name + ' (Dư: ' + balance + ' Coins)';
+        var optionExists = Array.from(select.options).some(function(opt) { return opt.value == id; });
+        if (!optionExists) {
+            var newOption = new Option(text, id, true, true);
+            select.appendChild(newOption);
+        } else {
+            select.options[select.selectedIndex].text = text;
+            select.value = id;
+        }
+        if (typeof jQuery !== 'undefined' && jQuery(select).data('select2')) {
+            jQuery(select).trigger('change');
+        }
+    }).catch(e => {
+        // Fallback
+        var optionExists = Array.from(select.options).some(function(opt) { return opt.value == id; });
+        if (!optionExists) {
+            var newOption = new Option(name + ' (Khách đang chọn)', id, true, true);
+            select.appendChild(newOption);
+        } else {
+            select.value = id;
+        }
+        if (typeof jQuery !== 'undefined' && jQuery(select).data('select2')) {
+            jQuery(select).trigger('change');
+        }
+    });
+}\`;
+
+code = code.replace(oldPrefill, newPrefill);
+
+// 2. Modify initCoinSelect2
+const oldSelect2 = \`            data: function (params) { return { q: params.term || '', current_patient_id: document.getElementById('ipPatientId').value }; },
+            processResults: function (data) { return { results: data.results }; },
+            cache: true
+        }
+    });\`;
+
+const newSelect2 = \`            data: function (params) { return { q: params.term || '', current_patient_id: document.getElementById('ipPatientId').value }; },
+            processResults: function (data) { return { results: data.results }; },
+            cache: true
+        },
+        templateSelection: function(data) {
+            if (!data.id) return data.text;
+            return jQuery('<span style=\"font-size: 0.85rem; font-weight: 600;\">' + data.text + '</span>');
+        }
+    });\`;
+
+code = code.replace(oldSelect2, newSelect2);
+
+fs.writeFileSync('includes/invoice_popup.php', code);
+"
+expect eof

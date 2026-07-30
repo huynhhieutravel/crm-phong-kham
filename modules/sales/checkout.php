@@ -29,7 +29,7 @@ if (!$treatment) {
 }
 
 // Calculate coin cost based on service or name fallback
-$service_coin_cost = (int)($treatment['coin_cost'] ?? 1);
+$service_coin_cost = (float)($treatment['coin_cost'] ?? 1);
 if ($service_coin_cost <= 1 && $treatment['service_name']) {
     $sname = mb_strtolower($treatment['service_name'], 'UTF-8');
     if (mb_strpos($sname, '60') !== false) $service_coin_cost = 2;
@@ -53,7 +53,7 @@ $patient_id = $treatment['patient_id'];
 // Get patient coin balance
 $patient_coin_balance = get_patient_coin_balance($db, $patient_id);
 
-// Get available packages (own + shared active)
+// Get available packages (only own active)
 $stmt = $db->prepare("
     SELECT pp.*, pkg.name as package_name, pkg.total_sessions, pkg.total_price,
            owner.full_name as owner_name, owner.id as owner_id
@@ -62,21 +62,23 @@ $stmt = $db->prepare("
     JOIN patients owner ON pp.patient_id = owner.id
     WHERE pp.sessions_remaining > 0
       AND pp.status = 'active'
-      AND (
-          pp.patient_id = ?
-          OR pp.id IN (SELECT patient_package_id FROM package_shared_users WHERE patient_id = ?)
-      )
+      AND pp.patient_id = ?
 ");
-$stmt->execute([$patient_id, $patient_id]);
+$stmt->execute([$patient_id]);
 $available_packages = $stmt->fetchAll();
+
+// Get coin tiers for quick top-up
+$stmt = $db->query("SELECT * FROM coin_tiers WHERE status = 'active' ORDER BY display_order ASC, id ASC");
+$coin_tiers = $stmt->fetchAll();
 
 // Handle Quick Coin Top-Up POST
 if (isset($_POST['action']) && $_POST['action'] === 'topup_coins') {
     verify_csrf();
     $topup_amount = (float)($_POST['topup_amount'] ?? 0);
     $topup_coins = (float)($_POST['topup_coins'] ?? 0);
+    $payment_method = $_POST['payment_method'] ?? 'cash';
     if ($topup_coins > 0) {
-        topup_patient_coins($db, $patient_id, $topup_coins, $topup_amount, $_SESSION['user_id'], 'Nạp Coin trực tiếp tại màn hình Thanh toán');
+        topup_patient_coins($db, $patient_id, $topup_coins, $topup_amount, $_SESSION['user_id'], 'Nạp Coin trực tiếp tại màn hình Thanh toán', $payment_method);
         set_flash("Nạp thành công $topup_coins Coins vào ví của bệnh nhân!", 'success');
     }
     header("Location: checkout.php?treatment_id=$treatment_id");
@@ -436,9 +438,6 @@ unset($pkg);
                             <input type="radio" name="patient_package_id" value="<?php echo $pkg['id']; ?>">
                             <div>
                                 <div style="font-weight: 700; color: #1e293b;"><?php echo e($pkg['package_name']); ?></div>
-                                <?php if ($pkg['owner_id'] != $patient_id): ?>
-                                    <div class="pkg-owner"><i class="fas fa-share-alt"></i> Gói của <?php echo e($pkg['owner_name']); ?></div>
-                                <?php endif; ?>
                                 <div class="pkg-sessions">Còn <?php echo $pkg['sessions_remaining']; ?> buổi · Quy đổi <?php echo format_money($pkg['per_session']); ?>/buổi</div>
                             </div>
                             <div style="text-align: right;">
@@ -486,14 +485,38 @@ unset($pkg);
             <?php echo csrf_field(); ?>
             <input type="hidden" name="action" value="topup_coins">
             <div style="margin-bottom: 1rem;">
-                <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số tiền nạp (VNĐ)</label>
-                <input type="number" name="topup_amount" class="form-input" placeholder="900000" style="margin-top: 0.25rem; font-size: 1rem; font-weight: 700;" oninput="document.getElementById('calcCoins').value = (this.value / 300000).toFixed(1).replace('.0','');">
+                <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.5rem;">Chọn Gói Nạp Nhanh</label>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <?php foreach($coin_tiers as $tier): ?>
+                        <button type="button" class="btn btn-sm" style="background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.8rem; padding: 0.4rem 0.6rem; border-radius: 8px; font-weight: 600;" 
+                                onclick="document.querySelector('input[name=\'topup_amount\']').value = '<?php echo $tier['price']; ?>'; document.getElementById('calcCoins').value = '<?php echo $tier['coins_amount']; ?>';">
+                            <?php echo e($tier['name']); ?>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
             </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số tiền khách trả (VNĐ)</label>
+                    <input type="number" name="topup_amount" class="form-input" placeholder="0" style="margin-top: 0.25rem; font-size: 1rem; font-weight: 700;" oninput="document.getElementById('calcCoins').value = (this.value / 300000).toFixed(1).replace('.0','');">
+                </div>
+                <div>
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số Coins quy đổi</label>
+                    <input type="number" step="0.1" name="topup_coins" id="calcCoins" class="form-input" placeholder="0" style="margin-top: 0.25rem; font-size: 1.1rem; font-weight: 800; color: #d97706;" required>
+                </div>
+            </div>
+            
             <div style="margin-bottom: 1.5rem;">
-                <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số Coins quy đổi</label>
-                <input type="number" step="0.1" name="topup_coins" id="calcCoins" class="form-input" placeholder="3" style="margin-top: 0.25rem; font-size: 1.3rem; font-weight: 800; color: #d97706;" required>
-                <small style="color: #64748b; display: block; margin-top: 0.35rem;">Gợi ý: 900.000đ = 3 Coins, 600.000đ = 2 Coins (Trung bình 300.000đ/Coin)</small>
+                <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Hình thức thanh toán</label>
+                <select name="payment_method" class="form-input" style="margin-top: 0.25rem;">
+                    <option value="cash">Tiền mặt</option>
+                    <option value="transfer_personal">CK Cá nhân</option>
+                    <option value="transfer_company">TK Công ty</option>
+                    <option value="card">Quẹt thẻ</option>
+                </select>
             </div>
+
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                 <button type="button" onclick="document.getElementById('topupModal').style.display='none';" class="btn" style="background: #f1f5f9; color: #475569; font-weight: 600;">Hủy</button>
                 <button type="submit" class="btn" style="background: #f59e0b; color: white; font-weight: 800;">Xác Nhận Nạp</button>
