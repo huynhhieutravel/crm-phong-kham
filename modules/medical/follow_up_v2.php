@@ -480,14 +480,95 @@ window.addEventListener('beforeprint', () => {
 
 
             
-            <div style="margin-top: 1.5rem; display: flex; align-items: center; gap: 1rem; background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <label style="font-weight: 800; color: #1e293b; margin: 0;"><?php echo _t_v2('Diễn tiến so với lần trước:', 'Verlauf im Vergleich zur letzten Behandlung:', 'Progress compared to last treatment:'); ?></label>
-                <select name="fu[progress]" class="fu-textarea" style="width: auto; padding: 0.5rem 1rem; margin: 0;">
-                    <option value="">-- Chọn --</option>
-                    <option value="Tốt lên" <?php echo checked_v('progress', 'Tốt lên') ? 'selected' : ''; ?>>📈 <?php echo _t_v2('Tốt lên', 'Verbessert', 'Improved'); ?></option>
-                    <option value="Giữ nguyên" <?php echo checked_v('progress', 'Giữ nguyên') ? 'selected' : ''; ?>>➖ <?php echo _t_v2('Giữ nguyên', 'Unverändert', 'Unchanged'); ?></option>
-                    <option value="Tệ đi" <?php echo checked_v('progress', 'Tệ đi') ? 'selected' : ''; ?>>📉 <?php echo _t_v2('Tệ đi', 'Verschlechtert', 'Worsened'); ?></option>
-                </select>
+            <style>
+            .progress-state-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                margin-top: 0.75rem;
+            }
+            .progress-state-option {
+                display: inline-block;
+                cursor: pointer;
+            }
+            .progress-state-option input[type="radio"] {
+                display: none;
+            }
+            .progress-state-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 0.5rem;
+                width: 85px;
+                height: 90px;
+                background: #fff;
+                transition: all 0.2s ease;
+            }
+            .progress-state-card img {
+                width: 40px;
+                height: 40px;
+                object-fit: contain;
+                margin-bottom: 0.4rem;
+                transition: all 0.2s ease;
+            }
+            .progress-state-text {
+                font-size: 0.65rem;
+                font-weight: 700;
+                color: #64748b;
+                text-align: center;
+                line-height: 1.2;
+            }
+            .progress-state-option input[type="radio"]:checked + .progress-state-card {
+                border-color: #3b82f6;
+                background: #eff6ff;
+                box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+            }
+            .progress-state-option input[type="radio"]:checked + .progress-state-card img {
+                filter: grayscale(0%);
+                opacity: 1;
+                transform: scale(1.15);
+            }
+            .progress-state-option input[type="radio"]:checked + .progress-state-card .progress-state-text {
+                color: #1d4ed8;
+            }
+            .progress-state-option:hover .progress-state-card {
+                border-color: #cbd5e1;
+            }
+            </style>
+            <div style="margin-top: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <label style="font-weight: 800; color: #1e293b; margin: 0; display: block; font-size: 0.95rem;">
+                    <?php echo _t_v2('Diễn tiến so với lần trước:', 'Verlauf im Vergleich zur letzten Behandlung:', 'Progress compared to last treatment:'); ?>
+                </label>
+                <div class="progress-state-group">
+                    <?php
+                    $progress_options = [
+                        'Tốt dần lên' => ['img' => 'tot-dan-len.png', 'de' => 'Besser werden', 'en' => 'Getting better'],
+                        'Ổn định tốt' => ['img' => 'on-dinh-tot.png', 'de' => 'Sehr stabil', 'en' => 'Very stable'],
+                        'Ổn định' => ['img' => 'on-dinh.png', 'de' => 'Stabil', 'en' => 'Stable'],
+                        'Phục hồi' => ['img' => 'phuc-hoi.png', 'de' => 'Erholend', 'en' => 'Recovering'],
+                        'Dao động' => ['img' => 'dao-dong.png', 'de' => 'Schwankend', 'en' => 'Fluctuating'],
+                        'Suy giảm' => ['img' => 'suy-giam.png', 'de' => 'Nachlassend', 'en' => 'Declining'],
+                        'Mệt mỏi' => ['img' => 'met-moi.png', 'de' => 'Müde', 'en' => 'Tired']
+                    ];
+                    
+                    foreach ($progress_options as $val => $data) {
+                        $checked = checked_v('progress', $val) ? 'checked' : '';
+                        $text = _t_v2($val, $data['de'], $data['en']);
+                        echo '
+                        <label class="progress-state-option">
+                            <input type="radio" name="fu[progress]" value="'.$val.'" '.$checked.'>
+                            <div class="progress-state-card">
+                                <img src="../../assets/images/progress/'.$data['img'].'" alt="'.$val.'">
+                                <span class="progress-state-text">'.$text.'</span>
+                            </div>
+                        </label>
+                        ';
+                    }
+                    ?>
+                </div>
             </div>
         </div>
 
