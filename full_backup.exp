@@ -1,0 +1,56 @@
+#!/usr/bin/expect -f
+# ============================================================
+# FULL BACKUP SCRIPT — SIMON CENTER (QUAN LY PHONG KHAM)
+# VPS: 112.78.15.2
+# ============================================================
+
+set timeout -1
+set password {&m5L9[eUv}
+set VPS "ubutu@112.78.15.2"
+set REMOTE_PATH "/var/www/crm_phong_kham"
+set BACKUP_DIR "_backups"
+set TIMESTAMP [clock format [clock seconds] -format "%Y%m%d_%H%M%S"]
+set BACKUP_NAME "simon_center_full_backup_$TIMESTAMP"
+set REMOTE_TMP "/tmp/$BACKUP_NAME"
+
+puts "\n╔══════════════════════════════════════════════════╗"
+puts "║      🚀 FULL BACKUP SIMON CENTER (PHÒNG KHÁM)    ║"
+puts "║           IP: 112.78.15.2                        ║"
+puts "╚══════════════════════════════════════════════════╝\n"
+
+exec mkdir -p $BACKUP_DIR
+
+puts "📦 \[1/4\] Dumping MySQL Database trên VPS..."
+spawn ssh -o StrictHostKeyChecking=no $VPS "echo '&m5L9\[eUv' | sudo -S mysqldump -u crm_admin -p'CrmAdmin2026@Pass' clinic_management > $REMOTE_TMP.sql"
+expect {
+    "*assword:*" { send "$password\r"; exp_continue }
+    eof
+}
+puts "✅ Export database thành công.\n"
+
+puts "🗜️  \[2/4\] Nén toàn bộ Code, DB và Tài liệu hình ảnh (uploads)..."
+spawn ssh -o StrictHostKeyChecking=no $VPS "echo '&m5L9\[eUv' | sudo -S mv $REMOTE_TMP.sql $REMOTE_PATH/database_backup.sql && cd /var/www && echo '&m5L9\[eUv' | sudo -S tar -czf $REMOTE_TMP.tar.gz crm_phong_kham && echo '&m5L9\[eUv' | sudo -S rm $REMOTE_PATH/database_backup.sql && echo '&m5L9\[eUv' | sudo -S chown ubutu:ubutu $REMOTE_TMP.tar.gz"
+expect {
+    "*assword:*" { send "$password\r"; exp_continue }
+    eof
+}
+puts "✅ Đã nén thành công $REMOTE_TMP.tar.gz.\n"
+
+puts "📥 \[3/4\] Tải file backup về máy local (_backups/)..."
+spawn scp -o StrictHostKeyChecking=no "$VPS:$REMOTE_TMP.tar.gz" "$BACKUP_DIR/"
+expect {
+    "*assword:*" { send "$password\r"; exp_continue }
+    eof
+}
+puts "✅ Đã tải file về thành công!\n"
+
+puts "🧹 \[4/4\] Dọn dẹp file tạm trên VPS..."
+spawn ssh -o StrictHostKeyChecking=no $VPS "echo '&m5L9\[eUv' | sudo -S rm -f $REMOTE_TMP.tar.gz"
+expect {
+    "*assword:*" { send "$password\r"; exp_continue }
+    eof
+}
+puts "✅ Hoàn tất!\n"
+
+puts "🎉 BACKUP TOÀN BỘ THÀNH CÔNG!"
+puts "📍 File của bạn ở: $BACKUP_DIR/${BACKUP_NAME}.tar.gz\n"

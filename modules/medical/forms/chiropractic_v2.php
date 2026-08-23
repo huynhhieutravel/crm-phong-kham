@@ -930,8 +930,8 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
     </table>
 
     <div style="margin-top: 2rem; margin-bottom: 3rem;">
-        <label style="display: block; margin-bottom: 10px; color: black;"><?php echo __('medical.v3.extra_notes'); ?></label>
-        <textarea name="history[assessment_notes]" class="form-input" rows="4" style="border: 1px solid black; border-radius: 0; background: transparent; color: black; resize: vertical;"><?php echo e($data['assessment_notes'] ?? ''); ?></textarea>
+        <label style="display: block; margin-bottom: 10px; color: black; font-weight: 700;"><?php echo __('medical.v3.extra_notes'); ?></label>
+        <textarea name="history[assessment_notes]" class="form-input" rows="6" style="border: 1px solid black; border-radius: 8px; background: transparent; color: black; resize: vertical; min-height: 140px; font-size: 0.95rem; line-height: 1.5;"><?php echo e($data['assessment_notes'] ?? ''); ?></textarea>
     </div>
 
     <!-- VẬT LÝ TRỊ LIỆU -->
@@ -999,7 +999,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
 
         <div class="form-group" style="margin: 0;">
             <label class="form-label" style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fas fa-pen-alt"></i> <?php echo __('Ghi chú (Notes):'); ?></label>
-            <textarea name="history[plan_notes]" class="form-input" rows="3" placeholder="<?php echo __('Nhập phác đồ, nhắc nhở định kỳ cho bệnh nhân...'); ?>"><?php echo e($plan_notes); ?></textarea>
+            <textarea name="history[plan_notes]" class="form-input" rows="8" placeholder="<?php echo __('Nhập phác đồ, nhắc nhở định kỳ cho bệnh nhân...'); ?>" style="min-height: 180px; font-size: 0.95rem; line-height: 1.6; resize: vertical;"><?php echo e($plan_notes); ?></textarea>
         </div>
     </div>
 </div>
@@ -1022,7 +1022,7 @@ function echoMatrixDot($subluxation, $group, $item, $side, $label) {
     <!-- Khung Ghi chú thêm cho Bác sĩ -->
     <div style="border-top: 1px dashed #bfdbfe; padding-top: 1.5rem;">
         <label class="form-label" style="font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;"><i class="fas fa-user-md"></i> <?php echo __('Doctor\'s Diagnostic Notes (Optional):'); ?></label>
-        <textarea name="history[symptom_notes]" class="form-input" rows="2" placeholder="<?php echo __('The doctor can enter additional professional diagnoses or edit the suggestions above...'); ?>"><?php echo e($symptom_notes); ?></textarea>
+        <textarea name="history[symptom_notes]" class="form-input" rows="5" placeholder="<?php echo __('The doctor can enter additional professional diagnoses or edit the suggestions above...'); ?>" style="min-height: 120px; font-size: 0.95rem; line-height: 1.5; resize: vertical;"><?php echo e($symptom_notes); ?></textarea>
     </div>
 </div>
 

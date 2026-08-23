@@ -4,8 +4,7 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/auth_middleware.php';
 
-// Check basic permissions (can reuse view_reports or manage_medical)
-require_permission('manage_medical'); // Phân quyền linh hoạt cho người quản lý y tế hoặc admin
+require_permission('view_reports');
 
 $page_title = __('reports') ?? 'Báo cáo' . ' — ' . 'KPI Kỹ Thuật Viên';
 $current_page = 'reports';

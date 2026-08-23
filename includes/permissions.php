@@ -45,7 +45,6 @@ $GLOBALS['_role_permissions'] = [
         'view_patients', 'manage_patients',
         'view_appointments', 'manage_appointments',
         'manage_medical', 'view_medical',
-        'view_reports',
     ],
     'receptionist' => [
         'view_patients', 'manage_patients',

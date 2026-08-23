@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password "&m5L9\[eUv"
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S mysql -e \"USE clinic_management; SELECT h.patient_id, p.full_name, h.created_at FROM medical_history h JOIN patients p ON h.patient_id = p.id WHERE h.type = 'chiro_history_v2' ORDER BY h.created_at DESC;\""
+expect "password:"
+send "$password\r"
+expect eof

@@ -20,7 +20,8 @@ $status_filter = $_GET['status'] ?? '';
 $date_filter = $_GET['date'] ?? '';
 $doctor_filter = $_GET['doctor_id'] ?? '';
 $type_filter = $_GET['type'] ?? '';
-$period = $_GET['period'] ?? (empty($_GET) ? 'today' : '');
+$applied_filters = array_diff(array_keys($_GET), ['page', 'view']);
+$period = $_GET['period'] ?? (empty($applied_filters) ? 'today' : '');
 $start_date_param = $_GET['start_date'] ?? '';
 $end_date_param = $_GET['end_date'] ?? '';
 $view = 'list'; // Strictly List view for index.php
@@ -45,8 +46,8 @@ $params = [];
 if ($search) {
     // H4 FIX: Escape LIKE wildcards
     $safe_search = addcslashes($search, '%_');
-    $conditions[] = "(p.full_name LIKE ? OR l.full_name LIKE ? OR p.phone LIKE ? OR l.phone LIKE ?)";
-    $params = array_merge($params, ["%$safe_search%", "%$safe_search%", "%$safe_search%", "%$safe_search%"]);
+    $conditions[] = "(p.full_name LIKE ? OR l.full_name LIKE ? OR p.phone LIKE ? OR l.phone LIKE ? OR p.label LIKE ?)";
+    $params = array_merge($params, ["%$safe_search%", "%$safe_search%", "%$safe_search%", "%$safe_search%", "%$safe_search%"]);
 }
 
 if ($status_filter) {
@@ -79,7 +80,7 @@ if ($conditions) {
 $query .= " ORDER BY a.appointment_date ASC";
 
 // Pagination Logic (Only for List view)
-$limit = 20;
+$limit = 30;
 $page = (int)($_GET['page'] ?? 1);
 if ($page < 1) $page = 1;
 $total_count = 0;
@@ -226,6 +227,24 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
     width: 110px;
     outline: none;
 }
+.quick-date-input {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    border-radius: 8px;
+    padding: 0.3rem 0.6rem;
+    height: 34px;
+    outline: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.quick-date-input:focus, .quick-date-input:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
 </style>
 
 <div class="card filter-card">
@@ -295,18 +314,25 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                         <a href="#" class="filter-btn <?php echo $period == 'custom' ? 'active' : ''; ?>" onclick="setPeriod(event, 'custom')"><?php echo __('filter.custom'); ?></a>
                     </div>
 
-                    <?php if($period === 'today' || $period === 'week' || $period === 'month' || $period === 'quarter' || $period === 'year'): ?>
-                        <div style="display: flex; gap: 0.25rem; align-items: center; margin-left: -0.5rem;">
-                            <?php if($period === 'today'): ?>
-                                <input type="date" name="sel_date" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.3rem 0.5rem; color: var(--text-main); outline: none;" value="<?php echo isset($_GET['sel_date']) ? e($_GET['sel_date']) : date('Y-m-d'); ?>" onchange="this.form.submit()">
+                    <?php if($period === 'today' || $period === 'tomorrow' || $period === 'week' || $period === 'month' || $period === 'quarter' || $period === 'year'): ?>
+                        <div style="display: flex; gap: 0.4rem; align-items: center; margin-left: -0.25rem;">
+                            <?php if($period === 'today' || $period === 'tomorrow'): ?>
+                                <?php
+                                    if ($period === 'tomorrow') {
+                                        $display_date = date('Y-m-d', strtotime('+1 day'));
+                                    } else {
+                                        $display_date = isset($_GET['sel_date']) && $_GET['sel_date'] !== '' ? $_GET['sel_date'] : date('Y-m-d');
+                                    }
+                                ?>
+                                <input type="date" name="sel_date" class="quick-date-input" value="<?php echo e($display_date); ?>" onchange="document.getElementById('periodInput').value = 'today'; this.form.submit()">
                             <?php endif; ?>
 
                             <?php if($period === 'week'): ?>
-                                <input type="week" name="sel_week" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.3rem 0.5rem; color: var(--text-main); outline: none;" value="<?php echo isset($_GET['sel_week']) ? e($_GET['sel_week']) : date('Y').'-W'.date('W'); ?>" onchange="this.form.submit()">
+                                <input type="week" name="sel_week" class="quick-date-input" value="<?php echo isset($_GET['sel_week']) ? e($_GET['sel_week']) : date('Y').'-W'.date('W'); ?>" onchange="this.form.submit()">
                             <?php endif; ?>
 
                             <?php if($period === 'month'): ?>
-                                <select name="sel_month" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
+                                <select name="sel_month" class="quick-date-input" onchange="this.form.submit()">
                                     <?php for($m=1; $m<=12; $m++): ?>
                                         <option value="<?php echo $m; ?>" <?php echo (isset($_GET['sel_month']) && $_GET['sel_month'] == $m) || (!isset($_GET['sel_month']) && $m == date('n')) ? 'selected' : ''; ?>><?php echo __('common.month_prefix') . $m . __('common.month_suffix'); ?></option>
                                     <?php endfor; ?>
@@ -314,7 +340,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                             <?php endif; ?>
                             
                             <?php if($period === 'quarter'): ?>
-                                <select name="sel_quarter" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
+                                <select name="sel_quarter" class="quick-date-input" onchange="this.form.submit()">
                                     <?php for($q=1; $q<=4; $q++): ?>
                                         <option value="<?php echo $q; ?>" <?php echo (isset($_GET['sel_quarter']) && $_GET['sel_quarter'] == $q) || (!isset($_GET['sel_quarter']) && $q == ceil(date('n')/3)) ? 'selected' : ''; ?>><?php echo __('common.quarter_prefix') . $q . __('common.quarter_suffix'); ?></option>
                                     <?php endfor; ?>
@@ -322,7 +348,7 @@ $is_filtered = $search || $status_filter || $doctor_filter || $type_filter || $p
                             <?php endif; ?>
 
                             <?php if($period === 'month' || $period === 'quarter' || $period === 'year'): ?>
-                                <select name="sel_year" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.8rem; padding: 0.35rem 0.5rem; color: var(--text-main); outline: none;" onchange="this.form.submit()">
+                                <select name="sel_year" class="quick-date-input" onchange="this.form.submit()">
                                     <?php for($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
                                         <option value="<?php echo $y; ?>" <?php echo (isset($_GET['sel_year']) && $_GET['sel_year'] == $y) || (!isset($_GET['sel_year']) && $y == date('Y')) ? 'selected' : ''; ?>><?php echo __('common.year_prefix') . $y . __('common.year_suffix'); ?></option>
                                     <?php endfor; ?>
@@ -399,6 +425,14 @@ function setPeriod(event, p) {
     if (p !== 'custom') {
         const di = document.getElementById('dateInput');
         if (di) di.value = '';
+        
+        // Disable sel_ inputs so they are not submitted, allowing backend to reset to current day/week/month/year when clicking quick buttons
+        document.querySelectorAll('.quick-date-input').forEach(input => {
+            if (input) {
+                input.disabled = true;
+            }
+        });
+
         const form = document.getElementById('filterForm');
         if (form) form.submit();
     } else {

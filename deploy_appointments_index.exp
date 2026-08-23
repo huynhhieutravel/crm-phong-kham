@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password "&m5L9\[eUv"
+
+spawn scp -o StrictHostKeyChecking=no deploy_appointments_index.tar.gz ubutu@112.78.15.2:/tmp/deploy_appointments_index.tar.gz
+expect "password:"
+send "$password\r"
+expect eof
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2
+expect "password:"
+send "$password\r"
+expect "$ "
+send "echo '&m5L9\[eUv' | sudo -S tar -xzvf /tmp/deploy_appointments_index.tar.gz -C /var/www/crm_phong_kham/ \r"
+expect "$ "
+send "echo '&m5L9\[eUv' | sudo -S chown -R www-data:www-data /var/www/crm_phong_kham/modules/appointments/index.php\r"
+expect "$ "
+send "exit\r"
+expect eof

@@ -51,15 +51,17 @@ if ($start_date && $end_date) {
         $prev_stats['appointments'] = (int)$stmt_prev->fetchColumn();
     } catch (Exception $e) { error_log($e->getMessage()); }
 
-    try {
-        $stmt = $db->prepare("SELECT SUM(amount) FROM transactions WHERE type = 'income' AND transaction_date >= ? AND transaction_date <= ?");
-        $stmt->execute([$start_date, $end_date]);
-        $stats['revenue'] = (float)($stmt->fetchColumn() ?: 0);
-        
-        $stmt_prev = $db->prepare("SELECT SUM(amount) FROM transactions WHERE type = 'income' AND transaction_date >= ? AND transaction_date <= ?");
-        $stmt_prev->execute([$prev_start . ' 00:00:00', $prev_end . ' 23:59:59']);
-        $prev_stats['revenue'] = (float)($stmt_prev->fetchColumn() ?: 0);
-    } catch (Exception $e) { error_log($e->getMessage()); }
+    if (can('view_reports') || can('view_finances')) {
+        try {
+            $stmt = $db->prepare("SELECT SUM(amount) FROM transactions WHERE type = 'income' AND transaction_date >= ? AND transaction_date <= ?");
+            $stmt->execute([$start_date, $end_date]);
+            $stats['revenue'] = (float)($stmt->fetchColumn() ?: 0);
+            
+            $stmt_prev = $db->prepare("SELECT SUM(amount) FROM transactions WHERE type = 'income' AND transaction_date >= ? AND transaction_date <= ?");
+            $stmt_prev->execute([$prev_start . ' 00:00:00', $prev_end . ' 23:59:59']);
+            $prev_stats['revenue'] = (float)($stmt_prev->fetchColumn() ?: 0);
+        } catch (Exception $e) { error_log($e->getMessage()); }
+    }
 
     try {
         $stmt = $db->prepare("SELECT COUNT(*) FROM appointments WHERE status = 'completed' AND appointment_date >= ? AND appointment_date <= ?");
@@ -557,6 +559,7 @@ $status_config = [
     </div>
 
     <!-- Doanh thu -->
+    <?php if (can('view_reports') || can('view_finances')): ?>
     <div class="visual-stat-card">
         <div class="stat-accent" style="background: linear-gradient(90deg, #f59e0b, #fbbf24);"></div>
         <div class="stat-header">
@@ -580,6 +583,7 @@ $status_config = [
             <span class="stat-sub"><?php echo __('dashboard.vs_prev'); ?></span>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- Buổi khám -->
     <div class="visual-stat-card">

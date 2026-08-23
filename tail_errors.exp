@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password "&m5L9\[eUv"
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S tail -n 50 /var/log/php8.1-fpm.log && echo '&m5L9\[eUv' | sudo -S tail -n 50 /var/log/nginx/error.log"
+expect "password:"
+send "$password\r"
+expect eof

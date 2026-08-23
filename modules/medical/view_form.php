@@ -23,9 +23,17 @@ if (!$record) {
     redirect('index.php');
 }
 
-// Redirect chiro_history_v2 to its own rich UI form
+// Redirect V2 rich forms to their own dedicated UI
 if ($record['type'] === 'chiro_history_v2') {
     redirect("chiro_history_v2.php?patient_id=" . $record['patient_id'] . "&id=" . $record['id'] . "&session_id=" . $record['session_id']);
+    exit;
+}
+if ($record['type'] === 'soap_note_v2') {
+    redirect("follow_up_v2.php?patient_id=" . $record['patient_id'] . "&id=" . $record['id'] . "&session_id=" . $record['session_id']);
+    exit;
+}
+if ($record['type'] === 'pathologie_v2') {
+    redirect("pathologie_v2.php?patient_id=" . $record['patient_id'] . "&id=" . $record['id'] . "&session_id=" . $record['session_id']);
     exit;
 }
 

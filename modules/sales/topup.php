@@ -16,8 +16,8 @@ $search = trim($_GET['search'] ?? '');
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'topup_coins') {
     verify_csrf();
     $patient_id = (int)$_POST['patient_id'];
-    $topup_amount = (float)($_POST['topup_amount'] ?? 0);
-    $topup_coins = (float)($_POST['topup_coins'] ?? 0);
+    $topup_amount = (int)($_POST['topup_amount'] ?? 0);
+    $topup_coins = (int)($_POST['topup_coins'] ?? 0);
     $note = trim($_POST['note'] ?? '');
     $payment_method = $_POST['payment_method'] ?? 'cash';
 
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'deduct_coins') {
     verify_csrf();
     $patient_id = (int)$_POST['patient_id'];
-    $deduct_coins = (float)($_POST['deduct_coins'] ?? 0);
+    $deduct_coins = (int)($_POST['deduct_coins'] ?? 0);
     $note = trim($_POST['note'] ?? '');
 
     if ($patient_id > 0 && $deduct_coins > 0) {
@@ -167,12 +167,12 @@ require_once '../../templates/header.php';
             
             <div style="margin-bottom: 1rem;">
                 <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số tiền thực nạp (VNĐ)</label>
-                <input type="number" name="topup_amount" class="form-input" placeholder="900000" style="margin-top: 0.25rem; font-size: 1rem; font-weight: 700;" oninput="document.getElementById('modalCoinsInput').value = (this.value / 300000).toFixed(1).replace('.0','');">
+                <input type="number" name="topup_amount" class="form-input" placeholder="900000" style="margin-top: 0.25rem; font-size: 1rem; font-weight: 700;" oninput="document.getElementById('modalCoinsInput').value = Math.floor(this.value / 300000);">
             </div>
             
             <div style="margin-bottom: 1rem;">
                 <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số Coins quy đổi</label>
-                <input type="number" step="0.1" name="topup_coins" id="modalCoinsInput" class="form-input" placeholder="3" style="margin-top: 0.25rem; font-size: 1.3rem; font-weight: 800; color: #d97706;" required>
+                <input type="number" step="1" name="topup_coins" id="modalCoinsInput" class="form-input" placeholder="3" style="margin-top: 0.25rem; font-size: 1.3rem; font-weight: 800; color: #d97706;" required>
                 <small style="color: #64748b; display: block; margin-top: 0.35rem;">Gợi ý: 900.000đ = 3 Coins, 600.000đ = 2 Coins</small>
             </div>
 
@@ -219,7 +219,7 @@ function openTopUpModal(id, name) {
             
             <div style="margin-bottom: 1rem;">
                 <label style="font-size: 0.85rem; font-weight: 700; color: #1e293b;">Số Coins cần trừ</label>
-                <input type="number" step="0.1" name="deduct_coins" class="form-input" placeholder="1" style="margin-top: 0.25rem; font-size: 1.3rem; font-weight: 800; color: #ef4444;" required>
+                <input type="number" step="1" name="deduct_coins" class="form-input" placeholder="1" style="margin-top: 0.25rem; font-size: 1.3rem; font-weight: 800; color: #ef4444;" required>
             </div>
             
             <div style="margin-bottom: 1.5rem;">

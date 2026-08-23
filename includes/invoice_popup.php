@@ -120,7 +120,7 @@
                         <button type="button" onclick="setIpCoinFast(3, 900000)" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Đông Y 90 phút - 3 Coins">ĐY90</button>
                         <button type="button" onclick="setIpCoinFast(3, 900000)" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Chiropractic - 3 Coins">Chiro</button>
                     </div>
-                    <input type="number" id="ipCoinCount" value="0" min="0" step="0.1" style="width:100%; padding:0.45rem; border:2px solid #fde047; border-radius:8px; font-weight:800; font-size:1.05rem; color:#b45309; text-align:center; background:white; outline:none; transition:border-color 0.2s; box-sizing:border-box; height:39px;" onfocus="this.style.borderColor='#eab308'" onblur="this.style.borderColor='#fde047'">
+                    <input type="number" id="ipCoinCount" value="0" min="0" step="1" style="width:100%; padding:0.45rem; border:2px solid #fde047; border-radius:8px; font-weight:800; font-size:1.05rem; color:#b45309; text-align:center; background:white; outline:none; transition:border-color 0.2s; box-sizing:border-box; height:39px;" onfocus="this.style.borderColor='#eab308'" onblur="this.style.borderColor='#fde047'">
                 </div>
                 <div style="flex:1; min-width:120px;">
                     <label style="font-size:0.75rem; color:#b45309; font-weight:700; display:block; margin-bottom:0.35rem;">Quy đổi (VNĐ)</label>

@@ -182,7 +182,7 @@ $joint_nodes = [
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                     <div>
                         <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.muscle_tone_label'); ?></h4>
-                        <textarea name="soap[o][muscle_tone]" class="form-input" rows="2" placeholder="<?php echo __('medical.followup.muscle_tone_placeholder'); ?>" style="padding: 0.75rem; border-radius: 12px;"><?php echo isset($existing_data['o']['muscle_tone']) ? e($existing_data['o']['muscle_tone']) : ''; ?></textarea>
+                        <textarea name="soap[o][muscle_tone]" class="form-input" rows="4" placeholder="<?php echo __('medical.followup.muscle_tone_placeholder'); ?>" style="padding: 0.75rem; border-radius: 12px; min-height: 100px; resize: vertical;"><?php echo isset($existing_data['o']['muscle_tone']) ? e($existing_data['o']['muscle_tone']) : ''; ?></textarea>
                         
                         <div style="margin-top: 1rem;">
                             <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase;"><?php echo __('medical.followup.severity_label'); ?></h4>
@@ -341,8 +341,8 @@ $joint_nodes = [
                     </div>
                 </div>
                 <div class="form-group" style="margin-top: 1.5rem;">
-                    <label class="form-label" style="font-size: 0.85rem;"><?php echo __('medical.followup.plan_notes_label'); ?></label>
-                    <textarea name="soap[p][notes]" class="form-input" rows="3" placeholder="<?php echo __('medical.followup.plan_notes_placeholder'); ?>"><?php echo isset($existing_data['p']['notes']) ? e($existing_data['p']['notes']) : ''; ?></textarea>
+                    <label class="form-label" style="font-size: 0.95rem; font-weight: 700;"><?php echo __('medical.followup.plan_notes_label'); ?></label>
+                    <textarea name="soap[p][notes]" class="form-input" rows="8" placeholder="<?php echo __('medical.followup.plan_notes_placeholder'); ?>" style="min-height: 180px; font-size: 0.95rem; line-height: 1.6; resize: vertical;"><?php echo isset($existing_data['p']['notes']) ? e($existing_data['p']['notes']) : ''; ?></textarea>
                 </div>
             </div>
         </div>

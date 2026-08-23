@@ -180,6 +180,16 @@ require_once '../../templates/header.php';
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h3 style="margin: 0;"><?php echo __('medical.session.date_prefix'); ?> <?php echo date('d/m/Y', strtotime($session['session_date'])); ?></h3>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <?php if (has_role('admin')): ?>
+                        <form action="session_delete.php" method="POST" style="margin: 0;" onsubmit="return confirm('Bạn có chắc chắn muốn xoá buổi khám này?\n\nHành động này sẽ xoá buổi khám. CHÚ Ý: Hệ thống sẽ chặn xoá nếu buổi khám này đã có phát sinh Ca Điều Trị (có trừ buổi liệu trình).');">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="id" value="<?php echo $session_id; ?>">
+                            <input type="hidden" name="patient_id" value="<?php echo $session['patient_id']; ?>">
+                            <button type="submit" class="btn btn-sm" style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; border-radius: 50px; font-weight: 600;" title="Xoá buổi khám">
+                                <i class="fas fa-trash-alt"></i> Xoá
+                            </button>
+                        </form>
+                    <?php endif; ?>
                     <a href="print_session.php?id=<?php echo $session_id; ?>" target="_blank" class="btn btn-outline btn-sm" style="border-radius: 50px;">
                         <i class="fas fa-print"></i> <?php echo __('medical.session.print'); ?>
                     </a>
@@ -219,74 +229,116 @@ require_once '../../templates/header.php';
             </style>
 
             <?php
-                $components = [
-                    'chiropractic' => ['label' => 'Phiếu khám Chiropractic', 'url' => 'form.php?type=chiropractic', 'icon' => 'fa-notes-medical'],
-                    'dong_y'        => ['label' => __('medical.type.dong_y_full'), 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
-                    'treatment'     => ['label' => __('medical.type.treatment_full'), 'url' => 'add_treatment.php', 'icon' => 'fa-file-signature']
-                ];
+                // NEW: Logic for V2
+                // We already have $history_records which has all medical_history for this session.
+                // We already have $patient_chiro_history (from any session).
+                
+                $has_anamnese_ever = $patient_chiro_history ? true : false;
+                $anamnese_type = $patient_chiro_history ? $patient_chiro_history['type'] : 'chiro_history_v2';
+                $anamnese_id = $patient_chiro_history ? $patient_chiro_history['id'] : null;
+                
+                // URLs for Anamnese
+                $url_anamnese_create = "chiro_history_v2.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id;
+                $url_anamnese_edit = "";
+                if ($has_anamnese_ever) {
+                    $url_anamnese_edit = ($anamnese_type === 'chiro_history_v2' ? 'chiro_history_v2.php' : 'chiro_history.php') . "?patient_id=" . $session['patient_id'] . "&id=" . $anamnese_id . "&session_id=" . $session_id;
+                }
+                
+                // Status for Pathologie in this session
+                $has_pathologie = isset($history_records['pathologie_v2']);
+                $pathologie_id = $has_pathologie ? $history_records['pathologie_v2']['id'] : null;
+                $url_pathologie = "pathologie_v2.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id . ($has_pathologie ? "&id=" . $pathologie_id : "");
+                
+                // Status for Follow-up in this session
+                $has_followup = isset($history_records['soap_note_v2']) || isset($history_records['soap_note']);
+                $followup_id = isset($history_records['soap_note_v2']) ? $history_records['soap_note_v2']['id'] : (isset($history_records['soap_note']) ? $history_records['soap_note']['id'] : null);
+                $url_followup = (isset($history_records['soap_note']) && !isset($history_records['soap_note_v2'])) 
+                                ? "follow_up.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id . "&id=" . $followup_id 
+                                : "follow_up_v2.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id . ($has_followup ? "&id=" . $followup_id : "");
+                
+                // Styling smart logic
+                $style_anamnese_box = $has_anamnese_ever ? "background: #f8fafc; border: 1px solid #e2e8f0; opacity: 0.8;" : "background: #faf5ff; border: 1px solid #e9d5ff; box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.1);";
+                $style_anamnese_icon = $has_anamnese_ever ? "color: #94a3b8; border-color: #e2e8f0;" : "color: #a855f7; border-color: #e9d5ff;";
+                $btn_anamnese_class = $has_anamnese_ever ? "btn-outline" : "";
+                $btn_anamnese_style = $has_anamnese_ever ? "border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem; color: #64748b; border-color: #cbd5e1;" : "background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-weight: 600;";
+                
+                $style_followup_box = ($has_anamnese_ever && !$has_followup) ? "background: #eff6ff; border: 1px solid #bfdbfe; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);" : "background: #f8fafc; border: 1px solid #e2e8f0;";
+                $style_followup_icon = ($has_anamnese_ever && !$has_followup) ? "color: #3b82f6; border-color: #bfdbfe;" : "color: #3b82f6; border-color: #e2e8f0;";
+                $btn_followup_class = ($has_anamnese_ever && !$has_followup) ? "btn-primary" : ($has_followup ? "btn-outline" : "btn-primary");
+                
+                $style_pathologie_box = "background: #f8fafc; border: 1px solid #e2e8f0;";
+                $btn_pathologie_class = $has_pathologie ? "btn-outline" : "btn-primary";
             ?>
 
-            <!-- TIỀN SỬ BỆNH CHIROPRACTIC MÀU TÍM RIÊNG BIỆT -->
-            <?php 
-                $has_history_v2 = isset($history_records['chiro_history_v2']);
-                $has_history = isset($history_records['chiro_history']) || $has_history_v2;
-                $history_id = null;
-                $history_type = 'chiro_history';
-                if ($has_history_v2) {
-                    $history_id = $history_records['chiro_history_v2']['id'];
-                    $history_type = 'chiro_history_v2';
-                } elseif (isset($history_records['chiro_history'])) {
-                    $history_id = $history_records['chiro_history']['id'];
-                }
-                
-                $history_create_url = "chiro_history.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id;
-                $history_create_v2_url = "chiro_history_v2.php?patient_id=" . $session['patient_id'] . "&session_id=" . $session_id;
-                
-                if ($has_history) {
-                    $history_edit_url = ($history_type === 'chiro_history_v2' ? 'chiro_history_v2.php' : 'chiro_history.php') . "?patient_id=" . $session['patient_id'] . "&id=" . $history_id;
-                } else {
-                    $history_edit_url = $history_create_url;
-                }
-            ?>
-            <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.05);">
+            <!-- V2 CHIROPRACTIC COMPONENTS -->
+            <h4 style="margin: 0 0 1rem 0; color: #1e293b; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem;">
+                <i class="fas fa-stethoscope text-primary"></i> Khám Chiropractic (V2)
+            </h4>
+
+            <!-- 1. ANAMNESE -->
+            <div style="border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; transition: all 0.3s; <?php echo $style_anamnese_box; ?>">
                 <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #a855f7; border: 1px solid #e9d5ff; box-shadow: 0 2px 4px rgba(0,0,0,0.02)">
+                    <div style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); <?php echo $style_anamnese_icon; ?>">
                         <i class="fas fa-history fa-lg"></i>
                     </div>
                     <div>
-                        <div style="font-weight: 800; font-size: 1.1rem; color: #1e293b;"><?php echo __('medical.type.chiro_history_full'); ?></div>
-                        <?php if (!$has_history): ?>
+                        <div style="font-weight: 800; font-size: 1.1rem; color: #1e293b;">Khai báo Tiền sử (Anamnese)</div>
+                        <?php if (!$has_anamnese_ever): ?>
                             <div style="color: #ea580c; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
-                                <i class="fas fa-exclamation-triangle"></i> <?php echo __('medical.session.history_not_filled'); ?>
+                                <i class="fas fa-exclamation-triangle"></i> Bệnh nhân chưa có tiền sử bệnh
                             </div>
                         <?php else: ?>
                             <div style="color: #10b981; font-size: 0.85rem; font-weight: 600; margin-top: 0.25rem;">
-                                <i class="fas fa-check-circle"></i> <?php echo __('medical.session.history_exists'); ?>
+                                <i class="fas fa-check-circle"></i> Đã có tiền sử bệnh
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <?php if ($has_history): ?>
-                        <a href="print_record.php?type=history&id=<?php echo $history_id; ?>" target="_blank" class="btn btn-sm" style="background: white; border: 1px solid #10b981; color: #10b981; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.6rem;">
+                    <?php if ($has_anamnese_ever): ?>
+                        <a href="print_record.php?type=history&id=<?php echo $anamnese_id; ?>" target="_blank" class="btn btn-sm" style="background: white; border: 1px solid #10b981; color: #10b981; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.6rem;">
                             <i class="fas fa-print"></i> PDF
                         </a>
-                        <a href="view_form.php?id=<?php echo $history_id; ?>" target="_blank" class="btn btn-sm btn-outline" style="border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem; color: #64748b; border-color: #cbd5e1;">
-                            <i class="fas fa-eye"></i> Xem
-                        </a>
-                        <a href="<?php echo $history_edit_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem;">
-                            <i class="fas fa-edit"></i> <?php echo __('common.edit'); ?>
+                        <a href="<?php echo $url_anamnese_edit; ?>" class="btn btn-sm <?php echo $btn_anamnese_class; ?>" style="<?php echo $btn_anamnese_style; ?>">
+                            <i class="fas fa-edit"></i> Xem / Sửa
                         </a>
                     <?php else: ?>
-                        <a href="<?php echo $history_create_url; ?>" class="btn btn-sm" style="background: #a855f7; border-color: #a855f7; color: white; border-radius: 50px; font-weight: 600;">
+                        <a href="<?php echo $url_anamnese_create; ?>" class="btn btn-sm <?php echo $btn_anamnese_class; ?>" style="<?php echo $btn_anamnese_style; ?>">
                             <i class="fas fa-plus"></i> Khai báo tiền sử
                         </a>
                     <?php endif; ?>
                 </div>
             </div>
 
+
+            <!-- 3. FOLLOW-UP -->
+            <div style="border-radius: 12px; padding: 1.25rem; margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; transition: all 0.3s; <?php echo $style_followup_box; ?>">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); <?php echo $style_followup_icon; ?>">
+                        <i class="fas fa-notes-medical fa-lg"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 1.1rem; color: #1e293b;">Tái khám (Follow-up)</div>
+                        <div class="component-status <?php echo $has_followup ? 'status-done' : 'status-pending'; ?>">
+                            <i class="fas <?php echo $has_followup ? 'fa-check-circle' : 'fa-hourglass-half'; ?>"></i>
+                            <?php echo $has_followup ? __('medical.session.status_done') : __('medical.session.status_pending'); ?>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <?php if ($has_followup): ?>
+                        <a href="print_record.php?type=history&id=<?php echo $followup_id; ?>" target="_blank" class="btn btn-sm" style="background: white; border: 1px solid #10b981; color: #10b981; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.6rem;">
+                            <i class="fas fa-print"></i> PDF
+                        </a>
+                    <?php endif; ?>
+                    <a href="<?php echo $url_followup; ?>" class="btn btn-sm <?php echo $btn_followup_class; ?>" style="border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem;">
+                        <?php echo $has_followup ? '<i class="fas fa-edit"></i> ' . __('common.edit') : '<i class="fas fa-play"></i> Bắt đầu'; ?>
+                    </a>
+                </div>
+            </div>
+
             <!-- PHIẾU ĐÔNG Y GẦN NHẤT MÀU XANH LÁ -->
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem; margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.05);">
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.05);">
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #22c55e; border: 1px solid #bbf7d0; box-shadow: 0 2px 4px rgba(0,0,0,0.02)">
                         <i class="fas fa-leaf fa-lg"></i>
@@ -318,12 +370,17 @@ require_once '../../templates/header.php';
                 </div>
             </div>
 
-            <!-- CHỈ MỤC CÁC THÀNH PHẦN KHÁC -->
+            <!-- CHỈ MỤC CÁC THÀNH PHẦN KHÁC (ĐÔNG Y & DỊCH VỤ) -->
             <h4 style="margin: 0 0 1rem 0; color: #1e293b; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem;">
-                <i class="fas fa-tasks text-primary"></i> <?php echo __('medical.session.components_list_title'); ?>
+                <i class="fas fa-tasks text-primary"></i> Đông Y & Dịch vụ
             </h4>
 
-            <?php foreach ($components as $type => $info):
+            <?php
+                $other_components = [
+                    'dong_y'        => ['label' => __('medical.type.dong_y_full'), 'url' => 'form.php?type=dong_y', 'icon' => 'fa-leaf'],
+                    'treatment'     => ['label' => __('medical.type.treatment_full'), 'url' => 'add_treatment.php', 'icon' => 'fa-file-signature']
+                ];
+                foreach ($other_components as $type => $info):
                 $actual_type_record = $type;
 
                 $is_done = ($type === 'treatment') ? !empty($treatment_records) : isset($history_records[$actual_type_record]);
@@ -334,7 +391,7 @@ require_once '../../templates/header.php';
                     'session_id' => $session_id
                 ];
                 
-                // Add ID if already exists (for editing or migrating old to new v2)
+                // Add ID if already exists (for editing)
                 if ($is_done && $type !== 'treatment') {
                     $params['id'] = $history_records[$actual_type_record]['id'];
                 }
@@ -373,7 +430,7 @@ require_once '../../templates/header.php';
                             </a>
                         <?php endif; ?>
                         <a href="<?php echo $edit_url; ?>" class="btn btn-sm <?php echo $is_done ? 'btn-outline' : 'btn-primary'; ?>" style="border-radius: 50px; font-size: 0.8rem; padding: 0.35rem 0.8rem;">
-                            <?php echo $is_done ? '<i class="fas fa-edit"></i> ' . __('common.edit') : $btn_label; ?>
+                            <?php echo $is_done ? '<i class="fas fa-edit"></i> ' . __('common.edit') : '<i class="fas fa-play"></i> Bắt đầu'; ?>
                         </a>
                     </div>
                 </div>
@@ -449,7 +506,7 @@ require_once '../../templates/header.php';
     </div>
 
     <!-- Right Column: Assessment & Plan (Rich-Text) -->
-    <div style="width: 500px; display: flex; flex-direction: column; gap: 1.5rem;">
+    <div style="width: 540px; display: flex; flex-direction: column; gap: 1.5rem;">
         <form method="POST" id="session-form" class="card" style="position: sticky; top: 1.5rem; background: #fcfdfe;">
             <?php echo csrf_field(); ?>
             <?php if ($session['status'] === 'completed'): ?>
@@ -497,13 +554,13 @@ require_once '../../templates/header.php';
             
             <div class="editor-wrapper">
                 <label class="editor-label"><?php echo __('medical.session.assessment_label'); ?></label>
-                <div id="assessment-editor" style="height: 200px;"><?php echo $session['assessment']; ?></div>
+                <div id="assessment-editor" style="min-height: 260px; height: 260px; font-size: 0.95rem;"><?php echo $session['assessment']; ?></div>
                 <input type="hidden" name="assessment" id="assessment-input">
             </div>
 
             <div class="editor-wrapper">
                 <label class="editor-label"><?php echo __('medical.session.plan_label'); ?></label>
-                <div id="plan-editor" style="height: 200px;"><?php echo $session['treatment_plan']; ?></div>
+                <div id="plan-editor" style="min-height: 260px; height: 260px; font-size: 0.95rem;"><?php echo $session['treatment_plan']; ?></div>
                 <input type="hidden" name="treatment_plan" id="plan-input">
             </div>
 

@@ -44,7 +44,7 @@ $technician_id = !empty($input['technician_id']) ? (int)$input['technician_id'] 
 $payment_id = !empty($input['payment_id']) ? (int)$input['payment_id'] : null;
 
 $coin_deduct_patient_id = (int)($input['coin_deduct_patient_id'] ?? 0);
-$coin_deduct_count = (float)($input['coin_deduct_count'] ?? 0);
+$coin_deduct_count = (int)($input['coin_deduct_count'] ?? 0);
 if (!$patient_id || empty($items)) {
     echo json_encode(['success' => false, 'error' => 'Thiếu thông tin khách hàng hoặc sản phẩm']);
     exit;

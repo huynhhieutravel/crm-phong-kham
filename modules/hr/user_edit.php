@@ -139,6 +139,22 @@ $branches = $db->query("SELECT * FROM branches ORDER BY name ASC")->fetchAll();
             <a href="users.php" class="btn" style="flex: 1; text-align: center; text-decoration: none; background: #f1f5f9; color: var(--text-main); display: flex; align-items: center; justify-content: center;">Hủy</a>
         </div>
     </form>
+
+    <?php if ($_SESSION['role'] === 'admin' && (int)$user['id'] !== (int)$_SESSION['user_id']): ?>
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 700; font-size: 0.9rem; color: #e11d48;"><i class="fas fa-exclamation-triangle"></i> Vùng nguy hiểm</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Xóa tài khoản nhân sự này khỏi hệ thống</div>
+            </div>
+            <form action="user_delete.php" method="POST" style="margin: 0;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa nhân sự «<?php echo e(addslashes($user['full_name'])); ?>» khỏi hệ thống?\n\n- Nếu chưa có dữ liệu: Hệ thống sẽ xóa vĩnh viễn.\n- Nếu đã có hồ sơ y tế/hóa đơn: Hệ thống sẽ chuyển sang trạng thái ĐÃ NGHỈ VIỆC.');">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
+                <button type="submit" class="btn" style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 0.6rem 1.2rem; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff1f2'">
+                    <i class="fas fa-trash-alt"></i> Xóa nhân viên
+                </button>
+            </form>
+        </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once '../../templates/footer.php'; ?>

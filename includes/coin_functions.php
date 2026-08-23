@@ -12,7 +12,7 @@ if (!defined('COIN_FUNCTIONS_LOADED')) {
         $stmt = $db->prepare("SELECT coin_balance FROM patient_wallets WHERE patient_id = ?");
         $stmt->execute([$patient_id]);
         $val = $stmt->fetchColumn();
-        return $val !== false ? (float)$val : 0.00;
+        return $val !== false ? (int)$val : 0;
     }
 
     /**

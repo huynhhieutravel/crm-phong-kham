@@ -76,6 +76,14 @@ if ($record_id) {
     $stmt->execute([$record_id]);
     $json = $stmt->fetchColumn();
     $existing_data = json_decode($json, true) ?: [];
+} elseif ($session_id) {
+    $stmt = $db->prepare("SELECT id, history_data FROM medical_history WHERE session_id = ? AND type = 'soap_note_v2' ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$session_id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $record_id = (int)$row['id'];
+        $existing_data = json_decode($row['history_data'], true) ?: [];
+    }
 }
 
 // 4. Fetch the most recent Pathologie/History for "Ghi chú từ Bệnh sử"
@@ -268,12 +276,29 @@ function checked_prev($path, $value) {
 }
 </style>
 <script>
+function autoResizeTextarea(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.max(el.scrollHeight + 10, parseInt(el.getAttribute('data-min-height') || 160)) + 'px';
+}
+window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('textarea').forEach(t => {
+        autoResizeTextarea(t);
+        t.addEventListener('input', () => autoResizeTextarea(t));
+    });
+});
 window.addEventListener('beforeprint', () => {
     document.querySelectorAll('textarea').forEach(t => {
         t.style.height = 'auto';
         t.style.height = (t.scrollHeight + 5) + 'px';
     });
 });
+<?php if (isset($_GET['auto_print'])): ?>
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        window.print();
+    }, 600);
+});
+<?php endif; ?>
 </script>
 
 <div style="max-width: 1100px; margin: 0 auto;">
@@ -390,37 +415,37 @@ window.addEventListener('beforeprint', () => {
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+            <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
                 
                 <!-- Box 1: Anamnese -->
-                <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                <div style="flex: 1 1 300px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
                     <div style="background: #f1f5f9; padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #475569; display: flex; justify-content: space-between; align-items: center;">
-                        <span><i class="fas fa-file-medical-alt" style="color: #64748b; margin-right: 0.5rem;"></i> <?php echo _t_v2('Ghi chú Anamnese', 'Anamnese', 'Anamnesis'); ?></span>
+                        <span><i class="fas fa-file-medical-alt" style="color: #64748b; margin-right: 0.5rem;"></i> <?php echo _t_v2('Ghi chú Bệnh sử', 'Anamnese', 'Anamnesis'); ?></span>
                         <span style="font-size: 0.75rem; font-weight: 500; opacity: 0.8;"><?php echo $history_date ?: (_t_v2('Chưa rõ', 'Unbekannt', 'Unknown')); ?></span>
                     </div>
                     <div style="padding: 1rem;">
-                        <textarea class="fu-textarea readonly" rows="5" readonly style="background: #fafafa; border: none; box-shadow: none; padding: 0; resize: none;"><?php echo e($history_note); ?></textarea>
+                        <textarea class="fu-textarea readonly" rows="8" data-min-height="160" readonly style="background: #fafafa; border: none; box-shadow: none; padding: 0; resize: vertical; min-height: 160px; font-size: 0.95rem; line-height: 1.6;"><?php echo e($history_note); ?></textarea>
                     </div>
                 </div>
 
                 <!-- Box 2: Previous FollowUp -->
-                <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                <div style="flex: 1 1 300px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
                     <div style="background: #f1f5f9; padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #475569; display: flex; justify-content: space-between; align-items: center;">
                         <span><i class="fas fa-history" style="color: #64748b; margin-right: 0.5rem;"></i> <?php echo _t_v2('Lần khám trước', 'Vorherige', 'Previous'); ?></span>
                         <span style="font-size: 0.75rem; font-weight: 500; opacity: 0.8;"><?php echo $prev_fu_date ?: (_t_v2('Chưa rõ', 'Unbekannt', 'Unknown')); ?></span>
                     </div>
                     <div style="padding: 1rem;">
-                        <textarea class="fu-textarea readonly" rows="5" readonly style="background: #fafafa; border: none; box-shadow: none; padding: 0; resize: none;"><?php echo e($prev_fu_note); ?></textarea>
+                        <textarea class="fu-textarea readonly" rows="8" data-min-height="160" readonly style="background: #fafafa; border: none; box-shadow: none; padding: 0; resize: vertical; min-height: 160px; font-size: 0.95rem; line-height: 1.6;"><?php echo e($prev_fu_note); ?></textarea>
                     </div>
                 </div>
 
                 <!-- Box 3: Current FollowUp -->
-                <div style="background: #fff; border: 2px solid #3b82f6; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);">
+                <div style="flex: 1 1 100%; background: #fff; border: 2px solid #3b82f6; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);">
                     <div style="background: #eff6ff; padding: 0.75rem 1rem; border-bottom: 1px solid #bfdbfe; font-weight: 800; color: #1d4ed8; display: flex; justify-content: space-between; align-items: center;">
                         <span><i class="fas fa-edit" style="margin-right: 0.5rem;"></i> <?php echo _t_v2('Ghi chú LẦN NÀY', 'HEUTE', 'TODAY'); ?></span>
                     </div>
                     <div style="padding: 1rem;">
-                        <textarea name="fu[today_notes]" class="fu-textarea" rows="5" placeholder="<?php echo _t_v2('Nhập ghi chú cho buổi điều trị này...', 'Notizen für diese Behandlung eingeben...', 'Enter notes for this treatment...'); ?>" style="border: none; background: transparent; padding: 0; box-shadow: none; resize: none; font-size: 1rem; color: #0f172a;"><?php echo e(get_v('today_notes')); ?></textarea>
+                        <textarea name="fu[today_notes]" class="fu-textarea" rows="12" data-min-height="240" placeholder="<?php echo _t_v2('Nhập ghi chú cho buổi điều trị này...', 'Notizen für diese Behandlung eingeben...', 'Enter notes for this treatment...'); ?>" style="border: none; background: transparent; padding: 0; box-shadow: none; resize: vertical; font-size: 1rem; line-height: 1.6; color: #0f172a; min-height: 240px;"><?php echo e(get_v('today_notes')); ?></textarea>
                     </div>
                 </div>
 
@@ -451,6 +476,10 @@ window.addEventListener('beforeprint', () => {
                     <div class="pain-level-btn" style="background: #fbbf24; color: #fbbf24;" onclick="setPainColor('M3', this)" title="Vẫn đau như lần trước"></div>
                     <div class="pain-level-btn" style="background: #fb923c; color: #fb923c;" onclick="setPainColor('M4', this)" title="Đau hơn cũ 1 chút"></div>
                     <div class="pain-level-btn" style="background: #ef4444; color: #ef4444;" onclick="setPainColor('M5', this)" title="Đau hơn nhiều"></div>
+                    <div style="width: 1px; background: #e2e8f0; margin: 0 0.25rem;"></div>
+                    <div class="pain-level-btn" style="background: #cbd5e1; color: #cbd5e1; display: flex; justify-content: center; align-items: center;" onclick="setEraserMode(this)" title="Xóa điểm đau">
+                        <i class="fas fa-eraser" style="color: white; font-size: 14px;"></i>
+                    </div>
                 </div>
             </div>
             
@@ -713,8 +742,7 @@ window.addEventListener('beforeprint', () => {
                         </span>
                         <span style="color:#cbd5e1; margin:0 0.75rem;">|</span>
                         <label><input type="checkbox" name="fu[misc][coccyx_ventral]" value="1" <?php echo checked_v("misc.coccyx_ventral", "1"); ?>> <?php echo _t_v2('ra trước (ventral)', 'ventral', 'Ventral'); ?></label> <span style="color:#cbd5e1; margin:0 0.25rem;">/</span> 
-                        <label><input type="checkbox" name="fu[misc][coccyx_cranial]" value="1" <?php echo checked_v("misc.coccyx_cranial", "1"); ?>> <?php echo _t_v2('lên trên (cranial)', 'cranial', 'Cranial'); ?></label> <span style="color:#cbd5e1; margin:0 0.25rem;">/</span> 
-                        <label><input type="checkbox" name="fu[misc][coccyx_caudal]" value="1" <?php echo checked_v("misc.coccyx_caudal", "1"); ?>> <?php echo _t_v2('xuống dưới (caudal)', 'caudal', 'Caudal'); ?></label>
+                        <label><input type="checkbox" name="fu[misc][coccyx_dorsal]" value="1" <?php echo checked_v("misc.coccyx_dorsal", "1"); ?>> <?php echo _t_v2('ra sau (dorsal)', 'dorsal', 'Dorsal'); ?></label>
                     </div>
                 </div>
             </div>
@@ -909,6 +937,15 @@ function setPainColor(intensity, btnEl) {
     }
 }
 
+function setEraserMode(btnEl) {
+    document.querySelectorAll('.pain-level-btn').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+    if (newMarking) {
+        newMarking.isEraser = true;
+        newMarking.currentTool = 'marker';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Setup Old Canvas (Read-only)
     const oldMarkersData = <?php echo json_encode(!empty($prev_fu_markers) ? $prev_fu_markers : $history_markers); ?>;
@@ -924,7 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     setTimeout(() => {
         oldMarking.markers = oldMarkersData;
-        oldMarking.redraw();
+        oldMarking.draw();
         // Prevent drawing on old canvas
         oldMarking.canvas.style.pointerEvents = 'none'; 
     }, 500);
@@ -951,7 +988,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             newMarking.markers = newInherited;
         }
-        newMarking.redraw();
+        newMarking.draw();
         newMarking.updateInput();
     }, 500);
 });
@@ -961,7 +998,7 @@ function undoNewMarking() {
     if (newMarking && newMarking.markers.length > 0) {
         newMarking.markers.pop();
         newMarking.updateInput();
-        newMarking.redraw();
+        newMarking.draw();
     }
 }
 function clearNewMarking() {
@@ -970,7 +1007,7 @@ function clearNewMarking() {
         const newInherited = <?php echo json_encode($inherited_markers); ?>;
         newMarking.markers = newInherited;
         newMarking.updateInput();
-        newMarking.redraw();
+        newMarking.draw();
     }
 }
 </script>

@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+set timeout -1
+set password "&m5L9\[eUv"
+spawn scp -o StrictHostKeyChecking=no test_schema.tar.gz ubutu@112.78.15.2:/tmp/test_schema.tar.gz
+expect "password:"
+send "$password\r"
+expect eof
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S tar -xzvf /tmp/test_schema.tar.gz -C /var/www/crm_phong_kham/ && echo '&m5L9\[eUv' | sudo -S php /var/www/crm_phong_kham/test_schema.php"
+expect "password:"
+send "$password\r"
+expect eof

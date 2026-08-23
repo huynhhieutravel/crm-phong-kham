@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+set timeout 10
+set password "&m5L9\[eUv"
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S mysql -e \"USE clinic_management; SELECT TABLE_NAME, CONSTRAINT_NAME, DELETE_RULE, REFERENCED_TABLE_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE TABLE_NAME = 'treatments' AND REFERENCED_TABLE_NAME = 'medical_sessions';\""
+expect "password:"
+send "$password\r"
+expect eof

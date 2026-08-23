@@ -17,20 +17,28 @@ if ($record_id) {
     $stmt->execute([$record_id]);
     $json = $stmt->fetchColumn();
     $existing_data = json_decode($json, true) ?: [];
-
-    // MIGRATION: Move old global details into the first selected location
-    if (!isset($existing_data['pathology']['details']) && !empty($existing_data['pathology']['locations'])) {
-        $first_loc = $existing_data['pathology']['locations'][0];
-        $existing_data['pathology']['details'] = [];
-        $existing_data['pathology']['details'][$first_loc] = [
-            'nature' => $existing_data['pathology']['nature'] ?? [],
-            'triggers' => $existing_data['pathology']['triggers'] ?? [],
-            'intensity' => $existing_data['pathology']['intensity'] ?? 5,
-            'duration' => $existing_data['pathology']['duration'] ?? '',
-            'activating_causes' => $existing_data['pathology']['activating_causes'] ?? [],
-            'description' => $existing_data['pathology']['description'] ?? ''
-        ];
+} elseif ($session_id) {
+    $stmt = $db->prepare("SELECT id, history_data FROM medical_history WHERE session_id = ? AND type = 'pathologie_v2' ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$session_id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $record_id = (int)$row['id'];
+        $existing_data = json_decode($row['history_data'], true) ?: [];
     }
+}
+
+// MIGRATION: Move old global details into the first selected location
+if (!isset($existing_data['pathology']['details']) && !empty($existing_data['pathology']['locations'])) {
+    $first_loc = $existing_data['pathology']['locations'][0];
+    $existing_data['pathology']['details'] = [];
+    $existing_data['pathology']['details'][$first_loc] = [
+        'nature' => $existing_data['pathology']['nature'] ?? [],
+        'triggers' => $existing_data['pathology']['triggers'] ?? [],
+        'intensity' => $existing_data['pathology']['intensity'] ?? 5,
+        'duration' => $existing_data['pathology']['duration'] ?? '',
+        'activating_causes' => $existing_data['pathology']['activating_causes'] ?? [],
+        'description' => $existing_data['pathology']['description'] ?? ''
+    ];
 }
 
 function get_detail_v($loc, $key, $default = '') {

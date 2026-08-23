@@ -300,11 +300,13 @@ $rules = $stmt->fetchAll();
     <?php
     $chiro_history = null;
     foreach ($histories as $h) {
-        if ($h['type'] === 'chiro_history') {
+        if ($h['type'] === 'chiro_history_v2') {
             $chiro_history = $h;
             break;
         }
     }
+    
+    $history_url = 'chiro_history_v2.php';
     ?>
     <div class="card" style="margin-bottom: 1.5rem; border: none; box-shadow: var(--shadow-sm); padding: 1.5rem; background: #faf5ff; border: 1px solid #e9d5ff;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
@@ -331,12 +333,12 @@ $rules = $stmt->fetchAll();
                         <a href="../medical/print_record.php?type=history&id=<?php echo $chiro_history['id']; ?>" target="_blank" class="btn" style="background: white; border: 1px solid #d8b4fe; color: #9333ea; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; transition: all 0.2s;" onmouseover="this.style.background='#9333ea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#9333ea';">
                             <i class="fas fa-print"></i> <?php echo __('common.print_pdf', 'In PDF'); ?>
                         </a>
-                        <a href="../medical/chiro_history.php?patient_id=<?php echo $patient['id']; ?>&id=<?php echo $chiro_history['id']; ?>" class="btn" style="background: white; border: 1px solid #d8b4fe; color: #9333ea; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; transition: all 0.2s;" onmouseover="this.style.background='#9333ea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#9333ea';">
+                        <a href="../medical/<?php echo $history_url; ?>?patient_id=<?php echo $patient['id']; ?>&id=<?php echo $chiro_history['id']; ?>" class="btn" style="background: white; border: 1px solid #d8b4fe; color: #9333ea; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; transition: all 0.2s;" onmouseover="this.style.background='#9333ea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#9333ea';">
                             <i class="fas fa-edit"></i> <?php echo __('patient.history.view_update'); ?>
                         </a>
                     </div>
                 <?php else: ?>
-                    <a href="../medical/chiro_history.php?patient_id=<?php echo $patient['id']; ?>" class="btn btn-primary" style="background: #9333ea; border: none; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);">
+                    <a href="../medical/<?php echo $history_url; ?>?patient_id=<?php echo $patient['id']; ?>" class="btn btn-primary" style="background: #9333ea; border: none; font-weight: 800; border-radius: 50px; padding: 0.5rem 1rem; box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);">
                         <i class="fas fa-plus-circle"></i> <?php echo __('patient.history.create_new'); ?>
                     </a>
                 <?php endif; ?>
@@ -384,7 +386,7 @@ $rules = $stmt->fetchAll();
                     $session_parts = [];
                     // Find all history records for THIS session
                     foreach ($histories as $h) {
-                        if ($h['type'] === 'chiro_history') continue;
+                        if ($h['type'] === 'chiro_history_v2') continue;
                         if ($h['session_id'] == $session['id']) {
                             $session_parts[] = $h;
                         }
@@ -407,7 +409,7 @@ $rules = $stmt->fetchAll();
                 // 2. Add Orphan Histories (or those belonging to non-existent/wrong sessions)
                 $session_ids = array_column($sessions, 'id');
                 foreach ($histories as $h) {
-                    if ($h['type'] === 'chiro_history') continue;
+                    if ($h['type'] === 'chiro_history_v2') continue;
                     if (!$h['session_id'] || !in_array($h['session_id'], $session_ids)) {
                         $timeline_items[] = [
                             'type' => 'history',
@@ -536,8 +538,11 @@ $rules = $stmt->fetchAll();
                                 $types = [
                                     'chiro_exam' => __('medical.type.chiro_exam'),
                                     'chiro_history' => __('medical.type.chiro_history'),
+                                    'chiro_history_v2' => 'Tiền sử Chiropractic (V2)',
                                     'chiropractic' => __('medical.type.chiropractic'),
                                     'soap_note' => __('medical.type.chiropractic'),
+                                    'soap_note_v2' => 'Tái khám Follow-up (V2)',
+                                    'pathologie_v2' => 'Bệnh lý Chiropractic (V2)',
                                     'dong_y' => __('medical.type.dong_y')
                                 ];
                                 $type_label = isset($types[$i['type']]) ? $types[$i['type']] : __('medical.type.general');

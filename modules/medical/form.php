@@ -100,6 +100,15 @@ if ($history_id) {
         $data = json_decode($record['history_data'], true);
         if (!$data) $data = [];
     }
+} elseif ($session_id) {
+    $stmt = $db->prepare("SELECT id, history_data FROM medical_history WHERE session_id = ? AND type = ? ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$session_id, $type]);
+    $record = $stmt->fetch();
+    if ($record) {
+        $history_id = (int)$record['id'];
+        $data = json_decode($record['history_data'], true);
+        if (!$data) $data = [];
+    }
 }
 ?>
 
@@ -418,8 +427,8 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label"><?php echo __('medical.form.reason_label'); ?></label>
-                    <textarea name="history[reason]" class="form-input" rows="2" placeholder="<?php echo __('medical.form.reason_placeholder'); ?>"><?php echo e($data['reason'] ?? ''); ?></textarea>
+                    <label class="form-label" style="font-weight: 700;"><?php echo __('medical.form.reason_label'); ?></label>
+                    <textarea name="history[reason]" class="form-input" rows="4" placeholder="<?php echo __('medical.form.reason_placeholder'); ?>" style="min-height: 100px; font-size: 0.95rem; line-height: 1.5; resize: vertical;"><?php echo e($data['reason'] ?? ''); ?></textarea>
                 </div>
             </div>
 
@@ -1188,8 +1197,8 @@ if ($type === 'chiropractic' || $type === 'initial_exam') {
                         </div>
                     </div>
                     <div class="form-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed #e2e8f0;">
-                        <label class="form-label" style="font-weight: 800;"><?php echo __('medical.form.treatment_notes'); ?></label>
-                        <textarea name="history[treatment_notes]" class="form-input" rows="3" placeholder="<?php echo __('medical.form.treatment_notes_ph'); ?>"><?php echo e($data['treatment_notes'] ?? ''); ?></textarea>
+                        <label class="form-label" style="font-weight: 800; font-size: 1rem;"><?php echo __('medical.form.treatment_notes'); ?></label>
+                        <textarea name="history[treatment_notes]" class="form-input" rows="8" placeholder="<?php echo __('medical.form.treatment_notes_ph'); ?>" style="min-height: 180px; font-size: 0.95rem; line-height: 1.6; resize: vertical;"><?php echo e($data['treatment_notes'] ?? ''); ?></textarea>
                     </div>
                 </div>
             </div>

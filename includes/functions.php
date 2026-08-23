@@ -124,10 +124,10 @@ function get_date_range($period = 'month', $start = null, $end = null) {
  * Render pagination UI
  */
 function render_pagination($total_count, $limit, $current_page) {
-    if ($total_count <= $limit) return '';
+    if ($total_count == 0) return '';
     
     $total_pages = ceil($total_count / $limit);
-    $current_page = max(1, min((int)$current_page, $total_pages));
+    $current_page = max(1, min((int)$current_page, max(1, (int)$total_pages)));
     
     // Get current URL and remove 'page' parameter
     $params = $_GET;
@@ -145,34 +145,38 @@ function render_pagination($total_count, $limit, $current_page) {
     $html .= '</div>';
     
     // Controls
-    $html .= '<div style="display: flex; gap: 0.5rem; align-items: center;">';
-    
-    // Previous
-    if ($current_page > 1) {
-        $html .= '<a href="' . $base_url . 'page=' . ($current_page - 1) . '" class="page-btn"><i class="fas fa-chevron-left"></i></a>';
-    } else {
-        $html .= '<span class="page-btn disabled"><i class="fas fa-chevron-left"></i></span>';
-    }
-    
-    // Page numbers
-    $range = 2; // How many pages to show before and after current
-    for ($i = 1; $i <= $total_pages; $i++) {
-        if ($i == 1 || $i == $total_pages || ($i >= $current_page - $range && $i <= $current_page + $range)) {
-            $active = ($i == $current_page) ? 'active' : '';
-            $html .= '<a href="' . $base_url . 'page=' . $i . '" class="page-btn ' . $active . '">' . $i . '</a>';
-        } elseif ($i == $current_page - $range - 1 || $i == $current_page + $range + 1) {
-            $html .= '<span style="color: #94a3b8; padding: 0 0.25rem;">...</span>';
+    if ($total_pages > 1) {
+        $html .= '<div style="display: flex; gap: 0.5rem; align-items: center;">';
+        
+        // Previous
+        if ($current_page > 1) {
+            $html .= '<a href="' . $base_url . 'page=' . ($current_page - 1) . '" class="page-btn"><i class="fas fa-chevron-left"></i></a>';
+        } else {
+            $html .= '<span class="page-btn disabled"><i class="fas fa-chevron-left"></i></span>';
         }
+        
+        // Page numbers
+        $range = 2; // How many pages to show before and after current
+        for ($i = 1; $i <= $total_pages; $i++) {
+            if ($i == 1 || $i == $total_pages || ($i >= $current_page - $range && $i <= $current_page + $range)) {
+                $active = ($i == $current_page) ? 'active' : '';
+                $html .= '<a href="' . $base_url . 'page=' . $i . '" class="page-btn ' . $active . '">' . $i . '</a>';
+            } elseif ($i == $current_page - $range - 1 || $i == $current_page + $range + 1) {
+                $html .= '<span style="color: #94a3b8; padding: 0 0.25rem;">...</span>';
+            }
+        }
+        
+        // Next
+        if ($current_page < $total_pages) {
+            $html .= '<a href="' . $base_url . 'page=' . ($current_page + 1) . '" class="page-btn"><i class="fas fa-chevron-right"></i></a>';
+        } else {
+            $html .= '<span class="page-btn disabled"><i class="fas fa-chevron-right"></i></span>';
+        }
+        
+        $html .= '</div>';
     }
     
-    // Next
-    if ($current_page < $total_pages) {
-        $html .= '<a href="' . $base_url . 'page=' . ($current_page + 1) . '" class="page-btn"><i class="fas fa-chevron-right"></i></a>';
-    } else {
-        $html .= '<span class="page-btn disabled"><i class="fas fa-chevron-right"></i></span>';
-    }
-    
-    $html .= '</div></div>';
+    $html .= '</div>';
     
     // Add CSS inline once in the page or via header.php. 
     // Here we add it once using a static variable to avoid duplication if multiple pagination on same page.

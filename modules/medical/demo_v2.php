@@ -59,11 +59,11 @@ if (!$has_140) {
                     </td>
                     <td style="padding: 1.25rem 1.5rem; text-align: right;">
                         <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                            <a href="chiro_history_v2.php?patient_id=<?php echo $p['id']; ?>" class="btn" style="background: white; color: #16a34a; border: 1px solid #16a34a; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.4rem 0.8rem; transition: all 0.2s;" onmouseover="this.style.background='#16a34a'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#16a34a';">
-                                <i class="fas fa-file-medical-alt"></i> Anamnese V2
+                            <a href="chiro_history_v2.php?patient_id=<?php echo $p['id']; ?>" class="btn" style="background: white; color: #16a34a; border: 1px solid #16a34a; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.4rem 0.8rem; transition: all 0.2s; white-space: nowrap;" onmouseover="this.style.background='#16a34a'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#16a34a';">
+                                <i class="fas fa-plus"></i> Anamnese
                             </a>
-                            <a href="follow_up_v2.php?patient_id=<?php echo $p['id']; ?>" class="btn" style="background: white; color: #1e40af; border: 1px solid #1e40af; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.4rem 0.8rem; transition: all 0.2s;" onmouseover="this.style.background='#1e40af'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#1e40af';">
-                                <i class="fas fa-stethoscope"></i> Follow-up V2
+                            <a href="follow_up_v2.php?patient_id=<?php echo $p['id']; ?>" class="btn" style="background: white; color: #1e40af; border: 1px solid #1e40af; border-radius: 50px; font-weight: 700; font-size: 0.8rem; padding: 0.4rem 0.8rem; transition: all 0.2s; white-space: nowrap;" onmouseover="this.style.background='#1e40af'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#1e40af';">
+                                <i class="fas fa-plus"></i> Follow-up
                             </a>
                         </div>
                     </td>

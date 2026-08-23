@@ -34,20 +34,28 @@ if ($record_id) {
     $stmt->execute([$record_id]);
     $json = $stmt->fetchColumn();
     $existing_data = json_decode($json, true) ?: [];
-
-    // MIGRATION: Move old global details into the first selected location
-    if (!isset($existing_data['pathology']['details']) && !empty($existing_data['pathology']['locations'])) {
-        $first_loc = $existing_data['pathology']['locations'][0];
-        $existing_data['pathology']['details'] = [];
-        $existing_data['pathology']['details'][$first_loc] = [
-            'nature' => $existing_data['pathology']['nature'] ?? [],
-            'triggers' => $existing_data['pathology']['triggers'] ?? [],
-            'intensity' => $existing_data['pathology']['intensity'] ?? 5,
-            'duration' => $existing_data['pathology']['duration'] ?? '',
-            'activating_causes' => $existing_data['pathology']['activating_causes'] ?? [],
-            'description' => $existing_data['pathology']['description'] ?? ''
-        ];
+} elseif ($patient_id) {
+    $stmt = $db->prepare("SELECT id, history_data FROM medical_history WHERE patient_id = ? AND type IN ('chiro_history_v2', 'chiro_history') ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$patient_id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $record_id = (int)$row['id'];
+        $existing_data = json_decode($row['history_data'], true) ?: [];
     }
+}
+
+// MIGRATION: Move old global details into the first selected location
+if (!isset($existing_data['pathology']['details']) && !empty($existing_data['pathology']['locations'])) {
+    $first_loc = $existing_data['pathology']['locations'][0];
+    $existing_data['pathology']['details'] = [];
+    $existing_data['pathology']['details'][$first_loc] = [
+        'nature' => $existing_data['pathology']['nature'] ?? [],
+        'triggers' => $existing_data['pathology']['triggers'] ?? [],
+        'intensity' => $existing_data['pathology']['intensity'] ?? 5,
+        'duration' => $existing_data['pathology']['duration'] ?? '',
+        'activating_causes' => $existing_data['pathology']['activating_causes'] ?? [],
+        'description' => $existing_data['pathology']['description'] ?? ''
+    ];
 }
 
 function get_detail_v($loc, $key, $default = '') {
@@ -185,6 +193,16 @@ require_once '../../templates/header.php';
 }
 </style>
 <script>
+function autoResizeTextarea(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.max(el.scrollHeight + 10, parseInt(el.getAttribute('data-min-height') || 120)) + 'px';
+}
+window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('textarea').forEach(t => {
+        autoResizeTextarea(t);
+        t.addEventListener('input', () => autoResizeTextarea(t));
+    });
+});
 window.addEventListener('beforeprint', () => {
     document.querySelectorAll('textarea').forEach(t => {
         t.style.height = 'auto';
@@ -355,8 +373,8 @@ window.addEventListener('beforeprint', () => {
             <!-- GHI CHÚ CHUNG -->
             <div style="margin-bottom: 2.5rem;">
                 <div class="form-group" style="margin-bottom: 2.5rem;">
-                    <label class="form-label" style="font-weight: 600; color: #1d1d1f; font-size: 0.95rem; display: block; margin-bottom: 0.6rem;"><?php echo _t_v2('Ô ghi chú', 'Notizfeld', 'Note Field'); ?></label>
-                    <textarea name="exam[notes]" class="form-input" rows="4" placeholder="<?php echo _t_v2('Nhập ghi chú hoặc thông tin bổ sung tại đây...', 'Hier Anmerkungen oder zusätzliche Informationen eingeben...', 'Enter notes or additional information here...'); ?>"><?php echo get_v('notes'); ?></textarea>
+                    <label class="form-label" style="font-weight: 700; color: #1d1d1f; font-size: 1rem; display: block; margin-bottom: 0.6rem;"><?php echo _t_v2('Ô ghi chú', 'Notizfeld', 'Note Field'); ?></label>
+                    <textarea name="exam[notes]" class="form-input" rows="8" data-min-height="160" placeholder="<?php echo _t_v2('Nhập ghi chú hoặc thông tin bổ sung tại đây...', 'Hier Anmerkungen oder zusätzliche Informationen eingeben...', 'Enter notes or additional information here...'); ?>" style="min-height: 160px; font-size: 0.95rem; line-height: 1.6; resize: vertical;"><?php echo get_v('notes'); ?></textarea>
                     <div style="font-size: 0.8rem; color: #3b82f6; font-style: italic; background: #eff6ff; padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid #bfdbfe; margin-top: 0.8rem; display: flex; gap: 0.5rem; align-items: flex-start;">
                         <i class="fas fa-info-circle" style="margin-top: 0.2rem;"></i>
                         <div><?php echo _t_v2('Sau khi bấm Lưu, ghi chú này sẽ được gom và hiển thị chung với phần ghi chú ở trên. Ghi chú trong phần Bệnh sử sẽ được hiển thị lại trên các bản Tái khám (Follow-Up) về sau.', 'Nach dem Speichern werden diese Notizen zusammengefasst und gemeinsam mit den obigen Notizen angezeigt. Notizen aus der Anamnese werden auf den späteren Follow-Up-Bögen erneut angezeigt.', 'After saving, these notes will be combined and displayed with the above notes. Notes from the Anamnesis will be displayed again on later Follow-Up forms.'); ?></div>
@@ -471,6 +489,64 @@ window.addEventListener('beforeprint', () => {
                 <h3 style="font-weight: 800; font-size: 1.15rem; color: #1d1d1f; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
                     <i class="fas fa-stethoscope" style="color: #3b82f6;"></i> <?php echo _t_v2('PHẦN 3 – BỆNH LÝ HIỆN TẠI', 'TEIL 3 – AKTUELLE BESCHWERDEN', 'PART 3 - CURRENT COMPLAINTS'); ?>
                 </h3>
+
+            <!-- SƠ ĐỒ ĐIỂM ĐAU / CẢNH BÁO -->
+            <div style="margin-top: 3rem; margin-bottom: 3rem;">
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-edit"></i> <?php echo __('medical.history.pain_map_title'); ?>
+                </h3>
+                
+                <div style="display: flex; gap: 3rem;">
+                    <div style="flex: 1; position: relative; background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); overflow: hidden; cursor: crosshair;">
+                        <canvas id="anatomy-canvas" width="800" height="800" style="width: 100%; height: auto; display: block;"></canvas>
+                        <input type="hidden" name="exam[markers]" id="marking-data" value="<?php echo e(json_encode(get_v('markers', []))); ?>">
+                    </div>
+                    
+                    <div style="width: 350px;">
+                        <div style="background: #fff9f0; padding: 1.25rem; border-radius: 12px; border: 1px solid #ffedd5; margin-bottom: 2rem;">
+                            <h4 style="font-size: 0.8rem; color: #9a3412; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 800;"><?php echo __('medical.history.guide_title'); ?></h4>
+                            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.8rem; color: #9a3412; line-height: 1.6;">
+                                <li><strong>O:</strong> <?php echo __('medical.history.guide_surgery'); ?></li>
+                                <li><strong>X:</strong> <?php echo __('medical.history.guide_fracture'); ?></li>
+                                <li><strong>M:</strong> <?php echo __('medical.history.guide_pain'); ?></li>
+                            </ul>
+                        </div>
+
+                        <div style="display: flex; gap: 0.75rem; margin-bottom: 2rem;">
+                            <button type="button" class="tool-btn active" id="tool-marker" title="<?php echo __('medical.history.tool_pain'); ?>"><i class="fas fa-pencil-alt"></i></button>
+                            <button type="button" class="tool-btn" id="tool-surgery" style="color: #f59e0b; font-weight: 900;">O</button>
+                            <button type="button" class="tool-btn" id="tool-fracture" style="color: #ef4444; font-weight: 900;">X</button>
+                            <button type="button" class="tool-btn" id="marker-eraser" title="<?php echo __('medical.history.tool_eraser'); ?>"><i class="fas fa-eraser"></i></button>
+                            <button type="button" class="tool-btn" id="marker-clear" style="margin-left: auto; color: #ef4444;"><i class="fas fa-trash"></i></button>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;">
+                            <?php 
+                            $colors = [
+                                'M1' => '#38bdf8', 'M2' => '#4ade80', 'M3' => '#fbbf24', 'M4' => '#fb923c', 'M5' => '#ef4444'
+                            ];
+                            foreach($colors as $m => $color): ?>
+                                <button type="button" class="intensity-btn <?php echo $m === 'M3' ? 'active' : ''; ?>" 
+                                        data-intensity="<?php echo $m; ?>" 
+                                        style="color: <?php echo $color; ?>"
+                                        title="<?php echo $m; ?>">
+                                    <span style="background: <?php echo $color; ?>;"></span> <?php echo $m; ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                        <div style="margin-top: 1.5rem; background: #e0f2fe; padding: 1rem; border-radius: 12px; border: 1px solid #bae6fd;">
+                            <h4 style="font-size: 0.85rem; color: #0369a1; font-weight: 800; margin-bottom: 0.5rem;"><?php echo _t_v2('Quy ước 5 vòng tròn mức độ đau:', 'Legende zur Schmerzintensität (5 Kreise):', 'Pain Intensity Legend (5 Circles):'); ?></h4>
+                            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.8rem; color: #0c4a6e; line-height: 1.6;">
+                                <li><strong><?php echo _t_v2('Vòng thứ 1 (xanh da trời)', 'Ring 1 (hellblau)', 'Ring 1 (Light Blue)'); ?>:</strong> <?php echo _t_v2('đã đỡ nhiều.', 'Deutlich verbessert.', 'Significantly improved.'); ?></li>
+                                <li><strong><?php echo _t_v2('Vòng thứ 2 (xanh lá cây)', 'Ring 2 (grün)', 'Ring 2 (Green)'); ?>:</strong> <?php echo _t_v2('đỡ ít hơn.', 'Leicht verbessert.', 'Slightly improved.'); ?></li>
+                                <li><strong><?php echo _t_v2('Vòng thứ 3 (vàng)', 'Ring 3 (gelb)', 'Ring 3 (Yellow)'); ?>:</strong> <?php echo _t_v2('vẫn đau như lần trước, không thay đổi.', 'Unverändert (Schmerzen wie zuvor).', 'Unchanged (Pain as before).'); ?></li>
+                                <li><strong><?php echo _t_v2('Vòng thứ 4 (cam)', 'Ring 4 (orange)', 'Ring 4 (Orange)'); ?>:</strong> <?php echo _t_v2('đau hơn cũ một chút.', 'Leicht verschlechtert.', 'Slightly worsened.'); ?></li>
+                                <li><strong><?php echo _t_v2('Vòng thứ 5 (đỏ)', 'Ring 5 (rot)', 'Ring 5 (Red)'); ?>:</strong> <?php echo _t_v2('đau hơn nhiều.', 'Deutlich verschlechtert.', 'Significantly worsened.'); ?></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <!-- Tabs Navigation -->
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; background: rgba(248,250,252,0.8); padding: 0.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
@@ -1035,7 +1111,7 @@ window.addEventListener('beforeprint', () => {
 
                 <div style="margin-top: 1.5rem;">
                     <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 700; color: #1e293b;"><?php echo _t_v2('Ô ghi chú:', 'Notizen:', 'Notes:'); ?></label>
-                    <textarea name="exam[akt_path][notes]" class="form-premium-input" rows="3" placeholder="<?php echo _t_v2('Nhập ghi chú thêm cho phần Bệnh sử...', 'Weitere Notizen zur Anamnese eingeben...', 'Enter additional anamnesis notes...'); ?>"><?php echo get_v('akt_path.notes'); ?></textarea>
+                    <textarea name="exam[akt_path][notes]" class="form-premium-input" rows="8" data-min-height="160" placeholder="<?php echo _t_v2('Nhập ghi chú thêm cho phần Bệnh sử...', 'Weitere Notizen zur Anamnese eingeben...', 'Enter additional anamnesis notes...'); ?>" style="min-height: 160px; font-size: 0.95rem; line-height: 1.6; resize: vertical;"><?php echo get_v('akt_path.notes'); ?></textarea>
                     <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.4rem; font-style: italic;"><?php echo _t_v2('Sau khi bấm Lưu, ghi chú này sẽ được gom và hiển thị chung với phần ghi chú ở trên. Ghi chú trong phần Bệnh sử sẽ được hiển thị lại trên các bản Tái khám (Follow-Up) về sau.', 'Nach dem Speichern wird diese Notiz mit den obigen Notizen zusammengefasst. Notizen in der Anamnese werden in zukünftigen Follow-Ups wieder angezeigt.', 'After saving, this note will be merged with the above notes. Notes in the Anamnesis will be displayed in future Follow-ups.'); ?></div>
                 </div>
             </div>
@@ -1066,63 +1142,7 @@ window.addEventListener('beforeprint', () => {
             </script>
 
         </div>
-            <!-- SƠ ĐỒ ĐIỂM ĐAU / CẢNH BÁO -->
-            <div style="margin-top: 3rem; margin-bottom: 3rem;">
-                <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-edit"></i> <?php echo __('medical.history.pain_map_title'); ?>
-                </h3>
-                
-                <div style="display: flex; gap: 3rem;">
-                    <div style="flex: 1; position: relative; background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); overflow: hidden; cursor: crosshair;">
-                        <canvas id="anatomy-canvas" width="800" height="800" style="width: 100%; height: auto; display: block;"></canvas>
-                        <input type="hidden" name="exam[markers]" id="marking-data" value="<?php echo e(json_encode(get_v('markers', []))); ?>">
-                    </div>
-                    
-                    <div style="width: 350px;">
-                        <div style="background: #fff9f0; padding: 1.25rem; border-radius: 12px; border: 1px solid #ffedd5; margin-bottom: 2rem;">
-                            <h4 style="font-size: 0.8rem; color: #9a3412; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 800;"><?php echo __('medical.history.guide_title'); ?></h4>
-                            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.8rem; color: #9a3412; line-height: 1.6;">
-                                <li><strong>O:</strong> <?php echo __('medical.history.guide_surgery'); ?></li>
-                                <li><strong>X:</strong> <?php echo __('medical.history.guide_fracture'); ?></li>
-                                <li><strong>M:</strong> <?php echo __('medical.history.guide_pain'); ?></li>
-                            </ul>
-                        </div>
 
-                        <div style="display: flex; gap: 0.75rem; margin-bottom: 2rem;">
-                            <button type="button" class="tool-btn active" id="tool-marker" title="<?php echo __('medical.history.tool_pain'); ?>"><i class="fas fa-pencil-alt"></i></button>
-                            <button type="button" class="tool-btn" id="tool-surgery" style="color: #f59e0b; font-weight: 900;">O</button>
-                            <button type="button" class="tool-btn" id="tool-fracture" style="color: #ef4444; font-weight: 900;">X</button>
-                            <button type="button" class="tool-btn" id="marker-eraser" title="<?php echo __('medical.history.tool_eraser'); ?>"><i class="fas fa-eraser"></i></button>
-                            <button type="button" class="tool-btn" id="marker-clear" style="margin-left: auto; color: #ef4444;"><i class="fas fa-trash"></i></button>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;">
-                            <?php 
-                            $colors = [
-                                'M1' => '#38bdf8', 'M2' => '#4ade80', 'M3' => '#fbbf24', 'M4' => '#fb923c', 'M5' => '#ef4444'
-                            ];
-                            foreach($colors as $m => $color): ?>
-                                <button type="button" class="intensity-btn <?php echo $m === 'M3' ? 'active' : ''; ?>" 
-                                        data-intensity="<?php echo $m; ?>" 
-                                        style="color: <?php echo $color; ?>"
-                                        title="<?php echo $m; ?>">
-                                    <span style="background: <?php echo $color; ?>;"></span> <?php echo $m; ?>
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
-                        <div style="margin-top: 1.5rem; background: #e0f2fe; padding: 1rem; border-radius: 12px; border: 1px solid #bae6fd;">
-                            <h4 style="font-size: 0.85rem; color: #0369a1; font-weight: 800; margin-bottom: 0.5rem;"><?php echo _t_v2('Quy ước 5 vòng tròn mức độ đau:', 'Legende zur Schmerzintensität (5 Kreise):', 'Pain Intensity Legend (5 Circles):'); ?></h4>
-                            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.8rem; color: #0c4a6e; line-height: 1.6;">
-                                <li><strong><?php echo _t_v2('Vòng thứ 1 (xanh da trời)', 'Ring 1 (hellblau)', 'Ring 1 (Light Blue)'); ?>:</strong> <?php echo _t_v2('đã đỡ nhiều.', 'Deutlich verbessert.', 'Significantly improved.'); ?></li>
-                                <li><strong><?php echo _t_v2('Vòng thứ 2 (xanh lá cây)', 'Ring 2 (grün)', 'Ring 2 (Green)'); ?>:</strong> <?php echo _t_v2('đỡ ít hơn.', 'Leicht verbessert.', 'Slightly improved.'); ?></li>
-                                <li><strong><?php echo _t_v2('Vòng thứ 3 (vàng)', 'Ring 3 (gelb)', 'Ring 3 (Yellow)'); ?>:</strong> <?php echo _t_v2('vẫn đau như lần trước, không thay đổi.', 'Unverändert (Schmerzen wie zuvor).', 'Unchanged (Pain as before).'); ?></li>
-                                <li><strong><?php echo _t_v2('Vòng thứ 4 (cam)', 'Ring 4 (orange)', 'Ring 4 (Orange)'); ?>:</strong> <?php echo _t_v2('đau hơn cũ một chút.', 'Leicht verschlechtert.', 'Slightly worsened.'); ?></li>
-                                <li><strong><?php echo _t_v2('Vòng thứ 5 (đỏ)', 'Ring 5 (rot)', 'Ring 5 (Red)'); ?>:</strong> <?php echo _t_v2('đau hơn nhiều.', 'Deutlich verschlechtert.', 'Significantly worsened.'); ?></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
         <div style="margin-top: 3.5rem; display: flex; gap: 1.5rem; justify-content: flex-end; border-top: 2px solid #f1f5f9; padding-top: 2rem;">
             <a href="../patients/view.php?id=<?php echo $patient_id; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 1.25rem 3rem; font-weight: 700; border-radius: 16px;"><?php echo __('common.cancel'); ?></a>

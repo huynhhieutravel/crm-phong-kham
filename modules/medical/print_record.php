@@ -42,11 +42,19 @@ if ($type === 'history') {
         $record_date = $record['created_at'];
         $record_type = $record['type']; // chiro_history, chiropractic, dong_y
         
+        // If it's soap_note_v2, redirect to follow_up_v2 print mode
+        if ($record_type === 'soap_note_v2') {
+            header("Location: follow_up_v2.php?patient_id={$record['patient_id']}&session_id={$record['session_id']}&id={$record['id']}&auto_print=1");
+            exit;
+        }
+
         $titles = [
             'chiro_history' => __('medical.type.chiro_history_full'),
             'chiro_history_v2' => __('medical.type.chiro_history_full') . ' (V2)',
             'chiropractic' => __('medical.type.chiropractic'),
             'soap_note' => __('medical.type.chiropractic'),
+            'soap_note_v2' => 'Phiếu tái khám Chiropractic (V2)',
+            'pathologie_v2' => 'Bệnh lý Chiropractic (V2)',
             'initial_exam' => __('medical.type.chiropractic'),
             'dong_y' => __('medical.type.dong_y')
         ];
