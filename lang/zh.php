@@ -736,7 +736,7 @@ return [
     'medical.treatment.details_label' => '治疗详情',
     'medical.treatment.details_placeholder' => '记录当前状况，应用的技术...',
     'medical.treatment.photo_label' => '治疗前后照片（待实施）',
-    'medical.treatment.btn_complete' => '完成疗程',
+    'medical.treatment.btn_complete' => '保存',
     'medical.followup.page_title' => '脊骨神经随访记录 (SOAP)',
     'medical.followup.title' => '脊骨神经随访',
     'medical.followup.patient_label' => '患者: ',

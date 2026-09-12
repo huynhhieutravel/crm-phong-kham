@@ -63,9 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $db->commit();
+        set_flash(__('medical.treatment.msg_success'));
         
-        // Redirect to Checkout page for payment
-        redirect("../sales/checkout.php?treatment_id=$treatment_id");
+        if ($session_id) {
+            redirect("session_view.php?id=$session_id");
+        } else {
+            redirect("../patients/view.php?id=$patient_id");
+        }
         
     } catch (Exception $e) {
         $db->rollBack();
@@ -89,13 +93,6 @@ require_once '../../templates/header.php';
         <div style="background: #fee2e2; color: #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;"><?php echo $error; ?></div>
     <?php endif; ?>
 
-    <!-- Info: Payment step happens after this -->
-    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe;">
-        <p style="font-size: 0.85rem; color: #1e40af; margin: 0; font-weight: 600;">
-            <i class="fas fa-info-circle"></i> <?php echo __('Sau khi lưu buổi điều trị, hệ thống sẽ chuyển đến trang Thanh Toán để chọn phương thức (Tiền mặt / CK / Gói / Nợ).'); ?>
-        </p>
-    </div>
-
     <form method="POST" class="no-autosave">
         <?php echo csrf_field(); ?>
         <div class="form-group">
@@ -108,7 +105,7 @@ require_once '../../templates/header.php';
         </div>
 
         <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-weight: 700;"><?php echo __('medical.treatment.btn_complete'); ?></button>
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2.5rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;"><i class="fas fa-save"></i> <?php echo __('common.save'); ?></button>
             <a href="<?php echo $session_id ? "session_view.php?id=$session_id" : "../patients/view.php?id=$patient_id"; ?>" class="btn" style="background: #f1f5f9; color: var(--text-main); padding: 0.75rem 1.5rem; font-weight: 600;"><?php echo __('common.cancel'); ?></a>
         </div>
     </form>

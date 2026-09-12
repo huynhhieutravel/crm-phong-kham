@@ -820,7 +820,7 @@ return [
     'medical.treatment.details_label' => 'Treatment Details',
     'medical.treatment.details_placeholder' => 'Record current condition, techniques applied...',
     'medical.treatment.photo_label' => 'Before/After Photos (To be implemented)',
-    'medical.treatment.btn_complete' => 'Complete Session',
+    'medical.treatment.btn_complete' => 'Save',
     'medical.followup.page_title' => 'Chiropractic Follow-up (SOAP)',
     'medical.followup.title' => 'Chiro Follow-up',
     'medical.followup.patient_label' => 'Patient: ',

@@ -866,7 +866,7 @@ return [
     'medical.treatment.details_label' => 'Chi tiết buổi điều trị',
     'medical.treatment.details_placeholder' => 'Ghi nhận tình trạng hiện tại, các kỹ thuật đã thực hiện...',
     'medical.treatment.photo_label' => 'Chụp ảnh Trước/Sau (Sẽ triển khai sau)',
-    'medical.treatment.btn_complete' => 'Hoàn tất buổi khám',
+    'medical.treatment.btn_complete' => 'Lưu',
     'medical.followup.msg_success' => 'Lưu phiếu theo dõi điều trị (SOAP) thành công!',
     'medical.followup.page_title' => 'Theo dõi Chiropractic (SOAP)',
     'medical.followup.title' => 'Theo dõi Chiropractic',

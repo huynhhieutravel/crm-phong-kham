@@ -230,12 +230,17 @@ $is_filtered = $search || $label || $gender || $period;
             </div>
         </form>
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap;">
-                <i class="fas fa-plus"></i> <?php echo __('common.add_new'); ?>
-            </a>
+            <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+                <a href="add.php" class="btn btn-primary shadow-sm" style="padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.9rem; border-radius: 12px; white-space: nowrap; flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                    <i class="fas fa-plus"></i> <?php echo __('common.add_new'); ?>
+                </a>
+                <a href="export_existing_customers.php?<?php echo http_build_query($_GET); ?>" class="btn" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 0.6rem 1rem; font-weight: 700; font-size: 0.85rem; border-radius: 12px; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 0.4rem; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3); border: none; text-decoration: none;" title="Xuất Danh Sách Khách Hàng Hiện Hữu (Mẫu thống kê Excel)">
+                    <i class="fas fa-file-excel"></i> Xuất DS Khách Hàng
+                </a>
+            </div>
             <div style="display: flex; gap: 0.4rem;">
                 <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-primary" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('patient.index.export_title'); ?>">
-                    <i class="fas fa-file-export"></i> <?php echo __('common.export'); ?>
+                    <i class="fas fa-file-export"></i> <?php echo __('common.export'); ?> CSV
                 </a>
                 <a href="import.php" class="btn btn-outline-success" style="padding: 0.4rem; flex: 1; font-size: 0.75rem; border-radius: 8px; font-weight: 700;" title="<?php echo __('patient.index.import_title'); ?>">
                     <i class="fas fa-file-import"></i> <?php echo __('common.import'); ?>

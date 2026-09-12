@@ -734,7 +734,7 @@ return [
     'medical.treatment.details_label' => 'Behandlungsdetails',
     'medical.treatment.details_placeholder' => 'Aktueller Zustand, angewandte Techniken aufzeichnen...',
     'medical.treatment.photo_label' => 'Vorher/Nachher-Fotos (folgt)',
-    'medical.treatment.btn_complete' => 'Sitzung abschließen',
+    'medical.treatment.btn_complete' => 'Speichern',
     'medical.followup.page_title' => 'Chiropraktische Nachsorge (SOAP)',
     'medical.followup.title' => 'Chiro-Nachsorge',
     'medical.followup.patient_label' => 'Patient: ',
