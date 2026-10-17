@@ -20,37 +20,88 @@ puts "╚═══════════════════════�
 
 exec mkdir -p $BACKUP_DIR
 
-puts "📦 \[1/4\] Dumping MySQL Database trên VPS..."
-spawn ssh -o StrictHostKeyChecking=no $VPS "echo '&m5L9\[eUv' | sudo -S mysqldump -u crm_admin -p'CrmAdmin2026@Pass' clinic_management > $REMOTE_TMP.sql"
+# ------------------------------------------------------------
+# STEP 1 & 2: EXECUTE FULL BACKUP PIPELINE ON VPS UNDER SUDO
+# ------------------------------------------------------------
+puts "📦 \[1/4\] Đang thực thi dump DB và nén toàn bộ hệ thống trên VPS..."
+spawn ssh -o StrictHostKeyChecking=no $VPS
+expect "password:"
+send "$password\r"
+expect "$ "
+
+set REMOTE_CMD "echo '$password' | sudo -S bash -c '\
+mkdir -p $REMOTE_TMP && \
+mysqldump -u crm_admin -p\"CrmAdmin2026@Pass\" --single-transaction --quick --routines --triggers clinic_management > $REMOTE_TMP/clinic_management.sql && \
+cp $REMOTE_TMP/clinic_management.sql $REMOTE_PATH/clinic_management_backup.sql && \
+cd $REMOTE_PATH && tar -czf $REMOTE_TMP/uploads_images.tar.gz uploads tai-lieu-cau-hoi && \
+cd /var/www && tar -czf $REMOTE_TMP/${BACKUP_NAME}.tar.gz --exclude=\"crm_phong_kham/sessions/*\" --exclude=\"crm_phong_kham/*.tar.gz\" --exclude=\"crm_phong_kham/*.tar\" crm_phong_kham && \
+rm -f $REMOTE_PATH/clinic_management_backup.sql && \
+chown -R ubutu:ubutu $REMOTE_TMP && \
+ls -lh $REMOTE_TMP'"
+
+send "$REMOTE_CMD\r"
+expect "$ "
+send "exit\r"
+expect eof
+
+puts "\n✅ Nén và chuẩn bị file trên VPS hoàn tất.\n"
+
+# ------------------------------------------------------------
+# STEP 3: DOWNLOAD FULL BACKUP ARCHIVE & SQL DUMP
+# ------------------------------------------------------------
+puts "📥 \[2/4\] Đang tải file Full Backup (${BACKUP_NAME}.tar.gz) về local..."
+spawn scp -o StrictHostKeyChecking=no "$VPS:$REMOTE_TMP/${BACKUP_NAME}.tar.gz" "$BACKUP_DIR/"
 expect {
-    "*assword:*" { send "$password\r"; exp_continue }
+    "password:" { send "$password\r"; exp_continue }
     eof
 }
-puts "✅ Export database thành công.\n"
+puts "✅ Tải Full Backup archive thành công.\n"
 
-puts "🗜️  \[2/4\] Nén toàn bộ Code, DB và Tài liệu hình ảnh (uploads)..."
-spawn ssh -o StrictHostKeyChecking=no $VPS "echo '&m5L9\[eUv' | sudo -S mv $REMOTE_TMP.sql $REMOTE_PATH/database_backup.sql && cd /var/www && echo '&m5L9\[eUv' | sudo -S tar -czf $REMOTE_TMP.tar.gz crm_phong_kham && echo '&m5L9\[eUv' | sudo -S rm $REMOTE_PATH/database_backup.sql && echo '&m5L9\[eUv' | sudo -S chown ubutu:ubutu $REMOTE_TMP.tar.gz"
+puts "📥 \[2b/4\] Đang tải SQL dump riêng lẻ để tra cứu nhanh..."
+spawn scp -o StrictHostKeyChecking=no "$VPS:$REMOTE_TMP/clinic_management.sql" "$BACKUP_DIR/clinic_management_$TIMESTAMP.sql"
 expect {
-    "*assword:*" { send "$password\r"; exp_continue }
+    "password:" { send "$password\r"; exp_continue }
     eof
 }
-puts "✅ Đã nén thành công $REMOTE_TMP.tar.gz.\n"
+puts "✅ Tải SQL dump thành công.\n"
 
-puts "📥 \[3/4\] Tải file backup về máy local (_backups/)..."
-spawn scp -o StrictHostKeyChecking=no "$VPS:$REMOTE_TMP.tar.gz" "$BACKUP_DIR/"
+# ------------------------------------------------------------
+# STEP 4: DOWNLOAD & SYNC IMAGES / DOCUMENTS DIRECTLY TO LOCAL WORKSPACE
+# ------------------------------------------------------------
+puts "🖼️  \[3/4\] Đang tải & đồng bộ toàn bộ ảnh (uploads/) và tài liệu (tai-lieu-cau-hoi/) về máy..."
+spawn scp -o StrictHostKeyChecking=no "$VPS:$REMOTE_TMP/uploads_images.tar.gz" "/tmp/uploads_images_$TIMESTAMP.tar.gz"
 expect {
-    "*assword:*" { send "$password\r"; exp_continue }
+    "password:" { send "$password\r"; exp_continue }
     eof
 }
-puts "✅ Đã tải file về thành công!\n"
 
-puts "🧹 \[4/4\] Dọn dẹp file tạm trên VPS..."
-spawn ssh -o StrictHostKeyChecking=no $VPS "echo '&m5L9\[eUv' | sudo -S rm -f $REMOTE_TMP.tar.gz"
-expect {
-    "*assword:*" { send "$password\r"; exp_continue }
-    eof
-}
-puts "✅ Hoàn tất!\n"
+# Extract images and documents into local workspace
+exec tar -xzf "/tmp/uploads_images_$TIMESTAMP.tar.gz" -C .
+exec rm -f "/tmp/uploads_images_$TIMESTAMP.tar.gz"
 
-puts "🎉 BACKUP TOÀN BỘ THÀNH CÔNG!"
-puts "📍 File của bạn ở: $BACKUP_DIR/${BACKUP_NAME}.tar.gz\n"
+# Also duplicate full backup to Backup/ directory
+exec cp "$BACKUP_DIR/${BACKUP_NAME}.tar.gz" "Backup/"
+puts "✅ Đồng bộ ảnh và tài liệu vào thư mục uploads/ và tai-lieu-cau-hoi/ thành công.\n"
+
+# ------------------------------------------------------------
+# STEP 5: CLEANUP TEMPORARY FILES ON VPS
+# ------------------------------------------------------------
+puts "🧹 \[4/4\] Dọn dẹp thư mục tạm trên VPS..."
+spawn ssh -o StrictHostKeyChecking=no $VPS
+expect "password:"
+send "$password\r"
+expect "$ "
+send "echo '$password' | sudo -S rm -rf $REMOTE_TMP\r"
+expect "$ "
+send "exit\r"
+expect eof
+puts "✅ Dọn dẹp VPS hoàn tất.\n"
+
+puts "========================================================"
+puts "🎉 TẤT CẢ BACKUP ĐÃ HOÀN TẤT THÀNH CÔNG!"
+puts "📍 File Full Backup: $BACKUP_DIR/${BACKUP_NAME}.tar.gz"
+puts "📍 Bản sao lưu dự phòng: Backup/${BACKUP_NAME}.tar.gz"
+puts "📍 File Database SQL: $BACKUP_DIR/clinic_management_$TIMESTAMP.sql"
+puts "📍 Thư mục ảnh đã tải về: uploads/"
+puts "📍 Thư mục tài liệu đã tải về: tai-lieu-cau-hoi/"
+puts "========================================================\n"

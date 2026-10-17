@@ -17,3 +17,5 @@ meta_config.env
 *.sql
 sessions/
 scratch/
+_backups/
+Backup/
