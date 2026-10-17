@@ -98,6 +98,12 @@ try {
     
     $invoice_id = $db->lastInsertId();
 
+    // Link coin transaction to invoice if applicable
+    if ($coin_deduct_patient_id > 0 && $coin_deduct_count > 0 && $package_deduct > 0) {
+        $db->prepare("UPDATE coin_transactions SET reference_id = ? WHERE reference_id = 0 AND note LIKE ?")
+           ->execute([$invoice_id, "%$invoice_no%"]);
+    }
+
     // Process Catalog Items (Package consumption or new packages)
     foreach ($items as $item) {
         $qty = isset($item['qty']) ? (int)$item['qty'] : 1;

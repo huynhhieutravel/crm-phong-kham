@@ -825,7 +825,7 @@ function submitInvoice() {
             transfer_company_amount: transferCompany,
             card_amount: card,
             package_deduct: coinVal,
-            coin_deduct_patient_id: document.getElementById('ipCoinPatientId').value,
+            coin_deduct_patient_id: document.getElementById('ipCoinPatientId').value || patientId,
             coin_deduct_count: parseFloat(document.getElementById('ipCoinCount').value) || 0,
             debt_amount: debt,
             note: document.getElementById('ipNote').value,
