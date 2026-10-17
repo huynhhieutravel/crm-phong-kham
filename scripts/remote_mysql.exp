@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+set timeout 30
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2
+expect "password:"
+send "&m5L9\[eUv\r"
+expect "$ "
+send "sudo mysql -u crm_admin -pCrmAdmin2026@Pass clinic_management\r"
+expect "password for ubutu:"
+send "&m5L9\[eUv\r"
+expect "clinic_management\]> "
+send "[lindex $argv 0]\r"
+expect "clinic_management\]> "
+send "exit\r"
+expect "$ "
+send "exit\r"
+expect eof

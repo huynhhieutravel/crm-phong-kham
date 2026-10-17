@@ -116,11 +116,11 @@
                         <label style="font-size:0.75rem; color:#b45309; font-weight:700;">Số Coin trừ</label>
                     </div>
                     <div style="display:flex; gap:0.25rem; margin-bottom:0.35rem;">
-                        <button type="button" onclick="setIpCoinFast(2, 600000)" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Đông Y 60 phút - 2 Coins">ĐY60</button>
-                        <button type="button" onclick="setIpCoinFast(3, 900000)" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Đông Y 90 phút - 3 Coins">ĐY90</button>
-                        <button type="button" onclick="setIpCoinFast(3, 900000)" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Chiropractic - 3 Coins">Chiro</button>
+                        <button type="button" onclick="setIpCoinFast(2, 600000, 'Đông Y 60 phút')" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Đông Y 60 phút - 2 Coins">ĐY60</button>
+                        <button type="button" onclick="setIpCoinFast(3, 900000, 'Đông Y 90 phút')" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Đông Y 90 phút - 3 Coins">ĐY90</button>
+                        <button type="button" onclick="setIpCoinFast(3, 900000, 'Chiropractic')" style="flex:1; padding:0.2rem; font-size:0.7rem; background:#fef08a; border:1px solid #fde047; border-radius:4px; color:#b45309; font-weight:700; cursor:pointer;" title="Chiropractic - 3 Coins">Chiro</button>
                     </div>
-                    <input type="number" id="ipCoinCount" value="0" min="0" step="1" style="width:100%; padding:0.45rem; border:2px solid #fde047; border-radius:8px; font-weight:800; font-size:1.05rem; color:#b45309; text-align:center; background:white; outline:none; transition:border-color 0.2s; box-sizing:border-box; height:39px;" onfocus="this.style.borderColor='#eab308'" onblur="this.style.borderColor='#fde047'">
+                    <input type="number" id="ipCoinCount" value="0" min="0" step="1" style="width:100%; padding:0.45rem; border:2px solid #fde047; border-radius:8px; font-weight:800; font-size:1.05rem; color:#b45309; text-align:center; background:white; outline:none; transition:border-color 0.2s; box-sizing:border-box; height:39px;" onfocus="this.style.borderColor='#eab308'" onblur="this.style.borderColor='#fde047'" oninput="handleCoinCountInput(this)">
                 </div>
                 <div style="flex:1; min-width:120px;">
                     <label style="font-size:0.75rem; color:#b45309; font-weight:700; display:block; margin-bottom:0.35rem;">Quy đổi (VNĐ)</label>
@@ -411,6 +411,23 @@ function openInvoicePopup(opts) {
         opts.prefill_items.forEach(function(item) {
             ipCartItems.push({ name: item.name, qty: item.qty || 1, price: parseFloat(item.price) || 0, type: item.type || 'service' });
         });
+    } else if (opts.appointment_type) {
+        var apptType = opts.appointment_type;
+        var apptServiceMap = {
+            'dong_y_60': { name: 'Đông Y 60 phút', price: 600000, type: 'service' },
+            'dong_y_90': { name: 'Đông Y 90 phút', price: 900000, type: 'service' },
+            'chiro': { name: 'Chiropractic', price: 900000, type: 'service' }
+        };
+        if (apptServiceMap[apptType]) {
+            var mappedSvc = apptServiceMap[apptType];
+            ipCartItems.push({
+                name: mappedSvc.name,
+                qty: 1,
+                price: mappedSvc.price,
+                type: mappedSvc.type,
+                _isAppointmentService: true
+            });
+        }
     }
     
     // Store extra context
@@ -623,10 +640,78 @@ function formatMoneyInput(el) {
     el.value = formatMoneyOnly(val);
 }
 
-function setIpCoinFast(coins, amount) {
+function setIpCoinFast(coins, amount, serviceName) {
     document.getElementById('ipCoinCount').value = coins;
     document.getElementById('ipCoinAmount').value = formatMoneyOnly(amount);
-    recalcPayment();
+    
+    if (serviceName) {
+        var foundIdx = -1;
+        for (var i = 0; i < ipCartItems.length; i++) {
+            if (ipCartItems[i]._isCoinService || ipCartItems[i]._isAppointmentService) {
+                foundIdx = i;
+                break;
+            }
+        }
+        var coinItem = {
+            name: serviceName,
+            qty: 1,
+            price: amount,
+            type: 'service',
+            _isCoinService: true
+        };
+        if (foundIdx >= 0) {
+            ipCartItems[foundIdx] = coinItem;
+        } else if (ipCartItems.length === 0) {
+            ipCartItems.push(coinItem);
+        } else {
+            var exists = ipCartItems.some(function(it) { return it.name === serviceName; });
+            if (!exists) ipCartItems.push(coinItem);
+        }
+        document.getElementById('ipCash').value = '0';
+        renderCart();
+    } else {
+        recalcPayment();
+    }
+}
+
+function handleCoinCountInput(el) {
+    var coins = parseFloat(el.value) || 0;
+    var amount = coins * 300000;
+    document.getElementById('ipCoinAmount').value = formatMoneyOnly(amount);
+    
+    var foundIdx = -1;
+    for (var i = 0; i < ipCartItems.length; i++) {
+        if (ipCartItems[i]._isCoinService || ipCartItems[i]._isAppointmentService) {
+            foundIdx = i;
+            break;
+        }
+    }
+    if (coins > 0) {
+        var svcName = 'Trị liệu trừ Ví Coin (' + coins + ' Coins)';
+        if (coins === 2) svcName = 'Đông Y 60 phút';
+        else if (coins === 3) svcName = 'Đông Y 90 phút';
+        var coinItem = {
+            name: svcName,
+            qty: 1,
+            price: amount,
+            type: 'service',
+            _isCoinService: true
+        };
+        if (foundIdx >= 0) {
+            ipCartItems[foundIdx] = coinItem;
+        } else if (ipCartItems.length === 0) {
+            ipCartItems.push(coinItem);
+        }
+        document.getElementById('ipCash').value = '0';
+        renderCart();
+    } else {
+        if (foundIdx >= 0) {
+            ipCartItems.splice(foundIdx, 1);
+            renderCart();
+        } else {
+            recalcPayment();
+        }
+    }
 }
 
 function recalcInvoice() {
@@ -643,12 +728,13 @@ function recalcInvoice() {
     document.getElementById('ipSubtotal').textContent = formatVND(subtotal);
     document.getElementById('ipTotal').textContent = formatVND(total);
     
-    // Auto-fill cash to total
+    // Auto-fill cash to total only if no other payment method is set
     var cash = getRawValue('ipCash');
     var transferPersonal = getRawValue('ipTransferPersonal');
     var transferCompany = getRawValue('ipTransferCompany');
     var card = getRawValue('ipCard');
-    if (cash === 0 && transferPersonal === 0 && transferCompany === 0 && card === 0) {
+    var coinVal = getRawValue('ipCoinAmount');
+    if (cash === 0 && transferPersonal === 0 && transferCompany === 0 && card === 0 && coinVal === 0) {
         document.getElementById('ipCash').value = formatMoneyOnly(total);
     }
     recalcPayment();
@@ -682,6 +768,23 @@ function recalcPayment() {
 }
 
 function submitInvoice() {
+    // Fail-safe: if cart is empty but coin count/amount was specified, auto add item
+    var coinCount = parseFloat(document.getElementById('ipCoinCount').value) || 0;
+    var coinVal = getRawValue('ipCoinAmount');
+    if (!ipCartItems.length && coinCount > 0 && coinVal > 0) {
+        var autoName = 'Trị liệu trừ Ví Coin (' + coinCount + ' Coins)';
+        if (coinCount === 2) autoName = 'Đông Y 60 phút';
+        else if (coinCount === 3) autoName = 'Đông Y 90 phút';
+        ipCartItems.push({
+            name: autoName,
+            qty: 1,
+            price: coinVal,
+            type: 'service',
+            _isCoinService: true
+        });
+        renderCart();
+    }
+    
     if (!ipCartItems.length) { alert('Vui lòng chọn ít nhất 1 sản phẩm/dịch vụ'); return; }
     var patientId = document.getElementById('ipPatientId').value;
     if (!patientId) { alert('Thiếu thông tin khách hàng'); return; }

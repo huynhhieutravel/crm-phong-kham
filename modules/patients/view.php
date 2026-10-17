@@ -44,6 +44,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 require_once '../../includes/coin_functions.php';
 $patient_coin_balance = get_patient_coin_balance($db, $id);
 
+// Fetch coin transactions (both wallet owner & beneficiary)
+$coin_stmt = $db->prepare("
+    SELECT ct.id, ct.patient_id, ct.amount, ct.transaction_type, ct.price_paid, ct.note, ct.created_at,
+           u.full_name as cashier_name,
+           inv.id as invoice_id, inv.invoice_no,
+           MIN(a.id) as appointment_id,
+           COALESCE(doc.full_name, u.full_name) as practitioner_name
+    FROM coin_transactions ct
+    LEFT JOIN users u ON ct.created_by = u.id
+    LEFT JOIN invoices inv ON (ct.reference_id = inv.id OR ct.note LIKE CONCAT('%', inv.invoice_no, '%'))
+    LEFT JOIN appointments a ON (a.patient_id = inv.patient_id AND DATE(a.appointment_date) = DATE(inv.created_at))
+    LEFT JOIN users doc ON a.doctor_id = doc.id
+    WHERE ct.patient_id = ? OR ct.note LIKE CONCAT('%BN-', ?, '%')
+    GROUP BY ct.id
+    ORDER BY ct.created_at DESC, ct.id DESC
+");
+$coin_stmt->execute([$id, $id]);
+$coin_transactions = $coin_stmt->fetchAll();
+
+$coin_usage_count = 0;
+$coin_total_used = 0;
+$coin_total_topup = 0;
+foreach ($coin_transactions as $ctx) {
+    if ($ctx['patient_id'] == $id) {
+        if ($ctx['amount'] < 0) {
+            $coin_usage_count++;
+            $coin_total_used += abs((float)$ctx['amount']);
+        } elseif ($ctx['amount'] > 0) {
+            $coin_total_topup += (float)$ctx['amount'];
+        }
+    } else {
+        if ($ctx['amount'] < 0) {
+            $coin_usage_count++;
+            $coin_total_used += abs((float)$ctx['amount']);
+        }
+    }
+}
+$coin_est_value = $patient_coin_balance * 300000;
+
 // Fetch medical sessions
 $stmt = $db->prepare("SELECT s.*, u.full_name as doctor_name FROM medical_sessions s JOIN users u ON s.doctor_id = u.id WHERE s.patient_id = ? ORDER BY s.session_date DESC");
 $stmt->execute([$id]);
@@ -186,7 +225,7 @@ $rules = $stmt->fetchAll();
         </div>
 
         <!-- Active Packages Summary -->
-        <?php if (!empty($active_packages)): ?>
+        <?php if (!empty($active_packages) || $patient_coin_balance > 0 || !empty($coin_transactions)): ?>
         <div style="padding: 1.5rem 2.5rem; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <div style="width: 48px; height: 48px; background: #10b981; color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
@@ -195,16 +234,24 @@ $rules = $stmt->fetchAll();
                 <div>
                     <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #065f46;">Gói Dịch Vụ Đang Kích Hoạt</h3>
                     <div style="font-size: 0.95rem; color: #047857; font-weight: 600; margin-top: 0.25rem;">
-                        Còn <strong style="font-size: 1.1rem;"><?php echo $total_remaining; ?></strong> buổi trong <?php echo count($active_packages); ?> gói
+                        <?php if (!empty($active_packages)): ?>
+                            Còn <strong style="font-size: 1.1rem;"><?php echo $total_remaining; ?></strong> buổi trong <?php echo count($active_packages); ?> gói
+                            <?php if ($patient_coin_balance > 0): ?>
+                                · <strong style="color: #b45309;"><?php echo $patient_coin_balance; ?> Coins</strong> trong Ví
+                            <?php endif; ?>
+                        <?php else: ?>
+                            Đang sử dụng Gói Ví Coin Trị Liệu (<strong><?php echo $patient_coin_balance; ?> Coins</strong>)
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
                 <!-- Coin Wallet Display Card -->
-                <div style="background: linear-gradient(135deg, #fffbebf5, #fef3c7); border: 1px solid #fde68a; padding: 0.75rem 1rem; border-radius: 10px; min-width: 180px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; align-items: center; justify-content: space-between;">
+                <div style="background: linear-gradient(135deg, #fffbebf5, #fef3c7); border: 1px solid #fde68a; padding: 0.75rem 1rem; border-radius: 10px; min-width: 180px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="document.getElementById('coinPackageCard')?.scrollIntoView({behavior: 'smooth'})" title="Bấm để xem chi tiết lịch sử dùng Coin">
                     <div>
-                        <div style="font-size: 0.75rem; font-weight: 800; color: #b45309; text-transform: uppercase;">Ví Coin Tích Điểm</div>
+                        <div style="font-size: 0.75rem; font-weight: 800; color: #b45309; text-transform: uppercase;">Ví Coin Trị Liệu</div>
                         <div style="font-size: 1.2rem; font-weight: 900; color: #d97706;"><i class="fas fa-coins"></i> <?php echo $patient_coin_balance; ?> Coins</div>
                     </div>
+                    <i class="fas fa-arrow-right" style="color: #d97706; margin-left: 0.75rem; font-size: 0.9rem;"></i>
                 </div>
 
                 <?php foreach ($active_packages as $pkg): 
@@ -656,18 +703,140 @@ $rules = $stmt->fetchAll();
                 <div style="margin-bottom: 1.5rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h4 style="margin: 0; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px;"><i class="fas fa-box-open" style="color: #6366f1;"></i> <?php echo __('patient.pkg.title', 'Gói Dịch Vụ'); ?></h4>
-                        <?php if (!empty($all_packages)): ?>
                         <span style="font-size: 0.7rem; font-weight: 800; background: #eef2ff; color: #4f46e5; padding: 0.2rem 0.6rem; border-radius: 50px;">
-                            <?php echo count($active_packages); ?> <?php echo __('patient.pkg.pkg_unit', 'gói'); ?> · <?php echo $total_remaining; ?> <?php echo __('patient.pkg.session_unit', 'buổi'); ?>
+                            <?php if (!empty($active_packages)): ?>
+                                <?php echo count($active_packages); ?> <?php echo __('patient.pkg.pkg_unit', 'gói'); ?> · <?php echo $total_remaining; ?> <?php echo __('patient.pkg.session_unit', 'buổi'); ?>
+                            <?php endif; ?>
+                            <?php if ($patient_coin_balance > 0): ?>
+                                <?php echo (!empty($active_packages) ? ' · ' : ''); ?><?php echo $patient_coin_balance; ?> Coins
+                            <?php endif; ?>
                         </span>
-                        <?php endif; ?>
                     </div>
 
+                    <!-- GÓI VÍ COIN TRỊ LIỆU CARD -->
+                    <?php if ($patient_coin_balance > 0 || !empty($coin_transactions)): ?>
+                        <?php
+                            $coin_cap = max($coin_total_topup, $patient_coin_balance + $coin_total_used);
+                            if ($coin_cap <= 0) $coin_cap = max(1, $patient_coin_balance);
+                            $coin_pct = min(100, round(($coin_total_used / $coin_cap) * 100));
+                            $coin_bar_color = $coin_pct >= 80 ? '#ef4444' : ($coin_pct >= 50 ? '#f59e0b' : '#10b981');
+                        ?>
+                        <div id="coinPackageCard" style="margin-bottom: 0.85rem; border: 1px solid #fde68a; border-radius: 14px; overflow: hidden; background: white; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.08);">
+                            <!-- Coin Card Header -->
+                            <div onclick="toggleCoinDetail()" style="padding: 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); transition: background 0.2s;" onmouseover="this.style.background='#fef08a'" onmouseout="this.style.background='linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)'">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #fde047; border: 1px solid #eab308; display: flex; align-items: center; justify-content: center; color: #b45309; font-size: 1.15rem; flex-shrink: 0; box-shadow: 0 2px 6px rgba(234, 179, 8, 0.3);">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                                        <span style="font-weight: 800; font-size: 0.88rem; color: #92400e;">Gói Ví Coin Trị Liệu</span>
+                                        <span style="font-size: 0.6rem; font-weight: 800; background: <?php echo $patient_coin_balance > 0 ? '#dcfce7' : '#f1f5f9'; ?>; color: <?php echo $patient_coin_balance > 0 ? '#15803d' : '#64748b'; ?>; padding: 0.12rem 0.45rem; border-radius: 4px; text-transform: uppercase;">
+                                            <?php echo $patient_coin_balance > 0 ? 'ACTIVE' : 'HẾT COIN'; ?>
+                                        </span>
+                                    </div>
+                                    <!-- Progress bar -->
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div style="flex: 1; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                                            <div style="background: <?php echo $coin_bar_color; ?>; height: 100%; width: <?php echo $coin_pct; ?>%; border-radius: 3px; transition: width 0.3s;"></div>
+                                        </div>
+                                        <span style="font-size: 0.72rem; font-weight: 800; color: #b45309; white-space: nowrap;">
+                                            <?php echo $patient_coin_balance; ?>/<?php echo $coin_cap; ?> Coins
+                                        </span>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-up" id="coinIcon" style="color: #b45309; font-size: 0.75rem; transition: transform 0.3s;"></i>
+                            </div>
+
+                            <!-- Coin Card Body -->
+                            <div id="coinDetail" style="display: block; border-top: 1px solid #fde68a;">
+                                <div style="padding: 0.75rem 1rem; background: #fffdf5; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.75rem; border-bottom: 1px solid #fef3c7;">
+                                    <div><span style="color: #78716c;">Số dư Coin:</span> <strong style="color: #b45309; font-size: 0.85rem;"><?php echo $patient_coin_balance; ?> Coins</strong></div>
+                                    <div><span style="color: #78716c;">Ước tính giá trị:</span> <strong style="color: #059669;"><?php echo number_format($coin_est_value, 0, ',', '.'); ?>đ</strong></div>
+                                    <div><span style="color: #78716c;">Tổng nạp/quy đổi:</span> <strong><?php echo $coin_total_topup; ?> Coins</strong></div>
+                                    <div><span style="color: #78716c;">Đã sử dụng:</span> <strong style="color: #dc2626;"><?php echo $coin_total_used; ?> Coins (<?php echo $coin_usage_count; ?> lượt)</strong></div>
+                                </div>
+
+                                <!-- Usage History -->
+                                <div style="padding: 0.75rem 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                                        <div style="font-size: 0.7rem; font-weight: 800; color: #92400e; text-transform: uppercase;">
+                                            <i class="fas fa-history" style="color: #d97706;"></i> Lịch sử dùng Coin (<?php echo count($coin_transactions); ?> giao dịch)
+                                        </div>
+                                        <a href="../sales/topup.php?patient_id=<?php echo $id; ?>" style="font-size: 0.65rem; font-weight: 700; color: #d97706; text-decoration: none; padding: 0.15rem 0.45rem; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px;">+ Nạp Coin</a>
+                                    </div>
+
+                                    <?php if (empty($coin_transactions)): ?>
+                                        <div style="text-align: center; padding: 0.75rem; color: #94a3b8; font-size: 0.8rem; font-style: italic;">Chưa có giao dịch Coin nào</div>
+                                    <?php else: ?>
+                                        <?php foreach ($coin_transactions as $ci => $ctx): 
+                                            $is_usage = ($ctx['amount'] < 0);
+                                            $is_beneficiary = ($ctx['patient_id'] != $id);
+                                            $dot_color = $is_usage ? '#ef4444' : '#10b981';
+                                            $badge_bg = $is_usage ? '#fef2f2' : '#f0fdf4';
+                                            $badge_color = $is_usage ? '#b91c1c' : '#15803d';
+                                            $amt_label = ($ctx['amount'] > 0 ? '+' : '') . (float)$ctx['amount'] . ' Coins';
+                                            $is_extra = ($ci >= 5);
+                                        ?>
+                                        <div class="<?php echo $is_extra ? 'coin-history-more' : ''; ?>" style="display: <?php echo $is_extra ? 'none' : 'flex'; ?>; align-items: flex-start; gap: 0.5rem; padding: 0.45rem 0; border-bottom: 1px solid #f8fafc; font-size: 0.75rem;">
+                                            <div style="width: 7px; height: 7px; background: <?php echo $dot_color; ?>; border-radius: 50%; margin-top: 5px; flex-shrink: 0;"></div>
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.25rem;">
+                                                    <div style="font-weight: 700; color: #1e293b;">
+                                                        <?php echo date('d/m/Y H:i', strtotime($ctx['created_at'])); ?>
+                                                        <?php if ($ctx['practitioner_name']): ?>
+                                                            <span style="color: #64748b; font-weight: 600;">· <?php echo e($ctx['practitioner_name']); ?></span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <span style="font-weight: 800; font-size: 0.7rem; background: <?php echo $badge_bg; ?>; color: <?php echo $badge_color; ?>; padding: 0.1rem 0.35rem; border-radius: 4px; white-space: nowrap;">
+                                                        <?php echo $amt_label; ?>
+                                                    </span>
+                                                </div>
+                                                
+                                                <div style="font-size: 0.7rem; color: #64748b; margin-top: 0.2rem; line-height: 1.3;">
+                                                    <?php if ($is_beneficiary): ?>
+                                                        <span style="color: #4f46e5; font-weight: 700;">[Dùng từ ví BN-<?php echo $ctx['patient_id']; ?>]</span>
+                                                    <?php endif; ?>
+                                                    <?php echo e($ctx['note']); ?>
+                                                    <?php if ($ctx['price_paid'] > 0): ?>
+                                                        <span style="color: #059669; font-weight: 700;">(Đã thu: <?php echo number_format($ctx['price_paid'], 0, ',', '.'); ?>đ)</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style="display: flex; gap: 0.25rem; flex-shrink: 0; margin-top: 2px;">
+                                                <?php if ($ctx['invoice_id']): ?>
+                                                    <a href="javascript:void(0)" onclick="openInvoiceView(<?php echo $ctx['invoice_id']; ?>)" title="Xem phiếu tính tiền <?php echo e($ctx['invoice_no']); ?>" style="width: 22px; height: 22px; background: #fef3c7; color: #b45309; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.65rem;">
+                                                        <i class="fas fa-file-invoice-dollar"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                                <?php if ($ctx['appointment_id']): ?>
+                                                    <a href="../appointments/view.php?id=<?php echo $ctx['appointment_id']; ?>" title="Xem lịch hẹn" style="width: 22px; height: 22px; background: #eef2ff; color: #6366f1; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.65rem;">
+                                                        <i class="fas fa-calendar-check"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+
+                                        <?php if (count($coin_transactions) > 5): ?>
+                                            <a href="javascript:void(0)" id="btnMoreCoinHistory" onclick="toggleMoreCoinHistory()" style="display: block; text-align: center; padding: 0.4rem; font-size: 0.7rem; color: #d97706; font-weight: 700; text-decoration: none; margin-top: 0.25rem;">
+                                                Xem tất cả <?php echo count($coin_transactions); ?> giao dịch Coin →
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- TRADITIONAL SESSION PACKAGES -->
                     <?php if (empty($all_packages)): ?>
+                        <?php if ($patient_coin_balance <= 0 && empty($coin_transactions)): ?>
                         <div style="padding: 2rem; text-align: center; background: #f8fafc; border-radius: 16px; border: 1px dashed #e2e8f0;">
                             <i class="fas fa-box-open" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
                             <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;"><?php echo __('patient.pkg.no_package', 'Chưa mua gói nào'); ?></p>
                         </div>
+                        <?php endif; ?>
                     <?php else: ?>
                         <?php foreach ($all_packages as $pi => $pkg):
                             $total_sess = $pkg['pkg_total_sessions'] ?: 1;
@@ -704,7 +873,7 @@ $rules = $stmt->fetchAll();
                             </div>
 
                             <!-- Package Detail (hidden by default, except first active) -->
-                            <div id="pkgDetail<?php echo $pi; ?>" style="display: <?php echo ($pi === 0 && $is_active) ? 'block' : 'none'; ?>; border-top: 1px solid #f1f5f9;">
+                            <div id="pkgDetail<?php echo $pi; ?>" style="display: <?php echo ($pi === 0 && $is_active && $patient_coin_balance <= 0) ? 'block' : 'none'; ?>; border-top: 1px solid #f1f5f9;">
                                 <div style="padding: 0.75rem 1rem; background: #f8fafc; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.75rem;">
                                     <div><span style="color: #64748b;"><?php echo __('patient.pkg.sessions_remaining', 'Buổi còn lại:'); ?></span> <strong style="color: #0f172a;"><?php echo $pkg['sessions_remaining']; ?></strong></div>
                                     <div><span style="color: #64748b;"><?php echo __('patient.pkg.purchase_date', 'Ngày mua:'); ?></span> <strong><?php echo date('d/m/Y', strtotime($pkg['purchase_date'])); ?></strong></div>
@@ -752,9 +921,14 @@ $rules = $stmt->fetchAll();
                     <?php endif; ?>
                 </div>
 
-                <a href="../sales/add_package.php?patient_id=<?php echo $id; ?>" class="btn shadow-sm" style="width: 100%; justify-content: center; background: #0f172a; color: white;">
-                    <i class="fas fa-cart-plus"></i> <?php echo __('patient.finance.new_package'); ?>
-                </a>
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="../sales/topup.php?patient_id=<?php echo $id; ?>" class="btn shadow-sm" style="flex: 1; justify-content: center; background: #d97706; color: white; font-weight: 700; font-size: 0.85rem; border: none;">
+                        <i class="fas fa-coins"></i> Nạp Ví Coin
+                    </a>
+                    <a href="../sales/add_package.php?patient_id=<?php echo $id; ?>" class="btn shadow-sm" style="flex: 1; justify-content: center; background: #0f172a; color: white; font-weight: 700; font-size: 0.85rem; border: none;">
+                        <i class="fas fa-cart-plus"></i> <?php echo __('patient.finance.new_package'); ?>
+                    </a>
+                </div>
             </div>
 
             <!-- Re-exam & Follow-up Section -->
@@ -966,6 +1140,27 @@ function togglePkgDetail(idx) {
     }
 }
 
+function toggleCoinDetail() {
+    var detail = document.getElementById('coinDetail');
+    var icon = document.getElementById('coinIcon');
+    if (!detail) return;
+    if (detail.style.display === 'none') {
+        detail.style.display = 'block';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    } else {
+        detail.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    }
+}
+
+function toggleMoreCoinHistory() {
+    var rows = document.querySelectorAll('.coin-history-more');
+    var btn = document.getElementById('btnMoreCoinHistory');
+    var isHidden = rows.length > 0 && (rows[0].style.display === 'none' || rows[0].style.display === '');
+    rows.forEach(function(r) { r.style.display = isHidden ? 'flex' : 'none'; });
+    if (btn) btn.innerHTML = isHidden ? 'Thu gọn lịch sử ▲' : 'Xem tất cả ' + (<?php echo count($coin_transactions); ?>) + ' giao dịch Coin →';
+}
+
 function switchMedicalTab(tabId, btn) {
     document.querySelectorAll('.med-tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -995,4 +1190,5 @@ function openLightbox(src) {
 }
 </script>
 
+<?php include '../../includes/invoice_popup.php'; ?>
 <?php require_once '../../templates/footer.php'; ?>

@@ -568,7 +568,7 @@ function setPeriod(event, p) {
                                     <?php endif; ?>
                                     
                                     <?php if ($a['patient_id']): ?>
-                                        <a href="#" onclick="openInvoicePopup({patient_id: <?php echo $a['patient_id']; ?>, patient_name: '<?php echo addslashes(e($a['contact_name'])); ?>', technician_id: <?php echo (int)$a['doctor_id']; ?>, appointment_id: <?php echo $a['id']; ?>}); return false;" class="btn btn-sm" title="<?php echo __('appointments.btn_bill'); ?>" style="background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; padding: 0.5rem 0.75rem; border-radius: 10px; font-weight: 700; display:flex; align-items:center; gap:0.4rem; white-space:nowrap;">
+                                        <a href="#" onclick="openInvoicePopup({patient_id: <?php echo $a['patient_id']; ?>, patient_name: '<?php echo addslashes(e($a['contact_name'])); ?>', technician_id: <?php echo (int)$a['doctor_id']; ?>, appointment_id: <?php echo $a['id']; ?>, appointment_type: '<?php echo addslashes($a['type'] ?? ''); ?>'}); return false;" class="btn btn-sm" title="<?php echo __('appointments.btn_bill'); ?>" style="background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; padding: 0.5rem 0.75rem; border-radius: 10px; font-weight: 700; display:flex; align-items:center; gap:0.4rem; white-space:nowrap;">
                                             <i class="fas fa-file-invoice-dollar"></i> <?php echo __('appointments.btn_bill'); ?>
                                         </a>
                                     <?php endif; ?>

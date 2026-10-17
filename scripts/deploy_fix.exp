@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+set timeout 60
+set password {&m5L9[eUv}
+
+puts "=== 1. UPLOADING FILES TO /tmp/ ==="
+spawn scp -o StrictHostKeyChecking=no includes/invoice_popup.php modules/appointments/index.php modules/patients/view.php ubutu@112.78.15.2:/tmp/
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+puts "=== 2. MOVING FILES AND SETTING PERMISSIONS ==="
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sudo -S bash -c '\
+    cp /tmp/invoice_popup.php /var/www/crm_phong_kham/includes/invoice_popup.php && \
+    cp /tmp/index.php /var/www/crm_phong_kham/modules/appointments/index.php && \
+    cp /tmp/view.php /var/www/crm_phong_kham/modules/patients/view.php && \
+    chown www-data:www-data /var/www/crm_phong_kham/includes/invoice_popup.php && \
+    chown www-data:www-data /var/www/crm_phong_kham/modules/appointments/index.php && \
+    chown www-data:www-data /var/www/crm_phong_kham/modules/patients/view.php && \
+    rm -f /tmp/invoice_popup.php /tmp/index.php /tmp/view.php && \
+    echo DEPLOY_SUCCESS\
+'"
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    "DEPLOY_SUCCESS" {
+        puts "=== DEPLOY SUCCESSFUL! ==="
+    }
+    eof
+}
