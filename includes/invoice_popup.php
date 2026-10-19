@@ -690,17 +690,18 @@ function handleCoinCountInput(el) {
     var amount = coins * 300000;
     document.getElementById('ipCoinAmount').value = formatMoneyOnly(amount);
     
+    var svcName = 'Trị liệu trừ Ví Coin (' + coins + ' Coins)';
+    if (coins === 2) svcName = 'Đông Y 60 phút';
+    else if (coins === 3) svcName = 'Đông Y 90 phút';
+    
     var foundIdx = -1;
     for (var i = 0; i < ipCartItems.length; i++) {
-        if (ipCartItems[i]._isCoinService || ipCartItems[i]._isAppointmentService) {
+        if (ipCartItems[i]._isCoinService || ipCartItems[i]._isAppointmentService || ipCartItems[i].name.indexOf(svcName) !== -1 || svcName.indexOf(ipCartItems[i].name) !== -1) {
             foundIdx = i;
             break;
         }
     }
     if (coins > 0) {
-        var svcName = 'Trị liệu trừ Ví Coin (' + coins + ' Coins)';
-        if (coins === 2) svcName = 'Đông Y 60 phút';
-        else if (coins === 3) svcName = 'Đông Y 90 phút';
         var coinItem = {
             name: svcName,
             qty: 1,
@@ -712,14 +713,20 @@ function handleCoinCountInput(el) {
             ipCartItems[foundIdx] = coinItem;
         } else if (ipCartItems.length === 0) {
             ipCartItems.push(coinItem);
+        } else {
+            var exists = ipCartItems.some(function(it) { return it.name === svcName; });
+            if (!exists && ipCartItems.length === 1 && ipCartItems[0].price === amount) {
+                ipCartItems[0]._isCoinService = true;
+            }
         }
         document.getElementById('ipCash').value = '0';
         renderCart();
     } else {
-        if (foundIdx >= 0) {
+        if (foundIdx >= 0 && ipCartItems[foundIdx]._isCoinService && !ipCartItems[foundIdx]._isAppointmentService) {
             ipCartItems.splice(foundIdx, 1);
             renderCart();
         } else {
+            if (foundIdx >= 0) ipCartItems[foundIdx]._isCoinService = false;
             recalcInvoice();
         }
     }

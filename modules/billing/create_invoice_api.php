@@ -45,6 +45,17 @@ $payment_id = !empty($input['payment_id']) ? (int)$input['payment_id'] : null;
 
 $coin_deduct_patient_id = (int)($input['coin_deduct_patient_id'] ?? 0);
 $coin_deduct_count = (int)($input['coin_deduct_count'] ?? 0);
+
+if ($coin_deduct_count > 0 && !$coin_deduct_patient_id) {
+    $coin_deduct_patient_id = $patient_id;
+}
+if ($coin_deduct_count > 0 && $package_deduct == 0) {
+    $package_deduct = $coin_deduct_count * 300000;
+}
+if ($package_deduct > 0 && $coin_deduct_count == 0) {
+    $coin_deduct_count = (int)round($package_deduct / 300000);
+}
+
 if (!$patient_id || empty($items)) {
     echo json_encode(['success' => false, 'error' => 'Thiếu thông tin khách hàng hoặc sản phẩm']);
     exit;
