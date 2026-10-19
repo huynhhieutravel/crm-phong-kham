@@ -26,10 +26,15 @@ $is_filtered = !empty($period) && $period !== 'today';
 $stmt = $db->prepare("
     SELECT 
         COUNT(*) as total_count,
-        COALESCE(SUM(total_amount), 0) as total_revenue,
+        COALESCE(SUM(total_amount), 0) as total_billing_value,
+        COALESCE(SUM(package_deduct), 0) as total_package_deduct,
         COALESCE(SUM(cash_amount), 0) as total_cash,
         COALESCE(SUM(transfer_personal_amount), 0) as total_transfer_personal,
         COALESCE(SUM(transfer_company_amount), 0) as total_transfer_company,
+        COALESCE(SUM(CASE 
+            WHEN transfer_personal_amount = 0 AND transfer_company_amount = 0 THEN transfer_amount 
+            ELSE 0 
+        END), 0) as total_transfer_other,
         COALESCE(SUM(card_amount), 0) as total_card,
         COALESCE(SUM(debt_amount), 0) as total_debt
     FROM invoices 
@@ -63,8 +68,14 @@ $stmt = $db->prepare("
 $stmt->execute([$start, $end]);
 $pkg_transactions = $stmt->fetchAll();
 
-// Tổng thực thu = Phiếu lẻ + Bán gói
-$grand_total = (float)$stats['total_revenue'] + $total_package_revenue;
+// Tổng thực thu = Tiền thực thu từ phiếu lẻ (Tiền mặt + CK + Thẻ) + Bán gói
+$actual_invoice_collected = (float)$stats['total_cash'] 
+    + (float)$stats['total_transfer_personal'] 
+    + (float)$stats['total_transfer_company'] 
+    + (float)$stats['total_transfer_other'] 
+    + (float)$stats['total_card'];
+
+$grand_total = $actual_invoice_collected + $total_package_revenue;
 
 // Invoices list
 $stmt = $db->prepare("
@@ -89,8 +100,8 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
 <style>
 .bill-outer { max-width: 1400px; width: 100%; }
 
-.kpi-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1.25rem; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 0.5rem; }
-@media (max-width: 1200px) { .kpi-row { grid-template-columns: repeat(4, 1fr); } }
+.kpi-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 1.25rem; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 0.5rem; }
+@media (max-width: 1400px) { .kpi-row { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 900px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
 .kpi-card {
     padding: 1.5rem; border-radius: 18px; color: white; position: relative; overflow: hidden;
@@ -221,7 +232,7 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
             <div class="kpi-icon">⭐</div>
             <div class="kpi-label">TỔNG THỰC THU</div>
             <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($grand_total); ?></div>
-            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Gói + Lẻ</div>
+            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Tiền vào quỹ thực tế</div>
         </div>
         <div class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6); min-width: 140px;">
             <div class="kpi-icon">📦</div>
@@ -238,7 +249,7 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
         <div class="kpi-card" style="background:linear-gradient(135deg,#3b82f6,#60a5fa); min-width: 140px;">
             <div class="kpi-icon">🏦</div>
             <div class="kpi-label">CK CÁ NHÂN</div>
-            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_transfer_personal']); ?></div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money((float)$stats['total_transfer_personal'] + (float)$stats['total_transfer_other']); ?></div>
             <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
         </div>
         <div class="kpi-card" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa); min-width: 140px;">
@@ -258,6 +269,12 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
             <div class="kpi-label">CÔNG NỢ</div>
             <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_debt']); ?></div>
             <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Chưa thu đủ</div>
+        </div>
+        <div class="kpi-card" style="background:linear-gradient(135deg,#d97706,#b45309); min-width: 140px;">
+            <div class="kpi-icon">🪙</div>
+            <div class="kpi-label">TRỪ COIN / GÓI</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_package_deduct']); ?></div>
+            <div style="font-size:0.7rem; opacity:0.8; margin-top:0.2rem;">Khách đã dùng</div>
         </div>
     </div>
 
@@ -293,6 +310,10 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
                         $items = json_decode($inv['items'], true);
                         $first_item = $items[0]['name'] ?? '—';
                         $more = count($items) > 1 ? ' +' . (count($items)-1) : '';
+                        $pkg_deduct = floatval($inv['package_deduct'] ?? 0);
+                        $total_val = floatval($inv['total_amount'] ?? 0);
+                        $net_amount = max(0, $total_val - $pkg_deduct);
+
                         $status_map = [
                             'paid' => ['label' => __('billing.status.paid'), 'bg' => '#dcfce7', 'color' => '#166534'],
                             'partial' => ['label' => __('billing.status.partial'), 'bg' => '#fef3c7', 'color' => '#92400e'],
@@ -310,7 +331,18 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
                         <td>
                             <span style="font-size:0.85rem; <?php echo $inv['status'] === 'cancelled' ? 'text-decoration: line-through; color: #94a3b8;' : ''; ?>"><?php echo e($first_item . $more); ?></span>
                         </td>
-                        <td style="text-align:right; font-weight:800; color:#1e293b; <?php echo $inv['status'] === 'cancelled' ? 'text-decoration: line-through; color: #94a3b8;' : ''; ?>"><?php echo format_money($inv['total_amount']); ?></td>
+                        <td style="text-align:right; font-weight:800; color:#1e293b; <?php echo $inv['status'] === 'cancelled' ? 'text-decoration: line-through; color: #94a3b8;' : ''; ?>">
+                            <?php if ($pkg_deduct > 0): ?>
+                                <div style="font-size: 0.95rem; color: <?php echo $net_amount == 0 ? '#15803d' : '#1e293b'; ?>;">
+                                    <?php echo format_money($net_amount); ?>
+                                </div>
+                                <div style="font-size: 0.72rem; color: #b45309; font-weight: 700; margin-top: 2px;">
+                                    <i class="fas fa-coins" style="color: #eab308;"></i> Trừ Coin: <?php echo format_money($pkg_deduct); ?>
+                                </div>
+                            <?php else: ?>
+                                <?php echo format_money($inv['total_amount']); ?>
+                            <?php endif; ?>
+                        </td>
                         <td>
                             <select onchange="updateInvoiceStatus(<?php echo $inv['id']; ?>, this.value)" style="font-size:0.75rem; font-weight:700; padding:0.2rem 0.5rem; border-radius:6px; border:1px solid #e2e8f0; background:<?php echo $st['bg']; ?>; color:<?php echo $st['color']; ?>; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; text-align:center;">
                                 <?php foreach($status_map as $key => $val): ?>

@@ -3,7 +3,7 @@ set timeout 60
 set password {&m5L9[eUv}
 
 puts "=== 1. UPLOADING FILES TO /tmp/ ==="
-spawn scp -o StrictHostKeyChecking=no includes/invoice_popup.php modules/billing/create_invoice_api.php modules/billing/get_invoice_api.php modules/billing/print_invoice.php ubutu@112.78.15.2:/tmp/
+spawn scp -o StrictHostKeyChecking=no includes/invoice_popup.php modules/billing/create_invoice_api.php modules/billing/get_invoice_api.php modules/billing/print_invoice.php modules/billing/index.php modules/reports/daily_revenue.php ubutu@112.78.15.2:/tmp/
 expect {
     "*assword:*" {
         send "$password\r"
@@ -18,11 +18,15 @@ spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2 "echo '&m5L9\[eUv' | sud
     cp /tmp/create_invoice_api.php /var/www/crm_phong_kham/modules/billing/create_invoice_api.php && \
     cp /tmp/get_invoice_api.php /var/www/crm_phong_kham/modules/billing/get_invoice_api.php && \
     cp /tmp/print_invoice.php /var/www/crm_phong_kham/modules/billing/print_invoice.php && \
+    cp /tmp/index.php /var/www/crm_phong_kham/modules/billing/index.php && \
+    cp /tmp/daily_revenue.php /var/www/crm_phong_kham/modules/reports/daily_revenue.php && \
     chown www-data:www-data /var/www/crm_phong_kham/includes/invoice_popup.php && \
     chown www-data:www-data /var/www/crm_phong_kham/modules/billing/create_invoice_api.php && \
     chown www-data:www-data /var/www/crm_phong_kham/modules/billing/get_invoice_api.php && \
     chown www-data:www-data /var/www/crm_phong_kham/modules/billing/print_invoice.php && \
-    rm -f /tmp/invoice_popup.php /tmp/create_invoice_api.php /tmp/get_invoice_api.php /tmp/print_invoice.php && \
+    chown www-data:www-data /var/www/crm_phong_kham/modules/billing/index.php && \
+    chown www-data:www-data /var/www/crm_phong_kham/modules/reports/daily_revenue.php && \
+    rm -f /tmp/invoice_popup.php /tmp/create_invoice_api.php /tmp/get_invoice_api.php /tmp/print_invoice.php /tmp/index.php /tmp/daily_revenue.php && \
     echo DEPLOY_SUCCESS\
 '"
 expect {

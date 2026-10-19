@@ -495,7 +495,7 @@ $all_invoices = $stmt->fetchAll();
                                                 <span style="font-size: 0.7rem; background: #dbeafe; color: #2563eb; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">CK</span>
                                             <?php endif; ?>
                                             <?php if ($inv['package_deduct'] > 0): ?>
-                                                <span style="font-size: 0.7rem; background: #f3e8ff; color: #7e22ce; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">Trừ Gói</span>
+                                                <span style="font-size: 0.7rem; background: #fef3c7; color: #b45309; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">Trừ Coin / Gói</span>
                                             <?php endif; ?>
                                             <?php if ($inv['debt_amount'] > 0): ?>
                                                 <span style="font-size: 0.7rem; background: #fee2e2; color: #dc2626; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">Ghi Nợ</span>
@@ -506,7 +506,16 @@ $all_invoices = $stmt->fetchAll();
                                         </div>
                                     </td>
                                     <td style="padding: 0.6rem; text-align: right; font-weight: 800; color: #1e293b; font-size: 1.05rem;">
-                                        <?php echo format_money($inv['total_amount']); ?>
+                                        <?php 
+                                        $pkg_ded = floatval($inv['package_deduct'] ?? 0);
+                                        $net_col = max(0, floatval($inv['total_amount']) - $pkg_ded);
+                                        ?>
+                                        <?php if ($pkg_ded > 0): ?>
+                                            <div style="color: <?php echo $net_col == 0 ? '#15803d' : '#1e293b'; ?>;"><?php echo format_money($net_col); ?></div>
+                                            <div style="font-size: 0.7rem; color: #b45309; font-weight: 700;"><i class="fas fa-coins" style="color: #eab308;"></i> Trừ Coin: <?php echo format_money($pkg_ded); ?></div>
+                                        <?php else: ?>
+                                            <?php echo format_money($inv['total_amount']); ?>
+                                        <?php endif; ?>
                                     </td>
                                     <td style="padding: 0.6rem; font-size: 0.8rem; color: #64748b;"><?php echo e($inv['created_by_name']); ?></td>
                                 </tr>
