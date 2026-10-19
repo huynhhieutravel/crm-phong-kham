@@ -34,6 +34,17 @@ try {
         exit;
     }
     
+    // Check coin transaction
+    $coinStmt = $db->prepare("
+        SELECT ct.*, p.full_name as coin_patient_name, p.phone as coin_patient_phone
+        FROM coin_transactions ct
+        LEFT JOIN patients p ON ct.patient_id = p.id
+        WHERE (ct.reference_id = ? OR ct.note LIKE ?) AND ct.transaction_type = 'usage'
+        ORDER BY ct.id DESC LIMIT 1
+    ");
+    $coinStmt->execute([$invoice['id'], "%{$invoice['invoice_no']}%"]);
+    $invoice['coin_info'] = $coinStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
     $invoice['items'] = json_decode($invoice['items'], true);
     echo json_encode(['success' => true, 'invoice' => $invoice]);
 } catch (Exception $e) {

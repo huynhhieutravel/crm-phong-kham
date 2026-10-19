@@ -27,6 +27,21 @@ if (!$invoice) {
     die('Phiếu không tồn tại.');
 }
 
+// Check coin transaction
+$coinStmt = $db->prepare("
+    SELECT ct.*, p.full_name as coin_patient_name, p.phone as coin_patient_phone
+    FROM coin_transactions ct
+    LEFT JOIN patients p ON ct.patient_id = p.id
+    WHERE (ct.reference_id = ? OR ct.note LIKE ?) AND ct.transaction_type = 'usage'
+    ORDER BY ct.id DESC LIMIT 1
+");
+$coinStmt->execute([$invoice['id'], "%{$invoice['invoice_no']}%"]);
+$coin_info = $coinStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+$package_deduct = floatval($invoice['package_deduct'] ?? 0);
+$coin_count = $coin_info ? abs(floatval($coin_info['amount'])) : ($package_deduct > 0 ? round($package_deduct / 300000) : 0);
+$net_payable = max(0, floatval($invoice['total_amount']) - $package_deduct);
+
 $items = json_decode($invoice['items'], true) ?: [];
 $invoice_date = $invoice['created_at'] ? date('d/m/Y', strtotime($invoice['created_at'])) : date('d/m/Y');
 $invoice_time = $invoice['created_at'] ? date('H:i', strtotime($invoice['created_at'])) : date('H:i');
@@ -299,6 +314,8 @@ $receipt_code = 'PTT' . date('ym', strtotime($invoice['created_at'] ?: 'now')) .
                         <?php echo e($item['name']); ?>
                         <?php if (!empty($item['type']) && $item['type'] === 'use_package'): ?>
                             <span style="font-size: 11px; background: #eef2ff; color: #4f46e5; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">Gói</span>
+                        <?php elseif (!empty($item['_isCoinService']) || ($package_deduct > 0 && count($items) === 1)): ?>
+                            <span style="font-size: 11px; background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: 700;">🪙 Ví Coin</span>
                         <?php endif; ?>
                     </td>
                     <td style="text-align: center;"><?php echo $qty; ?></td>
@@ -312,7 +329,7 @@ $receipt_code = 'PTT' . date('ym', strtotime($invoice['created_at'] ?: 'now')) .
         <!-- TOTALS -->
         <div class="totals-box">
             <div class="total-row">
-                <span style="color: #64748b;">Tổng cộng:</span>
+                <span style="color: #64748b;">Tổng giá trị dịch vụ:</span>
                 <span style="font-weight: 700;"><?php echo format_money($invoice['subtotal']); ?></span>
             </div>
             <?php if (floatval($invoice['discount_amount']) > 0): ?>
@@ -321,15 +338,44 @@ $receipt_code = 'PTT' . date('ym', strtotime($invoice['created_at'] ?: 'now')) .
                 <span style="font-weight: 700;">- <?php echo format_money($invoice['discount_amount']); ?></span>
             </div>
             <?php endif; ?>
+            <?php if ($package_deduct > 0 || $coin_count > 0): ?>
+            <div class="total-row" style="color: #b45309; font-weight: 700; background: #fefce8; padding: 6px 8px; border-radius: 6px; margin: 4px 0;">
+                <span>🪙 Trừ Ví Coin<?php echo $coin_count > 0 ? " ($coin_count Coins)" : ""; ?>:</span>
+                <span>- <?php echo format_money($package_deduct); ?></span>
+            </div>
+            <?php endif; ?>
             <div class="total-row grand">
-                <span>THÀNH TIỀN:</span>
-                <span><?php echo format_money($invoice['total_amount']); ?></span>
+                <span>TIỀN THỰC THU:</span>
+                <span style="color: <?php echo $net_payable == 0 ? '#15803d' : '#4f46e5'; ?>;"><?php echo format_money($net_payable); ?></span>
             </div>
         </div>
 
         <!-- PAYMENT BREAKDOWN -->
         <div class="payment-box">
             <div class="payment-title">Hình thức thanh toán</div>
+            <?php if ($package_deduct > 0 || $coin_info): ?>
+            <div style="background: #fffbeb; border: 1px solid #fde047; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; font-weight: 800; color: #b45309; font-size: 14px;">
+                    <span>🪙 Thanh toán bằng Ví Coin:</span>
+                    <span><?php echo $coin_count > 0 ? "$coin_count Coins " : ""; ?>(<?php echo format_money($package_deduct); ?>)</span>
+                </div>
+                <?php if (!empty($coin_info['coin_patient_name']) && $coin_info['patient_id'] != $invoice['patient_id']): ?>
+                <div style="font-size: 12px; color: #92400e; margin-top: 5px; font-weight: 600;">
+                    • Nguồn Coin: Ví của khách hàng <strong><?php echo e($coin_info['coin_patient_name']); ?></strong> (Mã: BN-<?php echo $coin_info['patient_id']; ?>)
+                </div>
+                <?php elseif (!empty($coin_info['coin_patient_name'])): ?>
+                <div style="font-size: 12px; color: #92400e; margin-top: 5px;">
+                    • Nguồn Coin: Trừ từ Ví Coin của bệnh nhân
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($coin_info['note'])): ?>
+                <div style="font-size: 12px; color: #a16207; margin-top: 3px; font-style: italic;">
+                    • Giao dịch: <?php echo e($coin_info['note']); ?>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
             <?php if (floatval($invoice['cash_amount']) > 0): ?>
             <div class="payment-row">
                 <span>💵 Tiền mặt</span>
@@ -348,16 +394,35 @@ $receipt_code = 'PTT' . date('ym', strtotime($invoice['created_at'] ?: 'now')) .
                 <span style="font-weight: 700;"><?php echo format_money($invoice['transfer_company_amount']); ?></span>
             </div>
             <?php endif; ?>
+            <?php if (floatval($invoice['card_amount']) > 0): ?>
+            <div class="payment-row">
+                <span>💳 Quẹt thẻ</span>
+                <span style="font-weight: 700;"><?php echo format_money($invoice['card_amount']); ?></span>
+            </div>
+            <?php endif; ?>
             <?php if (floatval($invoice['transfer_amount']) > 0 && floatval($invoice['transfer_personal_amount']) == 0 && floatval($invoice['transfer_company_amount']) == 0): ?>
             <div class="payment-row">
                 <span>🏦 Chuyển khoản (Cũ)</span>
                 <span style="font-weight: 700;"><?php echo format_money($invoice['transfer_amount']); ?></span>
             </div>
             <?php endif; ?>
+
+            <?php if ($package_deduct > 0 && floatval($invoice['cash_amount']) == 0 && floatval($invoice['transfer_amount']) == 0 && floatval($invoice['card_amount']) == 0 && floatval($invoice['debt_amount']) == 0): ?>
+            <div class="payment-row" style="color: #15803d; font-weight: 700;">
+                <span>💵 Tiền thực thu:</span>
+                <span>0 đ (Miễn thu — Đã quyết toán bằng Ví Coin)</span>
+            </div>
+            <?php endif; ?>
+
             <?php if (floatval($invoice['debt_amount']) > 0): ?>
             <div class="payment-row" style="color: #dc2626;">
                 <span>📝 Ghi nợ</span>
                 <span style="font-weight: 800;"><?php echo format_money($invoice['debt_amount']); ?></span>
+            </div>
+            <?php else: ?>
+            <div class="payment-row" style="color: #15803d;">
+                <span>📝 Còn nợ</span>
+                <span style="font-weight: 700;">0 đ ✓</span>
             </div>
             <?php endif; ?>
         </div>

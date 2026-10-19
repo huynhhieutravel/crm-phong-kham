@@ -100,7 +100,7 @@ try {
 
     // Link coin transaction to invoice if applicable
     if ($coin_deduct_patient_id > 0 && $coin_deduct_count > 0 && $package_deduct > 0) {
-        $db->prepare("UPDATE coin_transactions SET reference_id = ? WHERE reference_id = 0 AND note LIKE ?")
+        $db->prepare("UPDATE coin_transactions SET reference_id = ? WHERE note LIKE ?")
            ->execute([$invoice_id, "%$invoice_no%"]);
     }
 

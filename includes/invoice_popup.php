@@ -60,7 +60,7 @@
     <!-- Subtotal + Discount -->
     <div style="background:#f8fafc; border-radius:14px; padding:1rem; margin-bottom:1.5rem;">
         <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
-            <span style="color:#64748b; font-weight:600;">Tổng cộng:</span>
+            <span style="color:#64748b; font-weight:600;">Tổng giá trị dịch vụ:</span>
             <span id="ipSubtotal" style="font-weight:800; color:#1e293b;">0 đ</span>
         </div>
         <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
@@ -71,8 +71,19 @@
             <label style="color:#64748b; font-weight:600; font-size:0.85rem; white-space:nowrap;">Lý do:</label>
             <input type="text" id="ipDiscountNote" placeholder="VD: KM khai trương" style="flex:1; padding:0.4rem 0.6rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.85rem;">
         </div>
-        <div style="display:flex; justify-content:space-between; margin-top:1rem; padding-top:0.75rem; border-top:2px solid #e2e8f0;">
-            <span style="font-weight:800; font-size:1.1rem; color:#0f172a;">THÀNH TIỀN:</span>
+        <div id="ipCoinDeductRow" style="display:none; justify-content:space-between; align-items:center; background:#fefce8; border:1px dashed #fde047; padding:0.5rem 0.75rem; border-radius:8px; margin-top:0.6rem;">
+            <span style="color:#b45309; font-weight:700; font-size:0.85rem; display:flex; align-items:center; gap:0.35rem;">
+                <i class="fas fa-coins" style="color:#eab308;"></i> Trừ Ví Coin (<span id="ipCoinDeductCountText">0</span> Coins):
+            </span>
+            <span id="ipCoinDeductAmountText" style="color:#b45309; font-weight:800; font-size:0.95rem;">- 0 đ</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem; padding-top:0.75rem; border-top:2px solid #e2e8f0;">
+            <div style="display:flex; align-items:center;">
+                <span style="font-weight:800; font-size:1.1rem; color:#0f172a;">TIỀN THỰC THU:</span>
+                <span id="ipPaidByCoinBadge" style="display:none; font-size:0.72rem; color:#15803d; font-weight:700; background:#dcfce7; padding:2px 8px; border-radius:10px; margin-left:8px; align-items:center; gap:4px;">
+                    <i class="fas fa-check-circle"></i> Đã trừ Coin
+                </span>
+            </div>
             <span id="ipTotal" style="font-weight:900; font-size:1.3rem; color:#4f46e5;">0 đ</span>
         </div>
     </div>
@@ -124,7 +135,7 @@
                 </div>
                 <div style="flex:1; min-width:120px;">
                     <label style="font-size:0.75rem; color:#b45309; font-weight:700; display:block; margin-bottom:0.35rem;">Quy đổi (VNĐ)</label>
-                    <input type="text" id="ipCoinAmount" value="0" style="width:100%; padding:0.45rem; border:2px solid #fde047; border-radius:8px; font-weight:800; font-size:1.05rem; color:#b45309; text-align:right; background:white; outline:none; transition:border-color 0.2s; box-sizing:border-box; height:39px;" onfocus="this.style.borderColor='#eab308'" onblur="this.style.borderColor='#fde047'" oninput="formatMoneyInput(this); recalcPayment()">
+                    <input type="text" id="ipCoinAmount" value="0" style="width:100%; padding:0.45rem; border:2px solid #fde047; border-radius:8px; font-weight:800; font-size:1.05rem; color:#b45309; text-align:right; background:white; outline:none; transition:border-color 0.2s; box-sizing:border-box; height:39px;" onfocus="this.style.borderColor='#eab308'" onblur="this.style.borderColor='#fde047'" oninput="formatMoneyInput(this); recalcInvoice()">
                 </div>
             </div>
         </div>
@@ -647,7 +658,7 @@ function setIpCoinFast(coins, amount, serviceName) {
     if (serviceName) {
         var foundIdx = -1;
         for (var i = 0; i < ipCartItems.length; i++) {
-            if (ipCartItems[i]._isCoinService || ipCartItems[i]._isAppointmentService) {
+            if (ipCartItems[i]._isCoinService || ipCartItems[i]._isAppointmentService || ipCartItems[i].name.indexOf(serviceName) !== -1 || serviceName.indexOf(ipCartItems[i].name) !== -1) {
                 foundIdx = i;
                 break;
             }
@@ -670,7 +681,7 @@ function setIpCoinFast(coins, amount, serviceName) {
         document.getElementById('ipCash').value = '0';
         renderCart();
     } else {
-        recalcPayment();
+        recalcInvoice();
     }
 }
 
@@ -709,7 +720,7 @@ function handleCoinCountInput(el) {
             ipCartItems.splice(foundIdx, 1);
             renderCart();
         } else {
-            recalcPayment();
+            recalcInvoice();
         }
     }
 }
@@ -723,20 +734,54 @@ function recalcInvoice() {
         discount = subtotal;
         document.getElementById('ipDiscountAmount').value = formatMoneyOnly(discount);
     }
-    var total = subtotal - discount;
+    
+    var coinVal = getRawValue('ipCoinAmount');
+    var coinCount = parseFloat(document.getElementById('ipCoinCount').value) || 0;
+    
+    // Manage Coin deduction row in summary
+    var coinRow = document.getElementById('ipCoinDeductRow');
+    var coinBadge = document.getElementById('ipPaidByCoinBadge');
+    if (coinVal > 0 || coinCount > 0) {
+        if (coinRow) {
+            coinRow.style.display = 'flex';
+            document.getElementById('ipCoinDeductCountText').textContent = coinCount;
+            document.getElementById('ipCoinDeductAmountText').textContent = '- ' + formatVND(coinVal);
+        }
+    } else {
+        if (coinRow) coinRow.style.display = 'none';
+    }
+    
+    // Net payable to collect: (subtotal - discount) - coinVal
+    var afterDiscount = Math.max(0, subtotal - discount);
+    var netPayable = Math.max(0, afterDiscount - coinVal);
     
     document.getElementById('ipSubtotal').textContent = formatVND(subtotal);
-    document.getElementById('ipTotal').textContent = formatVND(total);
+    document.getElementById('ipTotal').textContent = formatVND(netPayable);
     
-    // Auto-fill cash to total only if no other payment method is set
-    var cash = getRawValue('ipCash');
-    var transferPersonal = getRawValue('ipTransferPersonal');
-    var transferCompany = getRawValue('ipTransferCompany');
-    var card = getRawValue('ipCard');
-    var coinVal = getRawValue('ipCoinAmount');
-    if (cash === 0 && transferPersonal === 0 && transferCompany === 0 && card === 0 && coinVal === 0) {
-        document.getElementById('ipCash').value = formatMoneyOnly(total);
+    if (netPayable === 0 && (coinVal > 0 || (subtotal > 0 && afterDiscount === 0))) {
+        if (coinBadge) coinBadge.style.display = (coinVal > 0) ? 'inline-flex' : 'none';
+        document.getElementById('ipTotal').style.color = '#15803d'; // Green for 0đ
+        // When net payable is 0, CASH MUST BE 0!
+        document.getElementById('ipCash').value = '0';
+        document.getElementById('ipTransferPersonal').value = '0';
+        document.getElementById('ipTransferCompany').value = '0';
+        document.getElementById('ipCard').value = '0';
+    } else {
+        if (coinBadge) coinBadge.style.display = 'none';
+        document.getElementById('ipTotal').style.color = '#4f46e5'; // Indigo
+        
+        // Auto-fill cash with remaining net payable only if no other payment has been entered
+        var cash = getRawValue('ipCash');
+        var transferPersonal = getRawValue('ipTransferPersonal');
+        var transferCompany = getRawValue('ipTransferCompany');
+        var card = getRawValue('ipCard');
+        if (cash === 0 && transferPersonal === 0 && transferCompany === 0 && card === 0) {
+            document.getElementById('ipCash').value = formatMoneyOnly(netPayable);
+        } else if (cash > netPayable && transferPersonal === 0 && transferCompany === 0 && card === 0) {
+            document.getElementById('ipCash').value = formatMoneyOnly(netPayable);
+        }
     }
+    
     recalcPayment();
 }
 
@@ -760,6 +805,7 @@ function recalcPayment() {
     var debtBox = document.getElementById('ipDebt').parentElement;
     if (debt > 0) {
         debtBox.style.background = '#fef2f2'; debtBox.style.borderColor = '#fecaca';
+        document.getElementById('ipDebt').style.color = '#dc2626';
     } else {
         debtBox.style.background = '#f0fdf4'; debtBox.style.borderColor = '#bbf7d0';
         document.getElementById('ipDebt').style.color = '#10b981';
@@ -771,7 +817,8 @@ function submitInvoice() {
     // Fail-safe: if cart is empty but coin count/amount was specified, auto add item
     var coinCount = parseFloat(document.getElementById('ipCoinCount').value) || 0;
     var coinVal = getRawValue('ipCoinAmount');
-    if (!ipCartItems.length && coinCount > 0 && coinVal > 0) {
+    if (!ipCartItems.length && coinCount > 0) {
+        if (coinVal === 0) coinVal = coinCount * 300000;
         var autoName = 'Trị liệu trừ Ví Coin (' + coinCount + ' Coins)';
         if (coinCount === 2) autoName = 'Đông Y 60 phút';
         else if (coinCount === 3) autoName = 'Đông Y 90 phút';
@@ -792,12 +839,26 @@ function submitInvoice() {
     var subtotal = 0;
     ipCartItems.forEach(function(item) { subtotal += item.qty * item.price; });
     var discount = getRawValue('ipDiscountAmount');
-    var total = subtotal - discount;
+    var total = Math.max(0, subtotal - discount);
     var cash = getRawValue('ipCash');
     var transferPersonal = getRawValue('ipTransferPersonal');
     var transferCompany = getRawValue('ipTransferCompany');
     var card = getRawValue('ipCard');
     var coinVal = getRawValue('ipCoinAmount');
+    var coinCount = parseFloat(document.getElementById('ipCoinCount').value) || 0;
+    
+    // Sync coinVal and coinCount
+    if (coinCount > 0 && coinVal === 0) coinVal = coinCount * 300000;
+    if (coinVal > 0 && coinCount === 0) coinCount = Math.round(coinVal / 300000);
+    
+    // If coin covers the full amount or more, ensure cash is 0
+    if (coinVal >= total) {
+        cash = 0;
+        transferPersonal = 0;
+        transferCompany = 0;
+        card = 0;
+    }
+    
     var transfer = transferPersonal + transferCompany;
     var debt = total - cash - transfer - card - coinVal;
     if (debt < 0) debt = 0;
@@ -826,7 +887,7 @@ function submitInvoice() {
             card_amount: card,
             package_deduct: coinVal,
             coin_deduct_patient_id: document.getElementById('ipCoinPatientId').value || patientId,
-            coin_deduct_count: parseFloat(document.getElementById('ipCoinCount').value) || 0,
+            coin_deduct_count: coinCount,
             debt_amount: debt,
             note: document.getElementById('ipNote').value,
             treatment_id: ctx.treatment_id,
@@ -863,12 +924,17 @@ function submitInvoice() {
         btn.disabled = false;
         btn.innerHTML = '✅ Chốt & Tạo Phiếu';
         console.error('Invoice API Error:', err);
-        alert('Lỗi: ' + (err.message || 'Kết nối mạng thất bại'));
+        alert('Lỗi kết nối khi tạo phiếu: ' + err.message);
     });
 }
 
 function renderReceiptView(inv) {
     var items = inv.items || [];
+    var packageDeduct = parseFloat(inv.package_deduct) || 0;
+    var coinInfo = inv.coin_info || null;
+    var coinCount = coinInfo ? Math.abs(parseFloat(coinInfo.amount)) : (packageDeduct > 0 ? Math.round(packageDeduct / 300000) : 0);
+    var netPayable = Math.max(0, parseFloat(inv.total_amount) - packageDeduct);
+
     var html = '<div style="text-align:center; padding:1rem 0; border-bottom:2px dashed #e2e8f0;">'
         + '<div style="font-weight:900; font-size:1.2rem; color:#0f172a;">SIMON CENTER</div>'
         + '<div style="font-size:0.75rem; color:#64748b;">Chăm sóc sức khỏe toàn diện</div>'
@@ -893,29 +959,77 @@ function renderReceiptView(inv) {
     html += '<div style="padding:0.75rem 0; border-bottom:1px dashed #e2e8f0;">';
     items.forEach(function(item) {
         var lineTotal = (item.qty || 1) * (item.price || 0);
+        var coinBadge = (item._isCoinService || (packageDeduct > 0 && items.length === 1)) 
+            ? ' <span style="font-size:0.7rem; background:#fef08a; color:#854d0e; padding:1px 5px; border-radius:4px; font-weight:700;"><i class="fas fa-coins"></i> Ví Coin</span>' 
+            : '';
         html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.25rem 0;">'
-            + '<span>' + item.name + ' x' + (item.qty || 1) + '</span>'
+            + '<span>' + item.name + ' x' + (item.qty || 1) + coinBadge + '</span>'
             + '<span style="font-weight:700;">' + formatVND(lineTotal) + '</span></div>';
     });
     html += '</div>';
     
     // Totals
     html += '<div style="padding:0.75rem 0; border-bottom:1px dashed #e2e8f0;">';
-    html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span style="color:#64748b;">Tổng cộng:</span><span style="font-weight:700;">' + formatVND(inv.subtotal) + '</span></div>';
+    html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span style="color:#64748b;">Tổng giá trị dịch vụ:</span><span style="font-weight:700;">' + formatVND(inv.subtotal) + '</span></div>';
     if (parseFloat(inv.discount_amount) > 0) {
         html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0; color:#ef4444;"><span>Giảm giá' + (inv.discount_note ? ' (' + inv.discount_note + ')' : '') + ':</span><span style="font-weight:700;">- ' + formatVND(inv.discount_amount) + '</span></div>';
     }
-    html += '<div style="display:flex; justify-content:space-between; font-size:1.1rem; padding:0.5rem 0; font-weight:900; color:#4f46e5;"><span>THÀNH TIỀN:</span><span>' + formatVND(inv.total_amount) + '</span></div>';
+    if (packageDeduct > 0 || coinCount > 0) {
+        html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.25rem 0.5rem; color:#b45309; font-weight:800; background:#fefce8; border-radius:6px; margin:0.25rem 0;">'
+            + '<span><i class="fas fa-coins" style="color:#eab308; margin-right:4px;"></i> Trừ Ví Coin' + (coinCount > 0 ? ' (' + coinCount + ' Coins)' : '') + ':</span>'
+            + '<span>- ' + formatVND(packageDeduct) + '</span>'
+            + '</div>';
+    }
+    html += '<div style="display:flex; justify-content:space-between; font-size:1.1rem; padding:0.5rem 0; font-weight:900; color:' + (netPayable === 0 ? '#15803d' : '#4f46e5') + ';">'
+        + '<span>TIỀN THỰC THU:</span><span>' + formatVND(netPayable) + '</span></div>';
     html += '</div>';
     
     // Payment breakdown
     html += '<div style="padding:0.75rem 0; border-bottom:1px dashed #e2e8f0;">';
+    html += '<div style="font-size:0.75rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:0.4rem;">Hình thức thanh toán:</div>';
+    
+    if (packageDeduct > 0 || coinInfo) {
+        html += '<div style="background:#fffbeb; border:1px solid #fde047; border-radius:8px; padding:0.6rem 0.75rem; margin-bottom:0.5rem;">'
+            + '<div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:800; color:#b45309;">'
+            + '<span><i class="fas fa-coins" style="color:#eab308; margin-right:4px;"></i> Trừ Ví Coin:</span>'
+            + '<span>' + (coinCount > 0 ? coinCount + ' Coins ' : '') + '(' + formatVND(packageDeduct) + ')</span>'
+            + '</div>';
+        
+        if (coinInfo) {
+            if (coinInfo.coin_patient_name && coinInfo.patient_id != inv.patient_id) {
+                html += '<div style="font-size:0.75rem; color:#92400e; margin-top:0.25rem; font-weight:600;">'
+                    + '<i class="fas fa-user-tag" style="margin-right:3px;"></i> Ví nguồn: <strong>' + coinInfo.coin_patient_name + '</strong> (Mã BN-' + coinInfo.patient_id + ')'
+                    + '</div>';
+            } else if (coinInfo.coin_patient_name) {
+                html += '<div style="font-size:0.75rem; color:#92400e; margin-top:0.25rem;">'
+                    + '<i class="fas fa-wallet" style="margin-right:3px;"></i> Trừ từ Ví Coin của bệnh nhân'
+                    + '</div>';
+            }
+            if (coinInfo.note) {
+                html += '<div style="font-size:0.72rem; color:#a16207; margin-top:0.2rem; font-style:italic;">'
+                    + coinInfo.note
+                    + '</div>';
+            }
+        }
+        html += '</div>';
+    }
+
     if (parseFloat(inv.cash_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>💵 Tiền mặt:</span><span style="font-weight:700;">' + formatVND(inv.cash_amount) + '</span></div>';
     if (parseFloat(inv.transfer_personal_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>🏦 CK Cá nhân:</span><span style="font-weight:700;">' + formatVND(inv.transfer_personal_amount) + '</span></div>';
     if (parseFloat(inv.transfer_company_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>🏦 TK Công ty:</span><span style="font-weight:700;">' + formatVND(inv.transfer_company_amount) + '</span></div>';
     if (parseFloat(inv.card_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>💳 Quẹt thẻ:</span><span style="font-weight:700;">' + formatVND(inv.card_amount) + '</span></div>';
     if (parseFloat(inv.transfer_amount) > 0 && parseFloat(inv.transfer_personal_amount) == 0 && parseFloat(inv.transfer_company_amount) == 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0;"><span>🏦 Chuyển khoản (Cũ):</span><span style="font-weight:700;">' + formatVND(inv.transfer_amount) + '</span></div>';
-    if (parseFloat(inv.debt_amount) > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0; color:#dc2626;"><span>📝 Ghi nợ:</span><span style="font-weight:700;">' + formatVND(inv.debt_amount) + '</span></div>';
+    
+    // Show Tiền thực thu: 0 đ when paid by coin
+    if (packageDeduct > 0 && parseFloat(inv.cash_amount) == 0 && parseFloat(inv.transfer_amount) == 0 && parseFloat(inv.card_amount) == 0 && parseFloat(inv.debt_amount) == 0) {
+        html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0; color:#15803d; font-weight:700;"><span>💵 Tiền thực thu:</span><span>0 đ (Miễn thu)</span></div>';
+    }
+    
+    if (parseFloat(inv.debt_amount) > 0) {
+        html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0; color:#dc2626; font-weight:800;"><span>📝 Ghi nợ:</span><span>' + formatVND(inv.debt_amount) + '</span></div>';
+    } else {
+        html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:0.15rem 0; color:#15803d;"><span>📝 Còn nợ:</span><span style="font-weight:700;">0 đ ✓</span></div>';
+    }
     html += '</div>';
     
     html += '<div style="padding:0.75rem 0; text-align:center; font-size:0.8rem; color:#64748b;">'
