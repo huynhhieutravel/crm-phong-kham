@@ -17,7 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $input = json_decode(file_get_contents('php://input'), true); 
-error_log("INVOICE API INPUT: " . print_r($input, true));
 if (!$input) {
     // Fallback to form POST
     $input = $_POST;

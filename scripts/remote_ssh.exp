@@ -1,5 +1,5 @@
 #!/usr/bin/expect -f
-set timeout 30
+set timeout 120
 set cmd [lindex $argv 0]
 spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2
 expect "password:"

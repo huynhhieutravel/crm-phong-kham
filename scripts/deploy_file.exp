@@ -1,0 +1,41 @@
+#!/usr/bin/expect -f
+set timeout 60
+set password {&m5L9[eUv}
+
+if {[llength $argv] < 2} {
+    puts "Usage: deploy_file.exp <local_path> <remote_path>"
+    exit 1
+}
+
+set local_file [lindex $argv 0]
+set remote_dest [lindex $argv 1]
+set tmp_name [exec basename $local_file]
+
+puts "=== UPLOADING $local_file TO /tmp/$tmp_name ==="
+spawn scp -o StrictHostKeyChecking=no $local_file ubutu@112.78.15.2:/tmp/$tmp_name
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+puts "=== MOVING TO $remote_dest ==="
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2
+expect "password:"
+send "$password\r"
+expect "$ "
+send "echo '&m5L9\[eUv' | sudo -S bash -c \"cp /tmp/$tmp_name $remote_dest && chown www-data:www-data $remote_dest && rm -f /tmp/$tmp_name && echo DEPLOY_SUCCESS\"\r"
+expect {
+    "DEPLOY_SUCCESS" {
+        puts "\n>>> DEPLOYED $remote_dest SUCCESSFULLY! <<<\n"
+    }
+    timeout {
+        puts "\n>>> TIMED OUT DEPLOYING $remote_dest <<<\n"
+        exit 1
+    }
+}
+expect "$ "
+send "exit\r"
+expect eof

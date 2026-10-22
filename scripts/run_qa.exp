@@ -1,0 +1,21 @@
+#!/usr/bin/expect -f
+set timeout 60
+set password {&m5L9[eUv}
+
+spawn scp -o StrictHostKeyChecking=no scripts/comprehensive_qa.php ubutu@112.78.15.2:/tmp/comprehensive_qa.php
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+spawn ssh -o StrictHostKeyChecking=no ubutu@112.78.15.2
+expect "password:"
+send "$password\r"
+expect "$ "
+send "echo '&m5L9\[eUv' | sudo -S php /tmp/comprehensive_qa.php && rm -f /tmp/comprehensive_qa.php\r"
+expect "$ "
+send "exit\r"
+expect eof
