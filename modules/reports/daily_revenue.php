@@ -24,47 +24,81 @@ $is_filtered = !empty($period) && $period !== 'today';
 
 $params = [$start, $end];
 
-// 1. KPIs Tổng quan từ Invoices
+// 1. KPIs Tổng quan từ Invoices (loại trừ các hóa đơn bị hủy)
 $stmt = $db->prepare("
     SELECT 
-        SUM(cash_amount) as total_cash,
-        SUM(transfer_amount) as total_transfer,
-        SUM(package_deduct) as total_package,
-        SUM(debt_amount) as total_debt
+        COUNT(*) as total_invoices,
+        COALESCE(SUM(total_amount), 0) as total_invoice_amount,
+        COALESCE(SUM(cash_amount), 0) as total_cash,
+        COALESCE(SUM(transfer_personal_amount), 0) as total_transfer_personal,
+        COALESCE(SUM(transfer_company_amount), 0) as total_transfer_company,
+        COALESCE(SUM(CASE 
+            WHEN transfer_personal_amount = 0 AND transfer_company_amount = 0 THEN transfer_amount 
+            ELSE 0 
+        END), 0) as total_transfer_other,
+        COALESCE(SUM(card_amount), 0) as total_card,
+        COALESCE(SUM(package_deduct), 0) as total_package_deduct,
+        COALESCE(SUM(debt_amount), 0) as total_debt
     FROM invoices
-    WHERE created_at BETWEEN ? AND ?
+    WHERE created_at BETWEEN ? AND ? AND status != 'cancelled'
 ");
 $stmt->execute($params);
-$inv_totals = $stmt->fetch();
+$inv_totals = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// 2. Thu Nợ (Từ package_payments)
-$stmt = $db->prepare("
-    SELECT payment_method, SUM(amount) as total
-    FROM package_payments
-    WHERE paid_at BETWEEN ? AND ?
-    GROUP BY payment_method
+// 2. Doanh thu Bán gói / Thu nợ gói (Từ transactions)
+$pkg_stmt = $db->prepare("
+    SELECT amount, description, transaction_date 
+    FROM transactions 
+    WHERE category IN ('package', 'package_debt') 
+      AND type = 'income' 
+      AND transaction_date BETWEEN ? AND ?
 ");
-$stmt->execute($params);
-$pkg_pays = $stmt->fetchAll();
+$pkg_stmt->execute($params);
+$pkg_transactions = $pkg_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$total_cash = (float)$inv_totals['total_cash'];
-$total_transfer = (float)$inv_totals['total_transfer'];
-$total_package = (float)$inv_totals['total_package'];
-$total_debt = (float)$inv_totals['total_debt'];
+$total_package_revenue = 0;
+$pkg_cash = 0;
+$pkg_transfer_personal = 0;
+$pkg_transfer_company = 0;
+$pkg_card = 0;
 
-foreach ($pkg_pays as $pp) {
-    if ($pp['payment_method'] === 'cash') {
-        $total_cash += (float)$pp['total'];
-    } elseif (in_array($pp['payment_method'], ['transfer', 'transfer_personal', 'transfer_company', 'card'])) {
-        // Cộng gộp tất cả các loại chuyển khoản (và quẹt thẻ nếu có) vào mục Chuyển khoản chung
-        $total_transfer += (float)$pp['total'];
+foreach ($pkg_transactions as $ptx) {
+    $desc = $ptx['description'] ?? '';
+    $amt = (float)$ptx['amount'];
+    $total_package_revenue += $amt;
+    if (mb_stripos($desc, 'Tiền mặt') !== false) {
+        $pkg_cash += $amt;
+    } elseif (mb_stripos($desc, 'TK Công ty') !== false) {
+        $pkg_transfer_company += $amt;
+    } elseif (mb_stripos($desc, 'Quẹt Thẻ') !== false || mb_stripos($desc, 'Quẹt thẻ') !== false) {
+        $pkg_card += $amt;
+    } else {
+        $pkg_transfer_personal += $amt;
     }
 }
 
-// Thực thu CHỈ tính Tiền mặt + Chuyển khoản thực tế + Tiền nạp Coin
-// Lấy doanh thu nạp ví Coin trong kỳ
+// Bóc tách nguồn thu
+$retail_cash = (float)$inv_totals['total_cash'];
+$retail_transfer_personal = (float)$inv_totals['total_transfer_personal'];
+$retail_transfer_company = (float)$inv_totals['total_transfer_company'];
+$retail_transfer_other = (float)$inv_totals['total_transfer_other'];
+$retail_card = (float)$inv_totals['total_card'];
+$total_package = (float)$inv_totals['total_package_deduct'];
+$total_debt = (float)$inv_totals['total_debt'];
+
+// Tổng tiền vào từng kênh (Phiếu lẻ + Bán gói) để đối soát quỹ thực tế
+$total_cash = $retail_cash + $pkg_cash;
+$total_transfer_personal = $retail_transfer_personal + $retail_transfer_other + $pkg_transfer_personal;
+$total_transfer_company = $retail_transfer_company + $pkg_transfer_company;
+$total_card = $retail_card + $pkg_card;
+$total_transfer = $total_transfer_personal + $total_transfer_company;
+
+// Tổng thực thu toàn bộ phòng khám (Khớp 100% với Billing và Dashboard)
+$total_revenue = $total_cash + $total_transfer_personal + $total_transfer_company + $total_card;
+
+// 3. Lấy thông tin Nạp ví Coin trong kỳ
 $stmt = $db->prepare("
-    SELECT SUM(price_paid) as total_topup
+    SELECT COALESCE(SUM(price_paid), 0) as total_topup
     FROM coin_transactions
     WHERE transaction_type = 'topup' AND created_at BETWEEN ? AND ?
 ");
@@ -82,18 +116,14 @@ $avg_coin_value = ($coin_stats['total_coins_minted'] > 0) ? ($coin_stats['total_
 
 // Tính số Coin đã tiêu hao trong kỳ
 $stmt = $db->prepare("
-    SELECT SUM(ABS(amount)) as total_coins_used
+    SELECT COALESCE(SUM(ABS(amount)), 0) as total_coins_used
     FROM coin_transactions
     WHERE transaction_type = 'usage' AND created_at BETWEEN ? AND ?
 ");
 $stmt->execute($params);
 $coins_used_today = (float)$stmt->fetchColumn();
 
-$total_coin_usage_revenue = $coins_used_today * $avg_coin_value;
-
-// Thực thu CHỈ tính Tiền mặt + Chuyển khoản thực tế
-// (Tiền Nạp Coin đã được cộng tự động vào Tiền mặt / Chuyển khoản thông qua Phiếu tính tiền)
-$total_revenue = $total_cash + $total_transfer; 
+$total_coin_usage_revenue = $coins_used_today * $avg_coin_value; 
 
 
 // 3. Chi Tiết Nợ Phát Sinh (Invoices có debt_amount > 0)
@@ -102,7 +132,7 @@ $stmt = $db->prepare("
     FROM invoices i
     JOIN patients p ON i.patient_id = p.id
     LEFT JOIN users u ON i.created_by = u.id
-    WHERE i.debt_amount > 0 AND i.created_at BETWEEN ? AND ?
+    WHERE i.debt_amount > 0 AND i.created_at BETWEEN ? AND ? AND i.status != 'cancelled'
     ORDER BY i.created_at DESC
 ");
 $stmt->execute($params);
@@ -126,12 +156,12 @@ $debt_payments = $stmt->fetchAll();
 $stmt = $db->prepare("
     SELECT u.full_name, u.id as user_id,
            COUNT(DISTINCT t.id) as total_cases,
-           SUM(COALESCE(i.cash_amount, 0) + COALESCE(i.transfer_amount, 0)) as cash_revenue,
+           SUM(COALESCE(i.cash_amount, 0) + COALESCE(i.transfer_personal_amount, 0) + COALESCE(i.transfer_company_amount, 0) + COALESCE(CASE WHEN i.transfer_personal_amount = 0 AND i.transfer_company_amount = 0 THEN i.transfer_amount ELSE 0 END, 0) + COALESCE(i.card_amount, 0)) as cash_revenue,
            SUM(COALESCE(i.package_deduct, 0)) as package_value,
            SUM(COALESCE(i.debt_amount, 0)) as debt_amount
     FROM treatments t
     JOIN users u ON t.technician_id = u.id
-    LEFT JOIN invoices i ON t.id = i.treatment_id
+    LEFT JOIN invoices i ON t.id = i.treatment_id AND i.status != 'cancelled'
     WHERE t.treatment_date BETWEEN ? AND ?
     GROUP BY u.id
     ORDER BY total_cases DESC
@@ -145,7 +175,7 @@ $stmt = $db->prepare("
     FROM invoices i
     JOIN patients p ON i.patient_id = p.id
     LEFT JOIN users u ON i.created_by = u.id
-    WHERE i.created_at BETWEEN ? AND ?
+    WHERE i.created_at BETWEEN ? AND ? AND i.status != 'cancelled'
     ORDER BY i.created_at DESC
 ");
 $stmt->execute($params);
@@ -155,8 +185,8 @@ $all_invoices = $stmt->fetchAll();
 <style>
 .rev-outer { max-width: 1400px; width: 100%; }
 
-.rev-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
-@media (max-width: 1200px) { .rev-stats { grid-template-columns: repeat(3, 1fr); } }
+.rev-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; margin-bottom: 2rem; }
+@media (max-width: 1400px) { .rev-stats { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 768px) { .rev-stats { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .rev-stats { grid-template-columns: 1fr; } }
 
@@ -277,31 +307,41 @@ $all_invoices = $stmt->fetchAll();
 
         <!-- Revenue KPIs -->
         <div class="rev-stats">
-            <div class="rev-card" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
-                <div class="rev-icon">🪙</div>
-                <div class="rev-label">Nạp Ví Coin</div>
-                <div class="rev-val"><?php echo format_money($total_coin_topup); ?></div>
-            </div>
             <div class="rev-card" style="background: linear-gradient(135deg, #10b981, #34d399);">
                 <div class="rev-icon">💵</div>
-                <div class="rev-label">Bán Gói Lẻ (Tiền mặt)</div>
-                <div class="rev-val"><?php echo format_money($total_cash); ?></div>
+                <div class="rev-label">Tiền Mặt</div>
+                <div class="rev-val" style="font-size: 1.5rem;"><?php echo format_money($total_cash); ?></div>
+                <div class="rev-sub">Lẻ: <?php echo format_money($retail_cash); ?><?php echo $pkg_cash > 0 ? ' · Gói: ' . format_money($pkg_cash) : ''; ?></div>
             </div>
             <div class="rev-card" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">
                 <div class="rev-icon">🏦</div>
-                <div class="rev-label">Bán Gói Lẻ (Chuyển Khoản)</div>
-                <div class="rev-val"><?php echo format_money($total_transfer); ?></div>
+                <div class="rev-label">CK Cá Nhân</div>
+                <div class="rev-val" style="font-size: 1.5rem;"><?php echo format_money($total_transfer_personal); ?></div>
+                <div class="rev-sub">Lẻ: <?php echo format_money($retail_transfer_personal + $retail_transfer_other); ?><?php echo $pkg_transfer_personal > 0 ? ' · Gói: ' . format_money($pkg_transfer_personal) : ''; ?></div>
             </div>
             <div class="rev-card" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
-                <div class="rev-icon">📈</div>
-                <div class="rev-label">Doanh Thu Thực Hiện (Coin + Gói)</div>
-                <div class="rev-val"><?php echo format_money($total_package + $total_coin_usage_revenue); ?></div>
-                <div class="rev-sub">Khách đã dùng <?php echo $coins_used_today; ?> Coins hôm nay</div>
+                <div class="rev-icon">🏢</div>
+                <div class="rev-label">TK Công Ty</div>
+                <div class="rev-val" style="font-size: 1.5rem;"><?php echo format_money($total_transfer_company); ?></div>
+                <div class="rev-sub">Lẻ: <?php echo format_money($retail_transfer_company); ?><?php echo $pkg_transfer_company > 0 ? ' · Gói: ' . format_money($pkg_transfer_company) : ''; ?></div>
+            </div>
+            <div class="rev-card" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
+                <div class="rev-icon">💳</div>
+                <div class="rev-label">Quẹt Thẻ</div>
+                <div class="rev-val" style="font-size: 1.5rem;"><?php echo format_money($total_card); ?></div>
+                <div class="rev-sub">Lẻ: <?php echo format_money($retail_card); ?><?php echo $pkg_card > 0 ? ' · Gói: ' . format_money($pkg_card) : ''; ?></div>
+            </div>
+            <div class="rev-card" style="background: linear-gradient(135deg, #6366f1, #818cf8);">
+                <div class="rev-icon">🎁</div>
+                <div class="rev-label">Bán Gói / Coin</div>
+                <div class="rev-val" style="font-size: 1.5rem;"><?php echo format_money($total_package_revenue); ?></div>
+                <div class="rev-sub"><?php echo count($pkg_transactions); ?> giao dịch</div>
             </div>
             <div class="rev-card" style="background: linear-gradient(135deg, #ef4444, #f87171);">
                 <div class="rev-icon">📝</div>
-                <div class="rev-label">Nợ Phát Sinh Mới</div>
-                <div class="rev-val"><?php echo format_money($total_debt); ?></div>
+                <div class="rev-label">Nợ Phát Sinh</div>
+                <div class="rev-val" style="font-size: 1.5rem;"><?php echo format_money($total_debt); ?></div>
+                <div class="rev-sub"><?php echo count($debt_invoices); ?> khoản nợ</div>
             </div>
         </div>
 
@@ -491,11 +531,20 @@ $all_invoices = $stmt->fetchAll();
                                             <?php if ($inv['cash_amount'] > 0): ?>
                                                 <span style="font-size: 0.7rem; background: #d1fae5; color: #059669; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">Tiền mặt</span>
                                             <?php endif; ?>
-                                            <?php if ($inv['transfer_amount'] > 0): ?>
+                                            <?php if (!empty($inv['transfer_personal_amount']) && $inv['transfer_personal_amount'] > 0): ?>
+                                                <span style="font-size: 0.7rem; background: #dbeafe; color: #2563eb; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">CK Cá nhân</span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($inv['transfer_company_amount']) && $inv['transfer_company_amount'] > 0): ?>
+                                                <span style="font-size: 0.7rem; background: #ede9fe; color: #7c3aed; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">TK Công ty</span>
+                                            <?php endif; ?>
+                                            <?php if (empty($inv['transfer_personal_amount']) && empty($inv['transfer_company_amount']) && $inv['transfer_amount'] > 0): ?>
                                                 <span style="font-size: 0.7rem; background: #dbeafe; color: #2563eb; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">CK</span>
                                             <?php endif; ?>
+                                            <?php if (!empty($inv['card_amount']) && $inv['card_amount'] > 0): ?>
+                                                <span style="font-size: 0.7rem; background: #fef3c7; color: #b45309; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">Quẹt thẻ</span>
+                                            <?php endif; ?>
                                             <?php if ($inv['package_deduct'] > 0): ?>
-                                                <span style="font-size: 0.7rem; background: #fef3c7; color: #b45309; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">Trừ Coin / Gói</span>
+                                                <span style="font-size: 0.7rem; background: #e0e7ff; color: #4338ca; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">Trừ Coin / Gói</span>
                                             <?php endif; ?>
                                             <?php if ($inv['debt_amount'] > 0): ?>
                                                 <span style="font-size: 0.7rem; background: #fee2e2; color: #dc2626; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">Ghi Nợ</span>
