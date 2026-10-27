@@ -312,6 +312,11 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
                         $more = count($items) > 1 ? ' +' . (count($items)-1) : '';
                         $pkg_deduct = floatval($inv['package_deduct'] ?? 0);
                         $total_val = floatval($inv['total_amount'] ?? 0);
+                        $discount_val = floatval($inv['discount_amount'] ?? 0);
+                        $cash_val = floatval($inv['cash_amount'] ?? 0);
+                        $transfer_val = floatval($inv['transfer_personal_amount'] ?? 0) + floatval($inv['transfer_company_amount'] ?? 0) + floatval($inv['transfer_amount'] ?? 0);
+                        $card_val = floatval($inv['card_amount'] ?? 0);
+                        $debt_val = floatval($inv['debt_amount'] ?? 0);
                         $net_amount = max(0, $total_val - $pkg_deduct);
 
                         $status_map = [
@@ -332,16 +337,41 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
                             <span style="font-size:0.85rem; <?php echo $inv['status'] === 'cancelled' ? 'text-decoration: line-through; color: #94a3b8;' : ''; ?>"><?php echo e($first_item . $more); ?></span>
                         </td>
                         <td style="text-align:right; font-weight:800; color:#1e293b; <?php echo $inv['status'] === 'cancelled' ? 'text-decoration: line-through; color: #94a3b8;' : ''; ?>">
-                            <?php if ($pkg_deduct > 0): ?>
-                                <div style="font-size: 0.95rem; color: <?php echo $net_amount == 0 ? '#15803d' : '#1e293b'; ?>;">
-                                    <?php echo format_money($net_amount); ?>
-                                </div>
-                                <div style="font-size: 0.72rem; color: #b45309; font-weight: 700; margin-top: 2px;">
-                                    <i class="fas fa-coins" style="color: #eab308;"></i> Trừ Coin: <?php echo format_money($pkg_deduct); ?>
-                                </div>
-                            <?php else: ?>
-                                <?php echo format_money($inv['total_amount']); ?>
-                            <?php endif; ?>
+                            <div style="font-size: 0.95rem; color: <?php echo $net_amount == 0 ? '#15803d' : '#1e293b'; ?>;">
+                                <?php echo $net_amount == 0 ? '0 đ <span style="font-size:0.7rem; font-weight:700; color:#15803d; background:#dcfce7; padding:1px 6px; border-radius:6px;">Miễn thu</span>' : format_money($net_amount); ?>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-end; margin-top:3px;">
+                                <?php if ($pkg_deduct > 0): ?>
+                                    <div style="font-size: 0.72rem; color: #b45309; font-weight: 700;">
+                                        <i class="fas fa-coins" style="color: #eab308;"></i> Trừ Coin: <?php echo format_money($pkg_deduct); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($discount_val > 0): ?>
+                                    <div style="font-size: 0.72rem; color: #dc2626; font-weight: 600;">
+                                        <i class="fas fa-tag"></i> Giảm: <?php echo format_money($discount_val); ?><?php echo !empty($inv['discount_note']) ? ' (' . e($inv['discount_note']) . ')' : ''; ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($cash_val > 0): ?>
+                                    <div style="font-size: 0.72rem; color: #059669; font-weight: 700;">
+                                        <i class="fas fa-money-bill-wave"></i> Tiền mặt: <?php echo format_money($cash_val); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($transfer_val > 0): ?>
+                                    <div style="font-size: 0.72rem; color: #2563eb; font-weight: 700;">
+                                        <i class="fas fa-university"></i> CK: <?php echo format_money($transfer_val); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($card_val > 0): ?>
+                                    <div style="font-size: 0.72rem; color: #d97706; font-weight: 700;">
+                                        <i class="fas fa-credit-card"></i> Thẻ: <?php echo format_money($card_val); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($debt_val > 0): ?>
+                                    <div style="font-size: 0.72rem; color: #dc2626; font-weight: 800;">
+                                        <i class="fas fa-exclamation-circle"></i> Nợ: <?php echo format_money($debt_val); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td>
                             <select onchange="updateInvoiceStatus(<?php echo $inv['id']; ?>, this.value)" style="font-size:0.75rem; font-weight:700; padding:0.2rem 0.5rem; border-radius:6px; border:1px solid #e2e8f0; background:<?php echo $st['bg']; ?>; color:<?php echo $st['color']; ?>; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; text-align:center;">

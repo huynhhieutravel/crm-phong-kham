@@ -765,10 +765,10 @@ function recalcInvoice() {
     document.getElementById('ipSubtotal').textContent = formatVND(subtotal);
     document.getElementById('ipTotal').textContent = formatVND(netPayable);
     
-    if (netPayable === 0 && (coinVal > 0 || (subtotal > 0 && afterDiscount === 0))) {
+    if (netPayable === 0) {
         if (coinBadge) coinBadge.style.display = (coinVal > 0) ? 'inline-flex' : 'none';
         document.getElementById('ipTotal').style.color = '#15803d'; // Green for 0đ
-        // When net payable is 0, CASH MUST BE 0!
+        // When net payable is 0, ALL PAYMENTS MUST BE 0!
         document.getElementById('ipCash').value = '0';
         document.getElementById('ipTransferPersonal').value = '0';
         document.getElementById('ipTransferCompany').value = '0';
@@ -858,8 +858,8 @@ function submitInvoice() {
     if (coinCount > 0 && coinVal === 0) coinVal = coinCount * 300000;
     if (coinVal > 0 && coinCount === 0) coinCount = Math.round(coinVal / 300000);
     
-    // If coin covers the full amount or more, ensure cash is 0
-    if (coinVal >= total) {
+    var netPayable = Math.max(0, total - coinVal);
+    if (netPayable === 0) {
         cash = 0;
         transferPersonal = 0;
         transferCompany = 0;

@@ -60,6 +60,58 @@ if (!$patient_id || empty($items)) {
     exit;
 }
 
+// =========================================================================
+// STRICT ACCOUNTING INVARIANTS (ADR 0003)
+// =========================================================================
+$calculated_subtotal = 0;
+foreach ($items as $item) {
+    $qty = isset($item['qty']) ? (int)$item['qty'] : 1;
+    $price = isset($item['price']) ? (float)$item['price'] : 0;
+    $calculated_subtotal += $qty * $price;
+}
+if ($subtotal <= 0 && $calculated_subtotal > 0) {
+    $subtotal = $calculated_subtotal;
+}
+
+// 1. Giảm giá không được vượt quá subtotal
+$discount_amount = max(0, min($discount_amount, $subtotal));
+
+// 2. Thành tiền sau giảm giá
+$total_amount = max(0, $subtotal - $discount_amount);
+
+// 3. Trừ Coin/Gói không vượt quá total_amount
+$package_deduct = max(0, min($package_deduct, $total_amount));
+
+// 4. Số tiền thực tế bệnh nhân cần thanh toán (Net Payable)
+$net_payable = max(0, $total_amount - $package_deduct);
+
+// 5. Khóa bất biến: Nếu Net Payable == 0 thì BẮT BUỘC tất cả khoản tiền thu = 0
+if ($net_payable <= 0) {
+    $cash_amount = 0;
+    $transfer_amount = 0;
+    $transfer_personal_amount = 0;
+    $transfer_company_amount = 0;
+    $card_amount = 0;
+    $debt_amount = 0;
+} else {
+    // Nếu Net Payable > 0: Tổng các kênh thanh toán không được vượt quá Net Payable
+    $non_cash = $transfer_personal_amount + $transfer_company_amount + $card_amount;
+    if ($non_cash > $net_payable) {
+        $scale = $net_payable / $non_cash;
+        $transfer_personal_amount = round($transfer_personal_amount * $scale);
+        $transfer_company_amount = round($transfer_company_amount * $scale);
+        $card_amount = round($card_amount * $scale);
+        $cash_amount = 0;
+    } else {
+        $max_cash = $net_payable - $non_cash;
+        $cash_amount = max(0, min($cash_amount, $max_cash));
+    }
+    $transfer_amount = $transfer_personal_amount + $transfer_company_amount;
+    $total_paid = $cash_amount + $transfer_personal_amount + $transfer_company_amount + $card_amount;
+    $debt_amount = max(0, $net_payable - $total_paid);
+}
+
+
 try {
     $db = getDB();
     

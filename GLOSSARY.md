@@ -31,3 +31,12 @@ _Avoid_: Subscription, bundle, plan
 **Coin System**:
 A clinic credit balance system allowing patients to accumulate, top up, and redeem points for clinic services.
 _Avoid_: Loyalty points, token
+
+**Net Payable**:
+The final out-of-pocket amount a patient must pay after deducting discounts and prepaid packages/coins (`max(0, subtotal - discount_amount - package_deduct)`).
+_Avoid_: Total bill, gross amount
+
+**Payment Split**:
+The distribution of collected funds across payment channels (Cash, Personal Transfer, Company Transfer, Card, Debt), strictly bounded by Net Payable.
+_Avoid_: Payment method, tender type
+
