@@ -68,14 +68,43 @@ $stmt = $db->prepare("
 $stmt->execute([$start, $end]);
 $pkg_transactions = $stmt->fetchAll();
 
-// Tổng thực thu = Tiền thực thu từ phiếu lẻ (Tiền mặt + CK + Thẻ) + Bán gói
-$actual_invoice_collected = (float)$stats['total_cash'] 
-    + (float)$stats['total_transfer_personal'] 
-    + (float)$stats['total_transfer_company'] 
-    + (float)$stats['total_transfer_other'] 
-    + (float)$stats['total_card'];
+// Bóc tách hình thức thanh toán của Bán Gói
+$pkg_cash = 0;
+$pkg_transfer_personal = 0;
+$pkg_transfer_company = 0;
+$pkg_card = 0;
 
-$grand_total = $actual_invoice_collected + $total_package_revenue;
+foreach ($pkg_transactions as $ptx) {
+    $desc = $ptx['description'] ?? '';
+    $amt = (float)$ptx['amount'];
+    if (mb_stripos($desc, 'Tiền mặt') !== false) {
+        $pkg_cash += $amt;
+    } elseif (mb_stripos($desc, 'TK Công ty') !== false) {
+        $pkg_transfer_company += $amt;
+    } elseif (mb_stripos($desc, 'Quẹt Thẻ') !== false || mb_stripos($desc, 'Quẹt thẻ') !== false) {
+        $pkg_card += $amt;
+    } else {
+        // Mặc định CK Cá nhân hoặc Chuyển khoản
+        $pkg_transfer_personal += $amt;
+    }
+}
+
+// Doanh thu từ phiếu lẻ
+$retail_cash = (float)$stats['total_cash'];
+$retail_transfer_personal = (float)$stats['total_transfer_personal'];
+$retail_transfer_company = (float)$stats['total_transfer_company'];
+$retail_transfer_other = (float)$stats['total_transfer_other'];
+$retail_card = (float)$stats['total_card'];
+
+// Tổng tiền vào từng kênh (Phiếu lẻ + Bán gói) để đối soát quỹ thực tế
+$total_cash = $retail_cash + $pkg_cash;
+$total_transfer_personal = $retail_transfer_personal + $retail_transfer_other + $pkg_transfer_personal;
+$total_transfer_company = $retail_transfer_company + $pkg_transfer_company;
+$total_card = $retail_card + $pkg_card;
+
+// Tổng thực thu toàn bộ phòng khám (Tiền mặt + CK Cá nhân + TK Công ty + Quẹt thẻ)
+$grand_total = $total_cash + $total_transfer_personal + $total_transfer_company + $total_card;
+
 
 // Invoices list
 $stmt = $db->prepare("
@@ -243,26 +272,26 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
         <div class="kpi-card" style="background:linear-gradient(135deg,#10b981,#34d399); min-width: 140px;">
             <div class="kpi-icon">💵</div>
             <div class="kpi-label">TIỀN MẶT</div>
-            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_cash']); ?></div>
-            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($total_cash); ?></div>
+            <div style="font-size:0.7rem; opacity:0.85; margin-top:0.2rem;">Lẻ: <?php echo format_money($retail_cash); ?><?php echo $pkg_cash > 0 ? ' · Gói: ' . format_money($pkg_cash) : ''; ?></div>
         </div>
         <div class="kpi-card" style="background:linear-gradient(135deg,#3b82f6,#60a5fa); min-width: 140px;">
             <div class="kpi-icon">🏦</div>
             <div class="kpi-label">CK CÁ NHÂN</div>
-            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money((float)$stats['total_transfer_personal'] + (float)$stats['total_transfer_other']); ?></div>
-            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($total_transfer_personal); ?></div>
+            <div style="font-size:0.7rem; opacity:0.85; margin-top:0.2rem;">Lẻ: <?php echo format_money($retail_transfer_personal + $retail_transfer_other); ?><?php echo $pkg_transfer_personal > 0 ? ' · Gói: ' . format_money($pkg_transfer_personal) : ''; ?></div>
         </div>
         <div class="kpi-card" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa); min-width: 140px;">
             <div class="kpi-icon">🏢</div>
             <div class="kpi-label">TK CÔNG TY</div>
-            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_transfer_company']); ?></div>
-            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($total_transfer_company); ?></div>
+            <div style="font-size:0.7rem; opacity:0.85; margin-top:0.2rem;">Lẻ: <?php echo format_money($retail_transfer_company); ?><?php echo $pkg_transfer_company > 0 ? ' · Gói: ' . format_money($pkg_transfer_company) : ''; ?></div>
         </div>
         <div class="kpi-card" style="background:linear-gradient(135deg,#f59e0b,#fbbf24); min-width: 140px;">
             <div class="kpi-icon">💳</div>
             <div class="kpi-label">QUẸT THẺ</div>
-            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($stats['total_card']); ?></div>
-            <div style="font-size:0.7rem; opacity:0.6; margin-top:0.2rem;">Phiếu lẻ</div>
+            <div class="kpi-val" style="font-size:1.3rem;"><?php echo format_money($total_card); ?></div>
+            <div style="font-size:0.7rem; opacity:0.85; margin-top:0.2rem;">Lẻ: <?php echo format_money($retail_card); ?><?php echo $pkg_card > 0 ? ' · Gói: ' . format_money($pkg_card) : ''; ?></div>
         </div>
         <div class="kpi-card" style="background:linear-gradient(135deg,#ef4444,#f87171); min-width: 140px;">
             <div class="kpi-icon">📝</div>
@@ -314,7 +343,9 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
                         $total_val = floatval($inv['total_amount'] ?? 0);
                         $discount_val = floatval($inv['discount_amount'] ?? 0);
                         $cash_val = floatval($inv['cash_amount'] ?? 0);
-                        $transfer_val = floatval($inv['transfer_personal_amount'] ?? 0) + floatval($inv['transfer_company_amount'] ?? 0) + floatval($inv['transfer_amount'] ?? 0);
+                        $transfer_p_val = floatval($inv['transfer_personal_amount'] ?? 0);
+                        $transfer_c_val = floatval($inv['transfer_company_amount'] ?? 0);
+                        $transfer_other_val = ($transfer_p_val == 0 && $transfer_c_val == 0) ? floatval($inv['transfer_amount'] ?? 0) : 0;
                         $card_val = floatval($inv['card_amount'] ?? 0);
                         $debt_val = floatval($inv['debt_amount'] ?? 0);
                         $net_amount = max(0, $total_val - $pkg_deduct);
@@ -356,9 +387,19 @@ $patients = $db->query("SELECT id, full_name, phone FROM patients ORDER BY full_
                                         <i class="fas fa-money-bill-wave"></i> Tiền mặt: <?php echo format_money($cash_val); ?>
                                     </div>
                                 <?php endif; ?>
-                                <?php if ($transfer_val > 0): ?>
+                                <?php if ($transfer_p_val > 0): ?>
                                     <div style="font-size: 0.72rem; color: #2563eb; font-weight: 700;">
-                                        <i class="fas fa-university"></i> CK: <?php echo format_money($transfer_val); ?>
+                                        <i class="fas fa-university"></i> CK Cá nhân: <?php echo format_money($transfer_p_val); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($transfer_c_val > 0): ?>
+                                    <div style="font-size: 0.72rem; color: #7c3aed; font-weight: 700;">
+                                        <i class="fas fa-building"></i> TK Công ty: <?php echo format_money($transfer_c_val); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($transfer_other_val > 0): ?>
+                                    <div style="font-size: 0.72rem; color: #2563eb; font-weight: 700;">
+                                        <i class="fas fa-university"></i> CK: <?php echo format_money($transfer_other_val); ?>
                                     </div>
                                 <?php endif; ?>
                                 <?php if ($card_val > 0): ?>
